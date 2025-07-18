@@ -6,8 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "prepare": "husky"
+    "lint": "next lint"
   },
   "dependencies": {
     "@genkit-ai/core": "^1.14.1",
