@@ -1,0 +1,25 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Users can only read and create their own user document.
+    // They can only update it if they are not trying to change their plan or role.
+    match /users/{userId} {
+      allow read, create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId 
+                    && request.resource.data.subscriptionPlan == resource.data.subscriptionPlan
+                    && request.resource.data.role == resource.data.role;
+    }
+
+    // Brands are nested under users for simple ownership-based rules.
+    match /users/{userId}/brands/{brandId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Media assets follow the same nested pattern.
+    match /users/{userId}/brands/{brandId}/mediaAssets/{assetId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}

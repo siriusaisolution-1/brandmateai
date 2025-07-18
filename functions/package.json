@@ -1,0 +1,23 @@
+{
+  "name": "functions",
+  "scripts": {
+    "lint": "eslint --ext .js,.ts .",
+    "build": "tsc",
+    "deploy": "firebase deploy --only functions"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "main": "lib/index.js",
+  "dependencies": {
+    "firebase-admin": "^12.1.1",
+    "firebase-functions": "^5.0.1",
+    "@google-cloud/functions-framework": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "5.4.5",
+    "eslint": "^8.57.0",
+    "@types/node": "^20.11.20"
+  },
+  "private": true
+}
