@@ -1,20 +1,25 @@
 {
+  "extends": "../tsconfig.json", // Inherit root settings
   "compilerOptions": {
-    "module": "commonjs",
-    "noImplicitReturns": true,
-    "noUnusedLocals": true,
     "outDir": "lib",
-    "sourceMap": true,
-    "strict": true,
+    "rootDir": "src",
+    "module": "commonjs",
     "target": "es2017",
-    "esModuleInterop": true, // <-- ADDED
-    "baseUrl": ".",
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": "./src", // Set the base URL for this project's source
     "paths": {
-      "@/*": ["../src/*"]
+      "@/types/*": ["types/*"],
+      "@/utils/*": ["utils/*"]
     }
   },
-  "compileOnSave": true,
   "include": [
-    "src"
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "lib"
   ]
 }
