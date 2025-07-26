@@ -4,7 +4,7 @@ import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
@@ -15,9 +15,10 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+
 const auth = getAuth(app);
-const db = getFirestore(app);
+const firestore = getFirestore(app); // Renamed from db for clarity
 const storage = getStorage(app);
 const functions = getFunctions(app);
 
-export { app, auth, db, storage, functions };
+export { app, auth, firestore, storage, functions };

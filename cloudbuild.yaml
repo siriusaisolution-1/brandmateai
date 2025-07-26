@@ -1,28 +1,34 @@
 steps:
-# 1. Install dependencies for the scraper service
-- name: 'gcr.io/cloud-builders/npm'
-  args: ['install']
-  dir: 'scraper-service'
-
-# 2. Build the container image using Docker
+# 1. Build the container image. The Dockerfile handles all installations.
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/${PROJECT_ID}/scraper-service', './scraper-service']
+  args: [
+    'build',
+    '-t', 'us-central1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/scraper-service',
+    './scraper-service'
+  ]
 
-# 3. Push the container image to Google Container Registry
+# 2. Push the container image to Artifact Registry
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['push', 'gcr.io/${PROJECT_ID}/scraper-service']
+  args: [
+    'push',
+    'us-central1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/scraper-service'
+  ]
 
-# 4. Deploy the container image to Cloud Run
+# 3. Deploy the new image to Cloud Run
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: gcloud
   args:
     - 'run'
     - 'deploy'
-    - 'scraper-service' # The name of our Cloud Run service
+    - 'scraper-service'
     - '--image'
-    - 'gcr.io/${PROJECT_ID}/scraper-service'
+    - 'us-central1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/scraper-service'
     - '--region'
     - 'us-central1'
     - '--platform'
     - 'managed'
-    - '--allow-unauthenticated' # IMPORTANT: For production, change this to --no-allow-unauthenticated and handle IAM permissions
+    - '--allow-unauthenticated'
+
+# Make the built image available for the deploy step
+images:
+  - 'us-central1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/scraper-service'

@@ -7,8 +7,11 @@
     "sourceMap": true,
     "strict": true,
     "target": "es2017",
-    "esModuleInterop": true,
-    "skipLibCheck": true
+    "esModuleInterop": true, // <-- ADDED
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["../src/*"]
+    }
   },
   "compileOnSave": true,
   "include": [

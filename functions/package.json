@@ -10,14 +10,22 @@
   },
   "main": "lib/index.js",
   "dependencies": {
+    "@genkit-ai/ai": "^1.15.4",
+    "@genkit-ai/core": "^1.15.4",
+    "@genkit-ai/flow": "^0.5.17",
+    "@genkit-ai/googleai": "^1.15.4",
+    "@google-cloud/functions-framework": "^3.0.0",
+    "@sendgrid/mail": "^8.1.5",
     "firebase-admin": "^12.1.1",
     "firebase-functions": "^5.0.1",
-    "@google-cloud/functions-framework": "^3.0.0"
+    "mjml": "^4.15.3",
+    "stripe": "^12.18.0",
+    "zod": "^4.0.10"
   },
   "devDependencies": {
-    "typescript": "5.4.5",
+    "@types/node": "^20.11.20",
     "eslint": "^8.57.0",
-    "@types/node": "^20.11.20"
+    "typescript": "5.4.5"
   },
   "private": true
 }

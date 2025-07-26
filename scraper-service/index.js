@@ -1,16 +1,17 @@
 const express = require('express');
-const puppeteer = require('puppeteer-core');
-const chromium = require('chrome-aws-lambda');
+const puppeteer = require('puppeteer');
 const admin = require('firebase-admin');
 
 // Initialize Firebase Admin SDK
-// IMPORTANT: Set up GOOGLE_APPLICATION_CREDENTIALS environment variable in Cloud Run
 admin.initializeApp();
 
 const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 8080;
+
+// Health check endpoint for Cloud Run readiness
+app.get('/healthz', (req, res) => res.status(200).send('ok'));
 
 // Middleware to verify Firebase ID token
 const verifyToken = async (req, res, next) => {
@@ -20,9 +21,11 @@ const verifyToken = async (req, res, next) => {
   }
   const idToken = authHeader.split('Bearer ')[1];
   try {
-    await admin.auth().verifyIdToken(idToken);
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    req.user = decodedToken; // Pass user info to the main handler
     next();
   } catch (error) {
+    console.error('Token verification failed:', error);
     res.status(403).send('Unauthorized: Invalid token');
   }
 };
@@ -30,57 +33,57 @@ const verifyToken = async (req, res, next) => {
 app.post('/scrape', verifyToken, async (req, res) => {
   const { url } = req.body;
 
-  // Basic URL validation
-  if (!url || !url.startsWith('http')) {
-    return res.status(400).send({ error: 'A valid URL is required.' });
+  // --- Enhanced URL Validation (SSRF Protection) ---
+  if (!url) {
+    return res.status(400).send({ error: 'URL is required.' });
   }
+  let urlObj;
+  try {
+    urlObj = new URL(url);
+    if (!['http:', 'https:'].includes(urlObj.protocol)) {
+      throw new Error('Invalid protocol');
+    }
+  } catch (error) {
+    return res.status(400).send({ error: 'Invalid URL provided.' });
+  }
+  // --- End of Validation ---
 
   let browser = null;
   try {
     browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
-      executablePath: await chromium.executablePath,
-      headless: chromium.headless,
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage' // Recommended for Docker/Cloud Run
+        ]
     });
 
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle2' });
+    await page.goto(urlObj.href, { waitUntil: 'networkidle2', timeout: 30000 });
 
-    // --- Data Extraction Logic ---
     const logoUrl = await page.$eval('img[src*="logo"]', img => img.src).catch(() => null);
     
     const colors = await page.evaluate(() => {
         const colorSet = new Set();
-        const styleSheets = Array.from(document.styleSheets);
-        styleSheets.forEach(sheet => {
-            try {
-                const cssRules = Array.from(sheet.cssRules);
-                cssRules.forEach(rule => {
-                    if (rule.style) {
-                        const color = rule.style.color;
-                        if (color && color.startsWith('rgb')) colorSet.add(color);
-                        const bgColor = rule.style.backgroundColor;
-                        if (bgColor && bgColor.startsWith('rgb')) colorSet.add(bgColor);
-                    }
-                });
-            } catch (e) {
-                // Ignore CORS errors on stylesheets
-            }
-        });
-        return Array.from(colorSet).slice(0, 5); // Return top 5 colors
+        const nodes = Array.from(document.querySelectorAll('*')).slice(0, 3000); // Limit node processing
+        for (const el of nodes) {
+            const style = window.getComputedStyle(el);
+            const color = style.getPropertyValue('color');
+            const bgColor = style.getPropertyValue('background-color');
+            if (color && color.startsWith('rgb')) colorSet.add(color);
+            if (bgColor && bgColor.startsWith('rgb')) colorSet.add(bgColor);
+            if (colorSet.size >= 25) break; // Exit early if we have enough colors
+        }
+        return Array.from(colorSet).slice(0, 5);
     });
 
     const textContent = await page.$eval('body', el => el.innerText.substring(0, 2000));
     
-    res.status(200).send({
-      logoUrl,
-      colors,
-      textContent,
-    });
+    res.status(200).send({ logoUrl, colors, textContent });
 
   } catch (error) {
-    console.error('Scraping failed:', error);
+    console.error('Scraping failed for URL:', url, 'Error:', error.stack || error);
     res.status(500).send({ error: 'Failed to scrape the website.' });
   } finally {
     if (browser) {

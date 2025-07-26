@@ -3,23 +3,49 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Users can only read and create their own user document.
-    // They can only update it if they are not trying to change their plan or role.
+    // Users can only read/create their own document and cannot change their own role/plan.
     match /users/{userId} {
       allow read, create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId 
-                    && request.resource.data.subscriptionPlan == resource.data.subscriptionPlan
-                    && request.resource.data.role == resource.data.role;
+      allow update: if request.auth != null && request.auth.uid == userId
+                    && request.resource.data.role == resource.data.role
+                    && request.resource.data.subscriptionPlan == resource.data.subscriptionPlan;
     }
 
-    // Brands are nested under users for simple ownership-based rules.
-    match /users/{userId}/brands/{brandId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Anyone authenticated can create a brand, as long as they set themselves as the owner.
+    // Only the owner of a brand can read, update, or delete it.
+    match /brands/{brandId} {
+      allow read, update, delete: if request.auth != null && get(/databases/$(database)/documents/brands/$(brandId)).data.ownerId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
     }
 
-    // Media assets follow the same nested pattern.
-    match /users/{userId}/brands/{brandId}/mediaAssets/{assetId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // MediaAssets follow the same pattern: ownership is checked via the brand document.
+    match /mediaAssets/{assetId} {
+      allow read, update, delete: if request.auth != null && get(/databases/$(database)/documents/brands/$(get(/databases/$(database)/documents/mediaAssets/$(assetId)).data.brandId)).data.ownerId == request.auth.uid;
+      allow create: if request.auth != null && get(/databases/$(database)/documents/brands/$(request.resource.data.brandId)).data.ownerId == request.auth.uid;
+    }
+
+    // The scraped cache is read-only for clients, but writable by server-side functions.
+    match /scrapedCache/{cacheId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only backend (admin SDK) can write
+    }
+
+    // Notifications are private to the owner.
+    match /notifications/{notificationId} {
+        allow read, update: if request.auth != null && resource.data.ownerId == request.auth.uid;
+        allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+    }
+    
+    // Calendar events are private to the owner.
+    match /calendarEvents/{eventId} {
+        allow read, write: if request.auth != null && resource.data.ownerId == request.auth.uid;
+        allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+    }
+    
+    // Ad campaigns are private to the owner.
+     match /adCampaigns/{campaignId} {
+        allow read, write: if request.auth != null && resource.data.ownerId == request.auth.uid;
+        allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
     }
   }
 }

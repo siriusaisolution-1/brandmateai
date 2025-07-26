@@ -12,24 +12,21 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { auth, functions } from '@/lib/firebase' // We need to create this file
-import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from 'firebase/auth'
+import { auth, functions } from '@/lib/firebase'
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'
 import { httpsCallable } from 'firebase/functions'
 import { Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
-type SubscriptionPlan = 'free' | 'small-business' | 'small-agency' | 'enterprise';
-
-const registerUserWithPlan = httpsCallable(functions, 'registeruserwithplan');
+// This now points to our refactored backend function
+const completeRegistration = httpsCallable(functions, 'completeRegistration');
 
 export default function RegisterPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [plan, setPlan] = useState<SubscriptionPlan>('free');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -45,15 +42,22 @@ export default function RegisterPage() {
 
     setIsLoading(true);
     try {
+      // 1. Create the user in Firebase Auth.
+      // This will trigger the `onUserCreated` function on the backend,
+      // which creates the Firestore document and sets the initial 'free' plan claim.
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      await updateProfile(userCredential.user, { displayName: fullName });
-      await registerUserWithPlan({ plan, displayName: fullName });
+      // 2. Call our new callable function to finalize the registration
+      // by providing the display name.
+      await completeRegistration({ displayName: fullName });
+
+      // 3. Send a verification email.
       await sendEmailVerification(userCredential.user);
 
       setIsSuccess(true);
       
     } catch (error: any) {
+        console.error("Registration failed:", error);
       if (error.code === 'auth/email-already-in-use') {
         setError("This email address is already in use.");
       } else if (error.code === 'auth/weak-password') {
@@ -93,9 +97,9 @@ export default function RegisterPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md bg-surface border-gray-700">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
+          <CardTitle className="text-2xl font-bold">Create Your Free Account</CardTitle>
           <CardDescription className="text-copy-secondary">
-            Choose your plan and start your journey with us.
+            All users start on a free plan. You can upgrade anytime.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -117,17 +121,6 @@ export default function RegisterPage() {
                     <Label htmlFor="confirmPassword">Confirm Password</Label>
                     <Input id="confirmPassword" type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required disabled={isLoading}/>
                 </div>
-            </div>
-
-             <div className="grid gap-2 pt-2">
-                <Label>Choose Your Plan</Label>
-                <RadioGroup defaultValue="free" value={plan} onValueChange={(v) => setPlan(v as SubscriptionPlan)} className="grid grid-cols-2 gap-4">
-                    <Label htmlFor="free" className="flex flex-col items-center justify-between rounded-md border-2 border-gray-600 bg-background p-4 hover:bg-gray-800/80 cursor-pointer [&:has([data-state=checked])]:border-primary">Free</Label>
-                    <RadioGroupItem value="free" id="free" className="sr-only" />
-                    
-                    <Label htmlFor="small-business" className="flex flex-col items-center justify-between rounded-md border-2 border-gray-600 bg-background p-4 hover:bg-gray-800/80 cursor-pointer [&:has([data-state=checked])]:border-primary">Small Business</Label>
-                    <RadioGroupItem value="small-business" id="small-business" className="sr-only" />
-                </RadioGroup>
             </div>
             
             {error && (
