@@ -1,107 +1,106 @@
+// src/app/(app)/content/generate/image/page.tsx
 'use client';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { BrandSelector } from '@/components/brand-selector';
-import { run, GenkitError } from '@genkit-ai/flow';
-import { generateImageFlow } from '@/ai/flows/generate-image';
-import { AlertTriangle, Download } from 'lucide-react';
-import Image from 'next/image';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2, Upload, Sparkles, Scissors, Wand, Trash2 } from 'lucide-react';
+import { useFlow } from '@genkit-ai/react';
 
-export default function GenerateImagePage() {
-  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
+// Main component for the Image Studio
+export default function ImageStudioPage() {
+  // State for the main generated/uploaded image
+  const [mainImage, setMainImage] = useState<string | null>(null);
   const [prompt, setPrompt] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [generatedImageUrl, setGeneratedImageUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+
+  // Flows
+  const [generateImage, genState] = useFlow('generateImageFlow');
+  const [removeBg, bgState] = useFlow('removeBackgroundFlow');
+  const [upscale, upscaleState] = useFlow('upscaleImageFlow');
 
   const handleGenerate = async () => {
-    if (!selectedBrandId || !prompt) {
-      setError('Please select a brand and enter a prompt.');
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    setGeneratedImageUrl(null);
-
-    try {
-      const response = await run(generateImageFlow, {
-        brandId: selectedBrandId,
+    const result = await generateImage({
         prompt,
-      });
-      setGeneratedImageUrl(response.url);
-    } catch (e) {
-      console.error(e);
-      const errorMessage = e instanceof GenkitError ? e.message : 'An unexpected error occurred.';
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
+        // Add other params like brandId, userId, width, height etc.
+        userId: 'devUser',
+        brandId: 'devBrand'
+    });
+    // This needs to be updated to handle async task polling
+    // For now, we assume direct image result for simplicity, but will need a task checker
+  };
+
+  const handleRemoveBackground = async () => {
+    if (!mainImage) return;
+    const result = await removeBg({ image_base64: mainImage });
+    if (result) {
+      setMainImage(`data:image/${result.image_type};base64,${result.image_base64}`);
     }
   };
 
+  const handleUpscale = async () => {
+      if (!mainImage) return;
+      // This is an async task, needs polling similar to video
+      const result = await upscale({ image_base64: mainImage });
+      alert(`Upscale task started: ${result?.taskId}`);
+  }
+
+  const isLoading = genState.loading || bgState.loading || upscaleState.loading;
+
   return (
-    <div className="p-4 md:p-8 grid md:grid-cols-2 gap-8">
-      <Card className="bg-surface border-gray-700 self-start">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 p-4">
+      {/* Control Panel */}
+      <Card className="lg:col-span-1">
         <CardHeader>
-          <CardTitle>AI Image Generator</CardTitle>
-          <CardDescription>Create stunning, on-brand images from a simple text description.</CardDescription>
+          <CardTitle>Image Studio Controls</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>1. Select Your Brand</Label>
-            <BrandSelector onBrandSelected={(id) => setSelectedBrandId(id)} disabled={isLoading} />
-          </div>
-          <div className="space-y-2">
-            <Label>2. Describe the Image You Want</Label>
+            <Label htmlFor="prompt">Prompt</Label>
             <Textarea 
-              value={prompt} 
-              onChange={(e) => setPrompt(e.target.value)} 
-              placeholder="e.g., A minimalist photo of a coffee cup on a clean desk, with natural morning light." 
-              disabled={isLoading}
-              rows={4}
+              id="prompt" 
+              placeholder="A majestic lion in a futuristic city..."
+              value={prompt}
+              onChange={(e) => setPrompt(e.Tira)}
             />
           </div>
-          {error && <p className="text-sm text-error flex items-center gap-2"><AlertTriangle size={16} /> {error}</p>}
-          <Button 
-            onClick={handleGenerate} 
-            disabled={isLoading || !selectedBrandId || !prompt} 
-            className="w-full bg-primary hover:bg-primary/90"
-          >
-            {isLoading ? 'Generating Image...' : 'Generate Image'}
+          {/* We will add more advanced controls here later */}
+          <Button onClick={handleGenerate} disabled={isLoading} className="w-full">
+            <Sparkles className="mr-2 h-4 w-4" />
+            {genState.loading ? 'Generating...' : 'Generate Image'}
+          </Button>
+          <div className="text-center my-2">OR</div>
+          <Button variant="outline" className="w-full">
+              <Upload className="mr-2 h-4 w-4" />
+              Upload an Image
           </Button>
         </CardContent>
       </Card>
 
-      <div className="flex flex-col items-center justify-center bg-surface border-gray-700 rounded-lg p-8 aspect-square">
-        {isLoading && (
-          <div className="w-full h-full bg-gray-800 rounded-md animate-pulse flex flex-col items-center justify-center">
-             <p className="text-copy-secondary">Generating your masterpiece...</p>
+      {/* Main Display & Editor Panel */}
+      <Card className="lg:col-span-2">
+        <CardHeader>
+          <CardTitle>Canvas</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="w-full h-96 bg-muted/30 rounded-md flex items-center justify-center border-2 border-dashed">
+            {isLoading && <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />}
+            {!isLoading && !mainImage && <p className="text-muted-foreground">Your generated image will appear here</p>}
+            {mainImage && <img src={mainImage} alt="Generated content" className="max-h-full max-w-full object-contain" />}
           </div>
-        )}
-        {!isLoading && generatedImageUrl && (
-          <div className="relative w-full h-full group">
-            <Image
-              src={generatedImageUrl}
-              alt="Generated by BrandMate AI"
-              layout="fill"
-              objectFit="contain"
-              className="rounded-md"
-            />
-            <a href={generatedImageUrl} download target="_blank" rel="noopener noreferrer"
-               className="absolute top-2 right-2 bg-black/50 p-2 rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                <Download className="w-5 h-5 text-white" />
-            </a>
-          </div>
-        )}
-         {!isLoading && !generatedImageUrl && (
-            <div className="text-center">
-                <p className="text-copy-secondary">Your generated image will appear here.</p>
+          
+          {/* Editing Tools - Appear when an image is present */}
+          {mainImage && !isLoading && (
+            <div className="flex justify-center gap-2 mt-4">
+              <Button onClick={handleRemoveBackground} variant="outline"><Trash2 className="mr-2 h-4 w-4" /> Remove BG</Button>
+              <Button onClick={handleUpscale} variant="outline"><Wand className="mr-2 h-4 w-4" /> Upscale 2x</Button>
+              <Button variant="outline"><Scissors className="mr-2 h-4 w-4" /> Inpaint/Cleanup</Button>
             </div>
-         )}
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

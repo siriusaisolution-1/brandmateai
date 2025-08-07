@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { MarketingHeader } from "@/components/marketing-header";
 import { MarketingFooter } from "@/components/marketing-footer";
-import { SocialProofBar } from "@/components/social-proof-bar"; // <-- Import
+import { SocialProofBar } from "@/components/social-proof-bar";
 import { CheckCircle2, Bot, Calendar, BarChart } from "lucide-react";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -14,7 +14,29 @@ export default function HomePage() {
       <main>
         {/* Hero Section */}
         <section className="relative min-h-[90vh] flex items-center justify-center text-center px-4">
-          {/* ... (Hero section unchanged) ... */}
+          <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10"></div>
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-repeat [mask-image:linear-gradient(to_bottom,white_50%,transparent_100%)]"></div>
+          
+          <div className="z-20 relative space-y-6">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tighter">
+              Your AI Marketing <br /> Co-pilot
+            </h1>
+            <p className="max-w-xl mx-auto text-lg text-muted-foreground">
+              BrandMate AI helps you create, schedule, and analyze your marketing
+              campaigns with the power of generative AI.
+            </p>
+            <div className="flex justify-center gap-4">
+              <Button asChild size="lg">
+                <Link href="/register">Get Started for Free</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline">
+                <Link href="#features">Explore Features</Link>
+              </Button>
+            </div>
+             <div className="text-sm text-muted-foreground">
+              14-day free trial. No credit card required.
+            </div>
+          </div>
         </section>
 
         <SocialProofBar />
@@ -50,8 +72,16 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Final CTA and Footer */}
-        {/* ... (unchanged) ... */}
+        {/* Final CTA Section */}
+        <section className="container text-center py-16 md:py-24">
+           <h2 className="text-3xl md:text-4xl font-bold">Ready to Supercharge Your Marketing?</h2>
+           <p className="mt-4 max-w-lg mx-auto text-muted-foreground">Start your free trial today and see how BrandMate AI can transform your workflow.</p>
+            <div className="mt-8">
+              <Button asChild size="lg">
+                <Link href="/register">Sign Up Now</Link>
+              </Button>
+            </div>
+        </section>
       </main>
       
       <MarketingFooter />

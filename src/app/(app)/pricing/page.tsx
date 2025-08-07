@@ -1,32 +1,44 @@
+// src/app/(app)/pricing/page.tsx
 'use client';
 
-import { useState } from 'react';
-// ... (imports are unchanged)
-import { track } from '@/lib/analytics'; // <-- IMPORT TRACKER
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Check } from "lucide-react";
 
-// ... (component and pricingPlans array are unchanged)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+const plans = [
+  { id: 'solo', name: 'Solo', priceUsd: 99, bmk: 1000, description: 'For individuals and small projects.', features: ["Approx. 15-20 Videos", "Approx. 100+ Photos & Edits", "~25 Blog Posts", "Full access to all AI tools"], cta: 'Get Started with Solo' },
+  { id: 'pro', name: 'Pro', priceUsd: 297, bmk: 3000, description: 'For growing teams and businesses.', features: ["Approx. 45-60 Videos", "Approx. 300+ Photos & Edits", "~75 Blog Posts", "Includes 2 LoRA Model Trainings"], cta: 'Choose Pro Plan' },
+  { id: 'agency', name: 'Agency', priceUsd: 889, bmk: 9000, description: 'For agencies and large teams.', features: ["Approx. 150-200 Videos", "Approx. 900+ Photos & Edits", "Unlimited Text Content", "Includes 10 LoRA Model Trainings"], cta: 'Go Agency' },
+  { id: 'enterprise', name: 'Enterprise', priceUsd: null, bmk: 'Custom', description: 'For large organizations.', features: ["Custom BMK Quotas", "Dedicated Support", "Advanced Security", "API Access"], cta: 'Contact Sales' }
+];
+
+const topUpOption = { bmk: 100, priceUsd: 9.90 };
 
 export default function PricingPage() {
-    const [isLoading, setIsLoading] = useState<string | null>(null);
-
-    const handleUpgrade = async (priceId: string, planName: string) => {
-        setIsLoading(priceId);
-        track('Upgrade Button Clicked', { plan: planName, location: 'pricing_page' }); // <-- TRACK EVENT
-        try {
-            // ... (rest of the logic is unchanged)
-        } catch (error) {
-            console.error('Error creating checkout session:', error);
-            setIsLoading(null);
-        }
-    };
-
-    return (
-        // ... (JSX is unchanged, just update the onClick handler)
-        <Button 
-            // ... (other props)
-            onClick={() => plan.priceId && handleUpgrade(plan.priceId, plan.name)}
-        >
-            {/* ... */}
-        </Button>
-    );
+  return (
+    <div className="container mx-auto py-12 px-4">
+      <div className="text-center mb-12">
+        <h1 id="pricing-v3-marker" className="text-4xl font-bold tracking-tight">
+          Pricing v3 @ {new Date().toISOString()}
+        </h1>
+        <p className="mt-4 text-lg text-muted-foreground">This is the latest version of the pricing page.</p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-stretch">
+        {plans.map((plan) => (
+          <Card key={plan.id} className={`flex flex-col ${plan.id === 'pro' ? 'border-primary ring-2 ring-primary' : ''}`}>
+            <CardHeader><CardTitle className="text-2xl">{plan.name}</CardTitle><CardDescription>{plan.description}</CardDescription></CardHeader>
+            <CardContent className="flex-grow space-y-6">
+              <div className="text-4xl font-bold">{plan.priceUsd ? `$${plan.priceUsd}` : 'Custom'}{plan.priceUsd && <span className="text-sm font-normal text-muted-foreground">/month</span>}</div>
+              <div><p className="font-semibold">{plan.bmk.toLocaleString()} BMK Credits</p></div>
+              <ul className="space-y-3">{plan.features.map((feature, index) => (<li key={index} className="flex items-start"><Check className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" /> <span className="text-sm text-muted-foreground">{feature}</span></li>))}</ul>
+            </CardContent>
+            <CardFooter><Button className="w-full">{plan.cta}</Button></CardFooter>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
 }

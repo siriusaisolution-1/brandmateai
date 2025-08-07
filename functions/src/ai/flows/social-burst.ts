@@ -1,89 +1,56 @@
-import { defineFlow, runFlow } from '@genkit-ai/flow';
+// functions/src/ai/flows/social-burst.ts
+import { defineFlow, run } from '@genkit-ai/flow';
 import { z } from 'zod';
-import { gemini10Pro } from '@genkit-ai/googleai';      // ← novi naziv modela
-import { generate } from '@genkit-ai/ai';
-import * as admin from 'firebase-admin';
-import { Brand } from '@/types/firestore';
-import { trackAiCall } from '../utils/ai-usage-tracker';
-import { moderateTextFlow } from './moderation';
+import { geminiPro } from 'genkitx-googleai'; // Use our chosen model
+import { deductBmkCredits } from '../../billing';
+import { BMK_COSTS } from '../../utils/bmk-costs';
+import { enhancePromptFlow } from './prompt-enhancer';
 
-// ────────────────────────────────────────────────────────────────
-
-// ❶ Definišemo šemu ulaza/izlaza (prilagodi po potrebi)
-const InputSchema = z.object({
+const SocialBurstInputSchema = z.object({
   brandId: z.string(),
+  userId: z.string(),
   topic: z.string().min(3),
   durationDays: z.number().int().positive(),
 });
 
-const OutputItemSchema = z.object({
-  platform: z.string(),                // npr. "Instagram"
-  content: z.string(),                 // tekst objave
-  mediaType: z.enum(['image', 'video', 'carousel', 'none']),
-  suggestedTime: z.string(),           // npr. "2025-08-01T10:00:00"
-});
-
-// ────────────────────────────────────────────────────────────────
-
-export const generateSocialBurstFlow = defineFlow(
+export const socialBurstFlow = defineFlow(
   {
-    name: 'generateSocialBurstFlow',
-    inputSchema: InputSchema,
-    outputSchema: z.array(OutputItemSchema),
-    auth: { user: true },
+    name: 'socialBurstFlow',
+    inputSchema: SocialBurstInputSchema,
+    outputSchema: z.any(), // Define a proper output schema later
   },
-  async (input, context) => {
-    const uid = context.auth!.uid;
+  async (input) => {
+    const { userId, brandId, topic } = input;
 
-    // ❷ Učitaj brend iz Firestore-a (primer)
-    const brandSnap = await admin
-      .firestore()
-      .doc(`users/${uid}/brands/${input.brandId}`)
-      .get();
-
-    if (!brandSnap.exists) {
-      throw new Error('Brand not found.');
+    // 1. Deduct credits FIRST
+    const paymentSuccess = await deductBmkCredits(userId, BMK_COSTS.SOCIAL_BURST);
+    if (!paymentSuccess) {
+      throw new Error('Payment failed. Please check your BMK credit balance.');
     }
 
-    const brand = brandSnap.data() as Brand;
+    // 2. Enhance the prompt using the MCP
+    const enhancedResult = await run('enhance-social-prompt', () =>
+      enhancePromptFlow.run({
+        userId,
+        brandId,
+        basePrompt: `Create a series of social media posts about: ${topic}`,
+        taskType: 'social',
+      })
+    );
 
-    // ❸ Konstruisi prompt za LLM
-    const prompt = `
-You are a social-media marketing assistant.
-Generate a ${input.durationDays}-day posting plan for the brand "${brand.name}".
-Brand voice: ${brand.brandVoice || 'neutral'}.
-Topic: "${input.topic}".
-
-Return ONLY valid JSON array with:
-[{ platform, content, mediaType, suggestedTime }]
-`.trim();
-
-    // ❹ Pozovi Gemini 1.0-pro (gemini10Pro)
-    const llmResponse = await generate({
-      model: gemini10Pro,
-      prompt,
-      output: { format: 'json' },
-    });
-
-    await trackAiCall(uid, llmResponse);        // evidentiraj potrošnju
-
-    const posts = llmResponse.output<typeof OutputItemSchema['_type'][]>();
-    if (!posts) {
-      throw new Error('The AI failed to generate social media posts.');
+    // 3. Execute the task with the enhanced prompt
+    try {
+      const llmResponse = await geminiPro.generate({
+          prompt: enhancedResult.enhancedPrompt,
+          // Add specific configurations for social burst if needed
+      });
+      // Process and return the response
+      return { success: true, content: llmResponse.text() };
+    } catch (e) {
+      // Refund credits on failure
+      await deductBmkCredits(userId, -BMK_COSTS.SOCIAL_BURST);
+      console.error("Social Burst generation failed:", e);
+      throw new Error("Failed to generate social burst.");
     }
-
-    // ❺ Moderacija celog teksta
-    const allTextContent = posts.map(p => p.content).join('\n');
-    const moderationResult = await runFlow(moderateTextFlow, allTextContent);
-
-    if (!moderationResult.isSafe) {
-      throw new Error(
-        `Generated content violates safety policies (${moderationResult.categories.join(
-          ', ',
-        )}). Please try a different topic.`,
-      );
-    }
-
-    return posts;
-  },
+  }
 );

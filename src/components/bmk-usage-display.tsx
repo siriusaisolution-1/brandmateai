@@ -6,12 +6,12 @@ import { Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { User } from '@/types/firestore';
 
-// Define monthly quotas for each plan in BMK
+// Plan quotas should now reflect the total BMK allowance for each plan
 const PLAN_QUOTAS: Record<string, number> = {
-    free: 1000, // Trial credits
-    solo: 6000,
-    pro: 18000,
-    agency: 36000,
+    free: 100, // Example starting credits
+    solo: 1000,
+    pro: 3000,
+    agency: 9000,
 };
 
 export function BmkUsageDisplay() {
@@ -26,20 +26,23 @@ export function BmkUsageDisplay() {
     }
 
     const appUser = userData as User;
-    const quota = PLAN_QUOTAS[appUser.subscriptionPlan] || 0;
-    const usage = appUser.bmkUsage || 0;
-    const remaining = Math.max(0, quota - usage);
+    // Assuming the balance is stored in bmkBalance
+    const balance = appUser.bmkBalance || 0;
+    const plan = appUser.subscriptionPlan || 'free';
+    const totalQuota = PLAN_QUOTAS[plan] || 0;
 
     return (
         <div className="p-3 bg-gray-800 rounded-lg">
             <div className="flex justify-between items-center mb-1">
-                <span className="text-xs font-bold text-copy-primary flex items-center gap-1"><Sparkles size={12} className="text-yellow-400"/> BMK Remaining</span>
-                <span className="text-xs text-copy-secondary">{remaining} / {quota}</span>
+                <span className="text-xs font-bold text-copy-primary flex items-center gap-1"><Sparkles size={12} className="text-yellow-400"/> BMK Balance</span>
+                <span className="text-xs text-copy-secondary">
+                  {balance.toFixed(2)} / {totalQuota.toLocaleString()}
+                </span>
             </div>
             <div className="w-full bg-gray-600 rounded-full h-1.5">
                 <div 
                     className="bg-primary h-1.5 rounded-full" 
-                    style={{ width: `${(remaining / quota) * 100}%` }}
+                    style={{ width: `${(balance / totalQuota) * 100}%` }}
                 ></div>
             </div>
             <Link href="/pricing" className="text-xs text-center block mt-2 text-indigo-400 hover:underline">
