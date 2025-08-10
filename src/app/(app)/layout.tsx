@@ -1,9 +1,8 @@
-'use client';
-
+// src/app/(app)/layout.tsx
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
-import { CommandPalette } from "@/components/command-palette"; // <-- IMPORT
-import QueryProvider from '@/components/query-provider';
+import { CommandPalette } from "@/components/command-palette";
+import QueryProvider from "@/components/query-provider";
 import { Toaster } from "@/components/ui/toaster";
 
 export default function AppLayout({
@@ -22,7 +21,8 @@ export default function AppLayout({
           </main>
         </div>
       </div>
-      <CommandPalette /> {/* <-- ADD COMPONENT */}
+
+      <CommandPalette />
       <Toaster />
     </QueryProvider>
   );

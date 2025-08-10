@@ -1,18 +1,12 @@
 // src/instrumentation.ts
-import * as Sentry from '@sentry/nextjs';
-import type { Instrumentation } from 'next';
+// Minimal Next.js instrumentation stub.
+// Sentry je već podešen kroz withSentryConfig u next.config.ts.
 
-export function register() {
-  // We only want to initialize Sentry on the server side.
-  // The client side will be initialized in instrumentation-client.ts
-  if (process.env.NEXT_RUNTIME === 'nodejs' || process.env.NEXT_RUNTIME === 'edge') {
-    Sentry.init({
-      dsn: process.env.SENTRY_DSN,
-      tracesSampleRate: 1.0,
-    });
-  }
+export async function register() {
+  // no-op
 }
 
-export const onRequestError: Instrumentation['onRequestError'] = (error) => {
-  Sentry.captureRequestError(error);
-};
+// (opciono) hook za request greške – ostavljen kao no-op dok ne vratimo Sentry
+export function onRequestError() {
+  // no-op
+}

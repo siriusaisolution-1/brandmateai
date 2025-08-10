@@ -1,21 +1,23 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from 'next';
 
-/** @type {import('next').NextConfig} */
+// Parsiranje Studio origin-a iz .env.local
+const ALLOWED_ORIGINS =
+  process.env.NEXT_PUBLIC_ALLOWED_DEV_ORIGINS?.split(',')
+    .map((s) => s.trim())
+    .filter(Boolean) ?? [
+      "*.googleusercontent.com",
+      "*.cloudworkstations.dev",
+    ];
+
 const nextConfig: NextConfig = {
   transpilePackages: ['@genkit-ai/react'],
   experimental: {
     serverActions: {
-      allowedOrigins: [
-        "*.googleusercontent.com",
-        "*.cloudworkstations.dev",
-      ],
+      allowedOrigins: ALLOWED_ORIGINS,
     },
   },
-  allowedDevOrigins: [
-    "https://*.googleusercontent.com",
-    "https://*.cloudworkstations.dev",
-  ],
+  allowedDevOrigins: ALLOWED_ORIGINS,
 };
 
 export default withSentryConfig(
