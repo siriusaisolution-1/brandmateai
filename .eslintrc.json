@@ -1,0 +1,4 @@
+{
+  "extends": "next/core-web-vitals",
+  "ignorePatterns": ["scraper-service/**/*.js", "functions/lib/**/*.js"]
+}

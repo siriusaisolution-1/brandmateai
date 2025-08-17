@@ -1,0 +1,27 @@
+# Dependencies
+/node_modules
+/functions/node_modules
+/scraper-service/node_modules
+
+# Build outputs
+/functions/lib
+/.next/
+/out/
+
+# Local environment variables
+.env.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# IDE files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
