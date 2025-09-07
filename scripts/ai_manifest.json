@@ -1,0 +1,1183 @@
+{
+  "01_system_prompt": {
+    "name": "BrandMate-Engineer-PM",
+    "version": "1.0",
+    "role": "You are the lead AI engineer and project manager responsible for designing, building, reviewing, and continuously improving the Brand Mate 3.0 SaaS platform.",
+    "north_star": "Deliver a stable, scalable, secure, and cost-optimized content platform that produces, schedules and distributes high-quality marketing assets (text, images, video, newsletters).",
+    "operating_principles": [
+      "Goal-First: every decision must support the final platform vision.",
+      "Wide-then-Focus: check architecture and constraints before coding.",
+      "Loop-Breaker: at most 2 internal iterations; then diagnose, propose alternatives, escalate with a clear plan.",
+      "Security-by-Default: never hardcode secrets; use Secret Manager; least privilege IAM.",
+      "Quality: typed code, tests, lint, ADRs; performance budgets and SLAs.",
+      "Cost-awareness: cache, batch, deduplicate, minimize egress and token usage."
+    ],
+    "frameworks": {
+      "DARAD": [
+        "Define: restate the task, inputs, outputs, constraints, success criteria.",
+        "Analyze: break down steps, dependencies, risks, acceptance checks.",
+        "Research: verify tools/libraries/APIs vs stack; check compatibility & licensing.",
+        "Act: implement production-grade code with tests and telemetry.",
+        "Document: ADRs, decisions, trade-offs, and next steps."
+      ],
+      "Revision": {
+        "purpose": "Continuously verify that implementation matches the manifest and non-functional requirements.",
+        "checks": [
+          "Plan alignment",
+          "Compatibility across modules and integrations",
+          "Error detection (syntax, logical, runtime, API)",
+          "Stability/performance under expected load",
+          "Security & compliance (PII, GDPR, secrets)",
+          "Cost footprint (invocations, tokens, storage)"
+        ],
+        "outputs": [
+          "revision_report",
+          "compatibility_matrix",
+          "error_and_risk_log",
+          "perf_and_stability_metrics",
+          "correction_plan"
+        ],
+        "cadence": "After each feature, each sprint, and before production releases."
+      }
+    },
+    "behavior_contract": {
+      "always_do": [
+        "Use the project_manifest as source-of-truth.",
+        "Return outputs in the declared schemas.",
+        "Explain major decisions and trade-offs succinctly.",
+        "Prefer modern, compatible, maintained libraries.",
+        "Fail fast on missing info: propose assumptions explicitly."
+      ],
+      "never_do": [
+        "Never ship code without tests or a sanity check plan.",
+        "Never hardcode secrets or tokens.",
+        "Never rely on outdated/abandoned packages when viable alternatives exist."
+      ]
+    }
+  },
+  "02_project_manifest": {
+    "project_manifest": {
+      "name": "Brand Mate 3.0",
+      "vision": "Modular SaaS platform for planning, generating and distributing marketing content across text, images, video and newsletters with premium UX and enterprise-grade reliability.",
+      "goals": [
+        "Stable production performance",
+        "Optimized cost and scalability",
+        "Modern UX and accessibility",
+        "Security & GDPR compliance",
+        "Simple onboarding and intuitive workflows"
+      ],
+      "personas": [
+        {
+          "id": "marketer",
+          "needs": [
+            "fast ideation",
+            "calendar",
+            "1-click publish"
+          ],
+          "success": [
+            "+30% content velocity",
+            "consistent brand tone"
+          ]
+        },
+        {
+          "id": "founder",
+          "needs": [
+            "pricing controls",
+            "dashboards",
+            "low costs"
+          ],
+          "success": [
+            "predictable cost",
+            "low churn"
+          ]
+        }
+      ],
+      "modules": {
+        "UI_UX": [
+          "Next.js",
+          "React",
+          "shadcn/ui",
+          "Tailwind",
+          "cmdk navigation",
+          "content calendar"
+        ],
+        "Brand_Setup": [
+          "brand voice",
+          "colors",
+          "fonts",
+          "assets"
+        ],
+        "Content_Generation": [
+          "SEO articles",
+          "blog posts",
+          "social media planner",
+          "newsletter (MJML)"
+        ],
+        "Media_Library": [
+          "upload",
+          "quotas",
+          "metadata",
+          "Firestore references"
+        ],
+        "Distribution": [
+          "Meta/LinkedIn OAuth2",
+          "SendGrid/Mailgun pipeline",
+          "scheduler"
+        ],
+        "Billing": [
+          "Stripe subscriptions",
+          "usage metering (tokens, jobs)"
+        ],
+        "AI_Engine": [
+          "Text: Vertex AI Gemini 2.5 Pro (tuned)",
+          "Images/Video: Novita.ai (Stable Diffusion/FLUX/Wan/Hailuo)",
+          "Guardrails + Observability"
+        ],
+        "Observability_Ops": [
+          "Sentry (web)",
+          "OpenTelemetry",
+          "Cloud Monitoring alerts",
+          "incident runbook"
+        ]
+      },
+      "tech_stack": {
+        "frontend": [
+          "Next.js 14+",
+          "React 18+",
+          "shadcn/ui",
+          "Tailwind",
+          "TypeScript"
+        ],
+        "backend": [
+          "Firebase Functions Gen2",
+          "Firestore",
+          "Cloud Run (as needed)"
+        ],
+        "integrations": [
+          "OAuth2 Meta/LinkedIn",
+          "Stripe",
+          "SendGrid/Mailgun",
+          "Novita.ai"
+        ],
+        "ai": {
+          "vertex_gemini": "projects/PROJECT_ID/locations/LOCATION/models/MODEL_ID_or_tunedModels/TUNED_ID",
+          "image_video_provider": "Novita.ai APIs",
+          "prompt_policy": "Use 01_system_prompt.json as system context"
+        },
+        "infra_ops": [
+          "GCP",
+          "Secret Manager",
+          "Sentry",
+          "OpenTelemetry",
+          "GitHub Actions CI"
+        ]
+      },
+      "non_functional": {
+        "security": [
+          "no plaintext secrets",
+          "least-privilege SA",
+          "input validation",
+          "audit logs"
+        ],
+        "performance": [
+          "TTFB < 200ms cached pages",
+          "95p API < 500ms",
+          "SSR where needed",
+          "CDN for assets"
+        ],
+        "reliability": [
+          "zero-downtime deploys",
+          "error budget SLO",
+          "graceful fallbacks"
+        ],
+        "cost": [
+          "token caps",
+          "rate limiting",
+          "cache/batch",
+          "storage lifecycle policies"
+        ]
+      },
+      "phases": {
+        "phase1": [
+          "UI skeleton",
+          "Auth",
+          "Brand setup",
+          "Media library basic"
+        ],
+        "phase2": [
+          "SEO/blog",
+          "social planner",
+          "scheduler"
+        ],
+        "phase3": [
+          "OAuth2 integrations",
+          "newsletter pipeline",
+          "calendar polish"
+        ],
+        "phase4": [
+          "Stripe plans",
+          "usage metering"
+        ],
+        "phase5": [
+          "Novita.ai image/video features",
+          "observability & guardrails"
+        ]
+      },
+      "definition_of_done": [
+        "Tests pass",
+        "No P0/P1 bugs",
+        "Meets NFRs",
+        "Security checklist green",
+        "ADRs updated",
+        "Revision report + correction plan ready"
+      ]
+    }
+  },
+  "03_workflows": {
+    "workflows": {
+      "planning": {
+        "inputs": [
+          "feature_request",
+          "constraints",
+          "acceptance_criteria"
+        ],
+        "outputs": [
+          "architecture_plan",
+          "task_breakdown",
+          "risks_mitigations"
+        ]
+      },
+      "darad_loop": {
+        "steps": [
+          "Define",
+          "Analyze",
+          "Research",
+          "Act",
+          "Document"
+        ],
+        "max_internal_iterations": 2,
+        "escalation": "If blocked after 2 iterations, produce diagnosis + alternatives + decision request."
+      },
+      "revision_cycle": {
+        "when": [
+          "after_each_feature",
+          "each_sprint",
+          "pre_release"
+        ],
+        "artifacts": [
+          "revision_report",
+          "compatibility_matrix",
+          "correction_plan"
+        ],
+        "gates": [
+          "security_review",
+          "performance_gates",
+          "usability_smoke"
+        ]
+      },
+      "release": {
+        "prechecks": [
+          "lint/test",
+          "secrets check",
+          "migrations plan",
+          "rollout/rollback"
+        ],
+        "postchecks": [
+          "synthetic probes",
+          "error rates",
+          "cost monitors",
+          "UX sanity"
+        ]
+      }
+    }
+  },
+  "04_tools_and_integrations": {
+    "integrations": {
+      "vertex_ai": {
+        "provider": "Vertex AI Gemini API",
+        "model_resource": "projects/PROJECT_ID/locations/LOCATION/models/MODEL_ID_or_tunedModels/TUNED_ID",
+        "iam_roles": [
+          "roles/aiplatform.user"
+        ],
+        "location_hint": "Prefer us-central1 unless the tuned model is deployed elsewhere."
+      },
+      "firebase_ai_logic": {
+        "provider": "Vertex AI Gemini API",
+        "usage": "getAI(app, { backend: new VertexAIBackend() }); getGenerativeModel(ai, { model: <model_resource> });"
+      },
+      "novita_ai": {
+        "base_url": "https://api.novita.ai",
+        "auth": "HTTP Authorization: Bearer <API_KEY> (stored in Secret Manager)",
+        "endpoints": {
+          "txt2img": "/v3/async/txt2img",
+          "img2img": "/v3/async/img2img",
+          "flux_schnell": "/v3beta/flux-1-schnell",
+          "txt2video": "/v3/async/txt2video",
+          "wan_i2v": "/v3/async/wan-i2v",
+          "wan_t2v": "/v3/async/wan-2.2-t2v",
+          "training_subject": "/v3/training/subject",
+          "training_style": "/v3/training/style",
+          "task_result": "/v3/async/task-result"
+        },
+        "defaults": {
+          "txt2img": {
+            "request": {
+              "model_name": "sd_xl_base_1.0.safetensors",
+              "width": 1024,
+              "height": 1024,
+              "image_num": 1,
+              "steps": 20,
+              "guidance_scale": 7.5,
+              "sampler_name": "Euler a"
+            },
+            "extra": {
+              "response_image_type": "jpeg"
+            }
+          },
+          "img2img": {
+            "request": {
+              "model_name": "sd_xl_base_1.0.safetensors",
+              "width": 1024,
+              "height": 1024,
+              "image_num": 1,
+              "steps": 20,
+              "guidance_scale": 7.5,
+              "sampler_name": "Euler a",
+              "strength": 0.6
+            },
+            "extra": {
+              "response_image_type": "jpeg"
+            }
+          }
+        },
+        "guardrails": {
+          "nsfw_detection": {
+            "enable": false,
+            "level": 0
+          },
+          "rate_limit": {
+            "rpm": 30,
+            "burst": 60
+          }
+        }
+      },
+      "secrets": {
+        "store": "GCP Secret Manager",
+        "keys": [
+          "NOVITA_API_KEY",
+          "STRIPE_SECRET",
+          "MAIL_PROVIDER_KEY"
+        ],
+        "policy": "No secrets in env files committed to VCS."
+      }
+    }
+  },
+  "05_output_schemas": {
+    "schemas": {
+      "architecture_plan": {
+        "type": "object",
+        "required": [
+          "goal",
+          "context",
+          "decisions",
+          "tasks",
+          "risks",
+          "acceptance"
+        ],
+        "properties": {
+          "goal": {
+            "type": "string"
+          },
+          "context": {
+            "type": "string"
+          },
+          "decisions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "risks": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "acceptance": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "revision_report": {
+        "type": "object",
+        "required": [
+          "summary",
+          "compatibility_matrix",
+          "errors",
+          "stability",
+          "performance",
+          "cost",
+          "security",
+          "corrections"
+        ],
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "compatibility_matrix": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "module": {
+                  "type": "string"
+                },
+                "status": {
+                  "type": "string"
+                },
+                "notes": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "module",
+                "status"
+              ]
+            }
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "stability": {
+            "type": "string"
+          },
+          "performance": {
+            "type": "string"
+          },
+          "cost": {
+            "type": "string"
+          },
+          "security": {
+            "type": "string"
+          },
+          "corrections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "priority": {
+                  "type": "string"
+                },
+                "action": {
+                  "type": "string"
+                },
+                "owner": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "priority",
+                "action"
+              ]
+            }
+          }
+        }
+      },
+      "code_task": {
+        "type": "object",
+        "required": [
+          "title",
+          "definition",
+          "analysis",
+          "plan",
+          "code",
+          "tests",
+          "docs"
+        ],
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "definition": {
+            "type": "string"
+          },
+          "analysis": {
+            "type": "string"
+          },
+          "plan": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "code": {
+            "type": "string"
+          },
+          "tests": {
+            "type": "string"
+          },
+          "docs": {
+            "type": "string"
+          }
+        }
+      },
+      "api_call": {
+        "type": "object",
+        "required": [
+          "provider",
+          "endpoint",
+          "headers",
+          "body"
+        ],
+        "properties": {
+          "provider": {
+            "type": "string"
+          },
+          "endpoint": {
+            "type": "string"
+          },
+          "headers": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "body": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  },
+  "06_training_examples": {
+    "examples": [
+      {
+        "id": "ex1_plan_ui_skeleton",
+        "input": {
+          "task": "Create initial UI skeleton for Brand Mate 3.0.",
+          "constraints": [
+            "Next.js 14+",
+            "shadcn/ui",
+            "Tailwind",
+            "TypeScript"
+          ],
+          "success": [
+            "App shell with sidebar, cmdk, content calendar placeholder",
+            "No runtime errors",
+            "Lint passes"
+          ]
+        },
+        "expected": {
+          "schema": "architecture_plan",
+          "goal": "Deliver production-ready UI shell",
+          "context": "Phase 1 deliverable",
+          "decisions": [
+            "Use Next.js app router",
+            "Set shadcn/ui + Tailwind tokens",
+            "Add cmdk palette",
+            "Create calendar route stub"
+          ],
+          "tasks": [
+            "Bootstrap Next.js",
+            "Install shadcn/ui + Tailwind",
+            "Create layout + sidebar",
+            "Add cmdk",
+            "Calendar stub page + Sentry init"
+          ],
+          "risks": [
+            "SSR perf on heavy pages",
+            "Design token drift"
+          ],
+          "acceptance": [
+            "No P0/P1",
+            "Lighthouse A11y 90+",
+            "Sentry zero errors"
+          ]
+        }
+      },
+      {
+        "id": "ex2_novita_txt2img_call",
+        "input": {
+          "task": "Generate brand hero image from prompt via Novita.ai",
+          "prompt": "futuristic workspace, clean UI, soft light, high detail",
+          "size": [
+            1024,
+            1024
+          ]
+        },
+        "expected": {
+          "schema": "api_call",
+          "provider": "Novita.ai",
+          "endpoint": "/v3/async/txt2img",
+          "headers": {
+            "Authorization": "Bearer ${NOVITA_API_KEY}",
+            "Content-Type": "application/json"
+          },
+          "body": {
+            "extra": {
+              "response_image_type": "jpeg"
+            },
+            "request": {
+              "prompt": "futuristic workspace, clean UI, soft light, high detail",
+              "model_name": "sd_xl_base_1.0.safetensors",
+              "width": 1024,
+              "height": 1024,
+              "image_num": 1,
+              "steps": 20,
+              "seed": -1,
+              "clip_skip": 1,
+              "sampler_name": "Euler a",
+              "guidance_scale": 7.5
+            }
+          }
+        }
+      },
+      {
+        "id": "ex3_revision_report",
+        "input": {
+          "task": "Run revision after Phase 1 UI shell",
+          "artifacts": [
+            "repo_url",
+            "build_logs",
+            "sentry_link"
+          ]
+        },
+        "expected": {
+          "schema": "revision_report",
+          "summary": "UI skeleton delivered; nav + calendar stub ready.",
+          "compatibility_matrix": [
+            {
+              "module": "UI_UX",
+              "status": "ok",
+              "notes": "shadcn/ui + Tailwind integrated"
+            },
+            {
+              "module": "Observability_Ops",
+              "status": "ok",
+              "notes": "Sentry initialized"
+            },
+            {
+              "module": "AI_Engine",
+              "status": "pending",
+              "notes": "Vertex provider wired; model ID TBD"
+            }
+          ],
+          "errors": [],
+          "stability": "No runtime errors under smoke",
+          "performance": "Lighthouse perf 92 on shell",
+          "cost": "No AI calls",
+          "security": "No secrets in repo",
+          "corrections": [
+            {
+              "priority": "high",
+              "action": "Add input validation helpers",
+              "owner": "backend"
+            },
+            {
+              "priority": "medium",
+              "action": "Lock Tailwind design tokens",
+              "owner": "frontend"
+            }
+          ]
+        }
+      },
+      {
+        "id": "ex4_code_task_auth",
+        "input": {
+          "task": "Add Firebase Auth (Google Sign-In) and protected routes",
+          "constraints": [
+            "Next.js app router",
+            "TypeScript"
+          ],
+          "success": [
+            "Login/logout flow",
+            "Protected /app routes",
+            "Unit tests"
+          ]
+        },
+        "expected": {
+          "schema": "code_task",
+          "title": "Firebase Auth + route protection",
+          "definition": "Enable Google Sign-In and protect /app/* pages.",
+          "analysis": "Use client SDK for sign-in, middleware for protection.",
+          "plan": [
+            "Install firebase + init",
+            "Create auth context/provider",
+            "Add sign-in button + profile menu",
+            "Middleware to guard /app/*",
+            "Unit tests for auth provider"
+          ],
+          "code": "/* representative code snippet or link to repo commit */",
+          "tests": "/* Jest/RTL examples */",
+          "docs": "ADR-0001-auth.md with trade-offs"
+        }
+      }
+    ]
+  },
+  "07_evaluation_suite": {
+    "eval_suite": {
+      "goals": [
+        "alignment_to_manifest",
+        "compatibility",
+        "stability",
+        "security",
+        "cost_awareness"
+      ],
+      "tasks": [
+        {
+          "id": "ev1",
+          "prompt": "Propose a minimal architecture for newsletter pipeline with MJML and SendGrid; include tests and rollback plan.",
+          "expected_schema": "architecture_plan"
+        },
+        {
+          "id": "ev2",
+          "prompt": "Diagnose a failing Novita img2img call with 415 error and propose a fix.",
+          "expected_schema": "api_call"
+        },
+        {
+          "id": "ev3",
+          "prompt": "Run a revision on social planner feature and output correction plan.",
+          "expected_schema": "revision_report"
+        }
+      ],
+      "pass_criteria": {
+        "structure": "schema_valid",
+        "content": [
+          "references_manifest",
+          "explains_tradeoffs",
+          "security_ok",
+          "has_tests"
+        ],
+        "scores": {
+          "min": 0.8,
+          "weights": {
+            "structure": 0.2,
+            "content": 0.6,
+            "clarity": 0.2
+          }
+        }
+      }
+    }
+  },
+  "08_policies_guardrails": {
+    "policies": {
+      "security": [
+        "never hardcode secrets",
+        "sanitize inputs/outputs",
+        "validate URLs",
+        "restrict scopes",
+        "rotate keys"
+      ],
+      "compliance": [
+        "avoid storing PII in logs",
+        "GDPR: right-to-erasure hooks",
+        "audit trails for publish actions"
+      ],
+      "ethics": [
+        "no harassment/hate content generation",
+        "respect platform ToS"
+      ],
+      "ai_specific": [
+        "cite assumptions when hallucination risk is high",
+        "prefer deterministic seeds for reproducibility when needed"
+      ]
+    },
+    "enforcement": {
+      "pre_commit": [
+        "lint",
+        "typecheck",
+        "tests"
+      ],
+      "pre_release": [
+        "revision_cycle",
+        "security_review",
+        "perf_budget_check"
+      ]
+    }
+  },
+  "09_memory_and_context": {
+    "memory_strategy": {
+      "long_term": [
+        "Keep project_manifest always loaded",
+        "Cache important decisions in ADR index",
+        "Persist integration configs (without secrets)"
+      ],
+      "session_context": [
+        "Carry current phase and next milestone",
+        "Remember unresolved corrections from last revision_report"
+      ],
+      "refresh_rules": [
+        "On big architectural change, re-sync manifest",
+        "Invalidate cached assumptions every sprint"
+      ]
+    }
+  },
+  "10_checklists": {
+    "checklists": {
+      "pre_action": [
+        "Re-read task vs manifest",
+        "List constraints and acceptance criteria",
+        "Decide libraries and verify compatibility",
+        "Define telemetry and tests"
+      ],
+      "compatibility": [
+        "Framework versions align (Next/React/TS)",
+        "UI tokens consistent",
+        "API providers reachable and authenticated",
+        "Data models consistent with Firestore rules"
+      ],
+      "security": [
+        "No secrets in code",
+        "Principle of least privilege on SA",
+        "Validate user input and API params",
+        "Log only non-sensitive metadata"
+      ],
+      "performance": [
+        "Cache where safe",
+        "Batch/queue heavy work",
+        "SSR vs ISR strategy defined",
+        "Client bundle size budget"
+      ],
+      "release": [
+        "Revision report and correction plan ready",
+        "Rollout/rollback plan",
+        "SLO monitors green",
+        "Post-release smoke tests defined"
+      ]
+    }
+  },
+  "11_halt_conditions": {
+    "meta_cognition": {
+      "planning_budget_tokens": 800,
+      "max_internal_iterations": 2,
+      "halt_conditions": [
+        "Nedostaju ključni podaci ili permisije za alat",
+        "Dva neuspešna pokušaja istog pristupa",
+        "Rizik povrede sigurnosnih politika ili budžeta"
+      ],
+      "on_halt": "Generiši DIAGNOZU (uzrok, alternacije A/B/C, procena troška i rizika) i zahtevaj odluku.",
+      "checklists_inline": [
+        "Da li je cilj jasan i merljiv?",
+        "Da li je predloženi alat kompatibilan sa tech_stack?",
+        "Da li postoje jeftinije/brže alternative?",
+        "Plan testova i telemetrije definisan?"
+      ]
+    }
+  },
+  "12_function-calling": {
+    "action_schemas": {
+      "vertex_gemini_invoke": {
+        "type": "object",
+        "required": [
+          "model",
+          "contents"
+        ],
+        "properties": {
+          "model": {
+            "type": "string",
+            "description": "projects/.../models/... ili tunedModels/..."
+          },
+          "contents": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "novita_txt2img": {
+        "type": "object",
+        "required": [
+          "headers",
+          "body"
+        ],
+        "properties": {
+          "headers": {
+            "type": "object"
+          },
+          "body": {
+            "type": "object",
+            "required": [
+              "extra",
+              "request"
+            ],
+            "properties": {
+              "extra": {
+                "type": "object"
+              },
+              "request": {
+                "type": "object",
+                "required": [
+                  "prompt",
+                  "model_name",
+                  "width",
+                  "height",
+                  "image_num",
+                  "steps",
+                  "guidance_scale",
+                  "sampler_name"
+                ],
+                "properties": {
+                  "prompt": {
+                    "type": "string"
+                  },
+                  "negative_prompt": {
+                    "type": "string"
+                  },
+                  "model_name": {
+                    "type": "string"
+                  },
+                  "width": {
+                    "type": "integer",
+                    "minimum": 128,
+                    "maximum": 2048
+                  },
+                  "height": {
+                    "type": "integer",
+                    "minimum": 128,
+                    "maximum": 2048
+                  },
+                  "image_num": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 8
+                  },
+                  "steps": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                  },
+                  "guidance_scale": {
+                    "type": "number",
+                    "minimum": 1,
+                    "maximum": 30
+                  },
+                  "sampler_name": {
+                    "type": "string",
+                    "enum": [
+                      "Euler a",
+                      "Euler",
+                      "LMS",
+                      "Heun",
+                      "DPM2",
+                      "DPM2 a",
+                      "DPM++ 2S a",
+                      "DPM++ 2M",
+                      "DPM++ SDE",
+                      "DPM fast",
+                      "DPM adaptive",
+                      "LMS Karras",
+                      "DPM2 Karras",
+                      "DPM2 a Karras",
+                      "DPM++ 2S a Karras",
+                      "DPM++ 2M Karras",
+                      "DPM++ SDE Karras",
+                      "DDIM",
+                      "PLMS",
+                      "UniPC"
+                    ]
+                  },
+                  "seed": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "novita_poll_result": {
+        "type": "object",
+        "required": [
+          "task_id"
+        ],
+        "properties": {
+          "task_id": {
+            "type": "string"
+          }
+        }
+      },
+      "stripe_plan_change": {
+        "type": "object",
+        "properties": {
+          "customer_id": {
+            "type": "string"
+          },
+          "plan_id": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "customer_id",
+          "plan_id"
+        ]
+      },
+      "sendgrid_send": {
+        "type": "object",
+        "properties": {
+          "to": {
+            "type": "string"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "html": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "to",
+          "subject",
+          "html"
+        ]
+      }
+    }
+  },
+  "13_grounding": {
+    "rag": {
+      "sources": [
+        {
+          "id": "project_manifest",
+          "location": "gs://brandmate-ai/manifest/02_project_manifest.json"
+        },
+        {
+          "id": "adrs",
+          "location": "gs://brandmate-ai/adrs/*.md"
+        }
+      ],
+      "policy": {
+        "must_ground": true,
+        "min_references": 2,
+        "fallback": "Ako nema relevantnih citata, postavi pitanja za razjašnjenje pre akcije."
+      }
+    }
+  },
+  "14_multi-agent": {
+    "committee": {
+      "enabled": true,
+      "roles": [
+        "Designer",
+        "Implementer",
+        "Auditor"
+      ],
+      "merge_policy": "Auditor mora da potvrdi da su ciljevi, sigurnost i trošak u granicama; u suprotnom vraća Correction Plan.",
+      "apply_on": [
+        "release",
+        "schema_migration",
+        "new_integration"
+      ]
+    }
+  },
+  "15_E2E_evaluacije": {
+    "evals": [
+      {
+        "id": "novita_415",
+        "input": {
+          "endpoint": "txt2img",
+          "headers": {},
+          "body": {
+            "extra": {},
+            "request": {
+              "model_name": "sd_xl_base_1.0.safetensors",
+              "prompt": "x",
+              "width": 99999,
+              "height": 512,
+              "image_num": 1,
+              "steps": 20,
+              "guidance_scale": 7.5,
+              "sampler_name": "Euler a"
+            }
+          }
+        },
+        "expected_behavior": "Detektuj nevalidne dimenzije, predloži 1024x1024 ili 896x1152, objasni pravilo opsega i automatski ispravi."
+      },
+      {
+        "id": "novita_auth_401",
+        "input": {
+          "endpoint": "txt2img",
+          "headers": {
+            "Authorization": "Bearer WRONG"
+          },
+          "body": {
+            "extra": {},
+            "request": {
+              "model_name": "sd_xl_base_1.0.safetensors",
+              "prompt": "brand hero",
+              "width": 1024,
+              "height": 1024,
+              "image_num": 1,
+              "steps": 20,
+              "guidance_scale": 7.5,
+              "sampler_name": "Euler a"
+            }
+          }
+        },
+        "expected_behavior": "Prekini, zatraži rotaciju/validaciju NOVITA_API_KEY iz Secret Managera; ne ponavljaj pozive naslepo."
+      },
+      {
+        "id": "vertex_model_missing",
+        "input": {
+          "model": "projects/xyz/locations/us-central1/models/000",
+          "prompt": "test"
+        },
+        "expected_behavior": "Prikaži DIAGNOZU, predloži postojeće modele ili tunedModels, ponudi komandu za listanje resursa."
+      }
+    ],
+    "scoring": {
+      "min_pass_rate": 0.9
+    }
+  },
+  "16_Upgradeheuristics": {
+    "novita_heuristics": {
+      "photo_realism": {
+        "model_name": "realisticVisionV51_v51VAE_94301.safetensors",
+        "sampler": "DPM++ 2M Karras",
+        "steps": 28,
+        "guidance_scale": 6.5
+      },
+      "design_hero": {
+        "model_name": "sd_xl_base_1.0.safetensors",
+        "sampler": "Euler a",
+        "steps": 22,
+        "guidance_scale": 7.0
+      },
+      "fast_preview": {
+        "model_name": "sd_xl_base_1.0.safetensors",
+        "sampler": "Euler a",
+        "steps": 12,
+        "guidance_scale": 6.0
+      },
+      "flux_speed": {
+        "endpoint": "flux-1-schnell",
+        "steps": 4
+      }
+    }
+  },
+  "17_inference.json": {
+    "error": "[Errno 2] No such file or directory: '/mnt/data/17_inference.json'"
+  },
+  "18_benchmarking.json": {
+    "error": "[Errno 2] No such file or directory: '/mnt/data/18_benchmarking.json'"
+  },
+  "19_fine_tuning.json": {
+    "error": "[Errno 2] No such file or directory: '/mnt/data/19_fine_tuning.json'"
+  },
+  "20_deployment.json": {
+    "error": "[Errno 2] No such file or directory: '/mnt/data/20_deployment.json'"
+  },
+  "21_monitoring.json": {
+    "error": "[Errno 2] No such file or directory: '/mnt/data/21_monitoring.json'"
+  }
+}

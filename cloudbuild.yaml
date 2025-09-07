@@ -1,0 +1,34 @@
+steps:
+# 1. Build the container image. The Dockerfile handles all installations.
+- name: 'gcr.io/cloud-builders/docker'
+  args: [
+    'build',
+    '-t', 'us-central1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/scraper-service',
+    './scraper-service'
+  ]
+
+# 2. Push the container image to Artifact Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: [
+    'push',
+    'us-central1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/scraper-service'
+  ]
+
+# 3. Deploy the new image to Cloud Run
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args:
+    - 'run'
+    - 'deploy'
+    - 'scraper-service'
+    - '--image'
+    - 'us-central1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/scraper-service'
+    - '--region'
+    - 'us-central1'
+    - '--platform'
+    - 'managed'
+    - '--allow-unauthenticated'
+
+# Make the built image available for the deploy step
+images:
+  - 'us-central1-docker.pkg.dev/${PROJECT_ID}/cloud-run-source-deploy/scraper-service'
