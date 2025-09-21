@@ -1,0 +1,9 @@
+# .firebaseignore
+**/node_modules/
+**/.git/
+**/.DS_Store
+
+# do not deploy docs and scripts
+docs/
+scripts/
+*.md
