@@ -1,14 +1,14 @@
 import { ai } from '../../genkit/ai';
 import { z } from 'zod';
-import * as functions from 'firebase-functions';
 import { NovitaSDK } from 'novita-sdk';
-
-const NOVITA_API_KEY =
-  (functions.config().novita?.key as string) ||
-  process.env.NOVITA_API_KEY ||
-  '';
+import { NOVITA_API_KEY } from '../../config';
+import { novitaImageTransformResultSchema } from './novita-schemas';
 
 const novitaSdk = new NovitaSDK(NOVITA_API_KEY);
+
+type RemoveBgFn = (params: { image_base64: string }) =>
+  | Promise<unknown>
+  | unknown;
 
 export const removeBackgroundFlow = ai.defineFlow({
   name: 'removeBackgroundFlow',
@@ -18,8 +18,11 @@ export const removeBackgroundFlow = ai.defineFlow({
     image_type: z.string(),
   }),
 }, async ({ image_base64 }) => {
-  const res: any =
-    (novitaSdk as any).removeBg?.({ image_base64 }) ??
-    { image_base64, image_type: 'image/png' };
-  return res;
+  const removeBg = (novitaSdk as unknown as { removeBg?: RemoveBgFn }).removeBg;
+  if (!removeBg) {
+    return { image_base64, image_type: 'image/png' };
+  }
+  const response = await removeBg({ image_base64 });
+  const parsed = novitaImageTransformResultSchema.parse(response);
+  return parsed;
 });

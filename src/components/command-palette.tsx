@@ -2,18 +2,7 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
-import {
-  Calculator,
-  Calendar,
-  CreditCard,
-  Settings,
-  Smile,
-  User,
-  LayoutDashboard,
-  Building,
-  BarChart,
-  PlusCircle,
-} from "lucide-react"
+import { Calendar, Settings, LayoutDashboard, Building, PlusCircle } from "lucide-react"
 
 import {
   CommandDialog,
@@ -23,7 +12,6 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-  CommandShortcut,
 } from "@/components/ui/command" // We need to create this component
 import { useFirestore, useFirestoreCollectionData, useUser } from "reactfire"
 import { collection, query, where } from "firebase/firestore"

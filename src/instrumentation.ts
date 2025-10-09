@@ -1,15 +1,25 @@
 // src/instrumentation.ts
 import * as Sentry from '@sentry/nextjs';
+import { getEdgeOptions, getServerOptions, shouldInitialize } from '../sentry.config.shared';
+
+// Zašto: Next App Router traži ovaj hook kako bismo inicijalizovali Sentry per-runtime samo kada DSN postoji.
 
 export function register() {
-  // Re-enabling Sentry with a low sample rate as per the hardening plan.
-  if (process.env.NEXT_RUNTIME === 'nodejs' || process.env.NEXT_RUNTIME === 'edge') {
-    Sentry.init({
-      dsn: process.env.SENTRY_DSN,
-      // Adjust this value in production
-      tracesSampleRate: 0.1, 
-      // TODO: Add profiling when performance becomes a focus
-      // profilesSampleRate: 1.0, 
-    });
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    const options = getServerOptions();
+
+    if (options && shouldInitialize('server')) {
+      Sentry.init(options);
+    }
+  }
+
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    const options = getEdgeOptions();
+
+    if (options && shouldInitialize('edge')) {
+      Sentry.init(options);
+    }
   }
 }
+
+export const onRequestError = Sentry.captureRequestError;

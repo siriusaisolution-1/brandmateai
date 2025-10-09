@@ -1,9 +1,8 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Megaphone, Calendar, BarChart, Settings, Bot, PlusCircle, Building } from "lucide-react";
+import { LayoutDashboard, Megaphone, Calendar, BarChart, PlusCircle, Building } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 

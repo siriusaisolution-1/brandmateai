@@ -5,7 +5,7 @@ import { adminAuth, adminStorage } from '@/lib/firebase-admin';
 function stripBOM(s: string) {
   return s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s;
 }
-function assertString(name: string, val: unknown) {
+function assertString(name: string, val: unknown): asserts val is string {
   if (typeof val !== 'string' || !val.trim()) {
     throw new Error(`Invalid "${name}"`);
   }
@@ -36,15 +36,16 @@ export async function POST(req: NextRequest) {
   // ------------------------------------------------
 
   try {
-    let body: any = {};
+    let body: unknown = {};
     if (clean.length > 0) {
       try {
-        body = JSON.parse(clean);
-      } catch (e: any) {
+        body = JSON.parse(clean) as unknown;
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Unexpected parse failure';
         return NextResponse.json(
           {
             error: 'Invalid JSON body',
-            details: e?.message,
+            details: message,
             sample: clean.slice(0, 200),
           },
           { status: 400 }
@@ -52,7 +53,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const { filename, contentType, brandId } = body || {};
+    const parsedBody = (body ?? {}) as Record<string, unknown>;
+    const { filename, contentType, brandId } = parsedBody;
     assertString('filename', filename);
     assertString('contentType', contentType);
     assertString('brandId', brandId);
@@ -91,10 +93,11 @@ export async function POST(req: NextRequest) {
       publicUrl: `https://storage.googleapis.com/${bucket.name}/${encodeURIComponent(objectPath)}`,
       bucket: bucket.name,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('get-upload-url error', err);
+    const message = err instanceof Error ? err.message : 'Unknown error';
     return NextResponse.json(
-      { error: err?.message ?? 'Unknown error' },
+      { error: message },
       { status: 400 }
     );
   }

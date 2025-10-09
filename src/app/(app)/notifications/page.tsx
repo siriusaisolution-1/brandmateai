@@ -4,6 +4,7 @@
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth, useFirestore, useFirestoreCollectionData } from 'reactfire';
 import { collection, orderBy, query } from 'firebase/firestore';
+import { useMemo } from 'react';
 
 type FirestoreTimestamp = { seconds: number; nanoseconds: number };
 type Notif = {
@@ -30,22 +31,34 @@ export default function NotificationsPage() {
   const user = auth.currentUser;
   const firestore = useFirestore();
 
-  const q = user
-    ? query(collection(firestore, 'users', user.uid, 'notifications'), orderBy('createdAt', 'desc'))
-    : null;
+  const fallbackQuery = useMemo(
+    () => query(collection(firestore, '__noop__')),
+    [firestore]
+  );
 
-  const { status, data } = q
-    ? useFirestoreCollectionData(q, { idField: 'id' })
-    : ({ status: 'success', data: [] as Notif[] } as const);
+  const notificationsQuery = useMemo(() => {
+    if (!user) {
+      return fallbackQuery;
+    }
+    return query(
+      collection(firestore, 'users', user.uid, 'notifications'),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore, user, fallbackQuery]);
 
-  const list = (data as unknown as Notif[]) ?? [];
+  const { status, data } = useFirestoreCollectionData(notificationsQuery, {
+    idField: 'id',
+  });
+
+  const list = (data as Notif[]) ?? [];
+  const isAuthenticated = Boolean(user);
 
   return (
     <div className="p-4 md:p-8">
       <h1 className="text-2xl font-bold mb-4">Notifications</h1>
       <div className="space-y-3">
         {status === 'loading' && <div className="h-20 w-full animate-pulse rounded-lg bg-gray-800" />}
-        {status === 'success' &&
+        {status === 'success' && isAuthenticated &&
           list.map((notif) => {
             const dt = toDateSafe(notif.createdAt)?.toLocaleString() ?? '';
             return (
@@ -63,8 +76,11 @@ export default function NotificationsPage() {
               </Card>
             );
           })}
-        {status === 'success' && list.length === 0 && (
+        {status === 'success' && isAuthenticated && list.length === 0 && (
           <div className="text-sm text-muted-foreground">No notifications yet.</div>
+        )}
+        {!isAuthenticated && (
+          <div className="text-sm text-muted-foreground">Sign in to view notifications.</div>
         )}
       </div>
     </div>

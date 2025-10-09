@@ -3,6 +3,7 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { Encryption } from './utils/encryption';
+import { ENCRYPTION_KEY, HAS_VALID_ENCRYPTION_KEY } from './config';
 
 // Init Admin SDK
 if (admin.apps.length === 0) {
@@ -10,28 +11,11 @@ if (admin.apps.length === 0) {
 }
 const db = admin.firestore();
 
-/**
- * ENCRYPTION_KEY iz okruženja ili iz functions.config()
- * - Preferiramo process.env (nova preporuka)
- * - Fallback na functions.config() (legacy) – radi do marta 2026.
- */
-const ENV_KEY = process.env.ENCRYPTION_KEY;
-const CFG_KEY = (() => {
-  try {
-    // @ts-ignore - types mogu biti strogi u nekim setup-ima
-    return functions.config()?.crypto?.key as string | undefined;
-  } catch {
-    return undefined;
-  }
-})();
-const ENCRYPTION_KEY = ENV_KEY || CFG_KEY;
-const KEY_VALID = !!ENCRYPTION_KEY && ENCRYPTION_KEY.length === 32;
-
-if (!KEY_VALID) {
+if (!HAS_VALID_ENCRYPTION_KEY) {
   console.warn(
     'ENCRYPTION_KEY nije postavljen ili nije tačno 32 znaka. ' +
     'Privremeno ću preskočiti čuvanje OAuth tokena dok ne postaviš ključ. ' +
-    'Preporuka: postavi ENCRYPTION_KEY preko env var (ili firebase functions:config:set crypto.key="...").'
+    'Preporuka: postavi ENCRYPTION_KEY preko env var u Codex Secrets.'
   );
 }
 
@@ -42,7 +26,7 @@ if (!KEY_VALID) {
  */
 export const storeUserCredential = functions.auth.user().beforeSignIn(async (user, context) => {
   // Ako nema validnog ključa, ne pokušavamo da pišemo
-  if (!KEY_VALID) {
+  if (!HAS_VALID_ENCRYPTION_KEY || !ENCRYPTION_KEY) {
     console.warn('Skipping credential storage due to invalid/missing ENCRYPTION_KEY.');
     return;
   }
@@ -58,7 +42,7 @@ export const storeUserCredential = functions.auth.user().beforeSignIn(async (use
 
   if (!accessToken) return;
 
-  const encryptedAccessToken = Encryption.encrypt(accessToken, ENCRYPTION_KEY!);
+  const encryptedAccessToken = Encryption.encrypt(accessToken, ENCRYPTION_KEY);
 
   const integrationData = {
     provider: providerId,

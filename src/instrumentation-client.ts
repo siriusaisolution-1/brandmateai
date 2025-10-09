@@ -1,12 +1,12 @@
 // src/instrumentation-client.ts
 import * as Sentry from '@sentry/nextjs';
+import { getBrowserOptions, shouldInitialize } from '../sentry.config.shared';
 
-// Initialize Sentry on the client side
-Sentry.init({
-    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN, 
-    tracesSampleRate: 1.0,
-    replaysSessionSampleRate: 0.1,
-});
+const options = getBrowserOptions();
+
+if (options && shouldInitialize('client')) {
+  Sentry.init(options);
+}
 
 // Export the required hook for navigation instrumentation
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
