@@ -1,14 +1,17 @@
 import { ai } from '../../genkit/ai';
 import { z } from 'zod';
-import * as functions from 'firebase-functions';
 import { NovitaSDK } from 'novita-sdk';
-
-const NOVITA_API_KEY =
-  (functions.config().novita?.key as string) ||
-  process.env.NOVITA_API_KEY ||
-  '';
+import { NOVITA_API_KEY } from '../../config';
+import { novitaAsyncTaskSchema } from './novita-schemas';
 
 const novitaSdk = new NovitaSDK(NOVITA_API_KEY);
+
+type InpaintFn = (params: {
+  image_base64: string;
+  mask_image_base64: string;
+  prompt: string;
+  model_name: string;
+}) => Promise<unknown> | unknown;
 
 export const inpaintImageFlow = ai.defineFlow({
   name: 'inpaintImageFlow',
@@ -20,8 +23,11 @@ export const inpaintImageFlow = ai.defineFlow({
   }),
   outputSchema: z.object({ taskId: z.string() }),
 }, async (input) => {
-  const response: any =
-    (novitaSdk as any).inpaint?.(input) ?? { task_id: 'stub-task' };
-  const result = await response;
-  return { taskId: result?.task_id ?? 'stub-task' };
+  const inpaint = (novitaSdk as unknown as { inpaint?: InpaintFn }).inpaint;
+  if (!inpaint) {
+    return { taskId: 'stub-task' };
+  }
+  const response = await inpaint(input);
+  const parsed = novitaAsyncTaskSchema.parse(response);
+  return { taskId: parsed.task_id };
 });

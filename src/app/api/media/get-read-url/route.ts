@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getBucket } from "@/lib/firebase-admin";
 
-function assertString(name: string, val: unknown) {
+function assertString(name: string, val: unknown): asserts val is string {
   if (typeof val !== "string" || !val.trim()) {
     throw new Error(`Invalid "${name}"`);
   }
@@ -29,10 +29,12 @@ export async function POST(req: NextRequest) {
       bucket: bucket.name,
       storagePath,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("get-read-url error", err);
+    const message =
+      err instanceof Error ? err.message : 'Unknown error';
     return NextResponse.json(
-      { error: err?.message ?? "Unknown error" },
+      { error: message },
       { status: 400 }
     );
   }

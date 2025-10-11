@@ -11,26 +11,6 @@ declare module '@genkit-ai/flow/client' {
   export function run<T = any>(...args: any[]): Promise<T>;
 }
 
-// ---- server flows koje UI importuje kao '@/ai/flows/...'
-declare module '@/ai/flows/brand-audit' {
-  export const performBrandAuditFlow: any;
-  export const brandAuditFlow: any;
-}
-declare module '@/ai/flows/manage-brand' {
-  export const saveBrandFlow: any;
-  export const uploadMediaAssetFlow: any;
-}
-declare module '@/ai/flows/train-lora-model' {
-  export const trainLoraModelFlow: any;
-  export const getUploadUrlFlow: any;
-}
-declare module '@/ai/flows/router' {
-  export const masterRouterFlow: any;
-}
-declare module '@/ai/flows/check-video-status' {
-  export const checkVideoStatusFlow: any;
-}
-
 // ---- UI komponente (ako nedostaju stvarne datoteke)
 declare module '@/components/ui/alert' {
   export const Alert: any;

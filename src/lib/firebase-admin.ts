@@ -1,3 +1,4 @@
+// src/lib/firebase-admin.ts
 import * as admin from 'firebase-admin';
 
 let _app: admin.app.App | undefined;
@@ -15,6 +16,7 @@ export function getAdminApp(): admin.app.App {
     throw new Error('FIREBASE_STORAGE_BUCKET is missing');
   }
 
+  // Dozvoli moderni (.firebasestorage.app) i legacy (.appspot.com) domen
   const bucketOk = /\.(firebasestorage\.app|appspot\.com)$/i.test(bucket);
   if (!bucketOk) {
     console.warn(
@@ -36,4 +38,8 @@ export function getAdminApp(): admin.app.App {
 
 export function getBucket() {
   return getAdminApp().storage().bucket();
+}
+
+export function getAuth() {
+  return getAdminApp().auth();
 }

@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Sparkles, Bot, User, CornerDownLeft, X } from 'lucide-react';
-import { run } from '@genkit-ai/flow/client';
-import { masterRouterFlow } from '@/ai/flows/router';
 import { useAuth } from 'reactfire';
+import { requestMasterRouter } from '@/lib/flows-client';
 
 interface Message {
   sender: 'user' | 'ai';
@@ -33,11 +32,11 @@ export function MasterAiChat() {
   useEffect(() => {
     if (isOpen && messages.length === 0 && !isLoading) {
       setIsLoading(true);
-      run(masterRouterFlow, { prompt: '', isFirstMessage: true })
-        .then((response: any) => {
-          setMessages([{ sender: 'ai', text: response }]);
+      requestMasterRouter({ prompt: '', isFirstMessage: true })
+        .then((response) => {
+          setMessages([{ sender: 'ai', text: response.message }]);
         })
-        .catch((error: any) => {
+        .catch((error: unknown) => {
           console.error("Failed to get initial greeting:", error);
           setMessages([{ sender: 'ai', text: "Hello! I seem to be having a little trouble starting up. Please try again in a moment." }]);
         })
@@ -55,10 +54,10 @@ export function MasterAiChat() {
     setIsLoading(true);
 
     try {
-      const responseText: any = await run(masterRouterFlow, { prompt: input });
-      const aiMessage: Message = { sender: 'ai', text: responseText };
+      const response = await requestMasterRouter({ prompt: input });
+      const aiMessage: Message = { sender: 'ai', text: response.message };
       setMessages(prev => [...prev, aiMessage]);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error calling masterRouterFlow:', error);
       const errorMessage: Message = {
         sender: 'ai',

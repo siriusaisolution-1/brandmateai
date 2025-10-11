@@ -1,6 +1,6 @@
 import { ai } from '../../genkit/ai';
 import { z } from 'zod';
-const RouterOutputSchema = z.object({ flow: z.string(), input: z.any() });
+const RouterOutputSchema = z.object({ flow: z.string(), input: z.unknown() });
 export const mainRouterFlow = ai.defineFlow({
   name: 'mainRouterFlow', inputSchema: z.string(), outputSchema: RouterOutputSchema
 }, async (query) => {

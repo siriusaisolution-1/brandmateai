@@ -1,4 +1,3 @@
-import { Megaphone } from "lucide-react";
 import Link from "next/link";
 
 export function MarketingFooter() {
@@ -10,7 +9,11 @@ export function MarketingFooter() {
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li><Link href="#features">Features</Link></li>
             <li><Link href="/pricing">Pricing</Link></li>
-            <li><a href="#">Book a Demo</a></li>
+            <li>
+              <Link href="/demo" prefetch={false}>
+                Book a Demo
+              </Link>
+            </li>
           </ul>
         </div>
         <div>
@@ -25,16 +28,36 @@ export function MarketingFooter() {
         <div>
           <h3 className="font-bold mb-2">Company</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><a href="#">About Us</a></li>
-            <li><a href="#">Blog</a></li>
-            <li><a href="#">Contact</a></li>
+            <li>
+              <Link href="/about" prefetch={false}>
+                About Us
+              </Link>
+            </li>
+            <li>
+              <Link href="/blog" prefetch={false}>
+                Blog
+              </Link>
+            </li>
+            <li>
+              <Link href="mailto:hello@brandmate.ai" prefetch={false}>
+                Contact
+              </Link>
+            </li>
           </ul>
         </div>
         <div>
           <h3 className="font-bold mb-2">Legal</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><a href="#">Terms of Service</a></li>
-            <li><a href="#">Privacy Policy</a></li>
+            <li>
+              <Link href="/legal/terms" prefetch={false}>
+                Terms of Service
+              </Link>
+            </li>
+            <li>
+              <Link href="/legal/privacy" prefetch={false}>
+                Privacy Policy
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

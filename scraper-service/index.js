@@ -1,6 +1,8 @@
 const express = require('express');
 const puppeteer = require('puppeteer');
 const admin = require('firebase-admin');
+const dns = require('dns').promises;
+const net = require('net');
 
 // Initialize Firebase Admin SDK
 admin.initializeApp();
@@ -42,7 +44,8 @@ app.post('/scrape', verifyToken, async (req, res) => {
     if (!['http:', 'https:'].includes(urlObj.protocol)) {
       throw new Error('Invalid protocol');
     }
-  } catch (error) {
+    await validateTarget(urlObj);
+  } catch {
     return res.status(400).send({ error: 'Invalid URL provided.' });
   }
 
@@ -115,3 +118,136 @@ app.post('/scrape', verifyToken, async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Scraper service listening on port ${PORT}`);
 });
+
+const BLOCKED_HOSTNAMES = new Set([
+  'localhost',
+  'localhost.',
+  '127.0.0.1',
+  '0.0.0.0',
+  '::1',
+  '::',
+  'metadata.google.internal',
+  'metadata.google.internal.',
+  'metadata.google.internal.google',
+  'metadata.google.internal.google.com',
+  'metadata.google.internal.googleusercontent.com',
+  'metadata.google.internal.googleusercontent.com.',
+  '169.254.169.254',
+  '169.254.169.254.',
+  'metadata.aws',
+  'instance-data',
+  'instance-data.',
+  'instance-data.ec2.internal'
+]);
+
+const PRIVATE_IPV4_RANGES = [
+  { base: '0.0.0.0', mask: 8 },
+  { base: '10.0.0.0', mask: 8 },
+  { base: '100.64.0.0', mask: 10 },
+  { base: '127.0.0.0', mask: 8 },
+  { base: '169.254.0.0', mask: 16 },
+  { base: '172.16.0.0', mask: 12 },
+  { base: '192.0.0.0', mask: 24 },
+  { base: '192.168.0.0', mask: 16 },
+  { base: '198.18.0.0', mask: 15 },
+  { base: '224.0.0.0', mask: 4 },
+  { base: '240.0.0.0', mask: 4 }
+];
+
+async function validateTarget(urlObj) {
+  const hostname = urlObj.hostname;
+  if (isBlockedHostname(hostname)) {
+    throw new Error('Blocked hostname');
+  }
+
+  const lookupResults = await resolveHostname(hostname);
+  if (!lookupResults.length) {
+    throw new Error('Unable to resolve hostname');
+  }
+
+  for (const { address, family } of lookupResults) {
+    if (isBlockedHostname(address)) {
+      throw new Error('Blocked address');
+    }
+    if (family === 4 && isPrivateIPv4(address)) {
+      throw new Error('Disallowed private IPv4 address');
+    }
+    if (family === 6 && isPrivateIPv6(address)) {
+      throw new Error('Disallowed private IPv6 address');
+    }
+  }
+}
+
+function isBlockedHostname(hostname) {
+  return BLOCKED_HOSTNAMES.has(hostname.toLowerCase());
+}
+
+async function resolveHostname(hostname) {
+  const ipType = net.isIP(hostname);
+  if (ipType) {
+    return [{ address: hostname, family: ipType }];
+  }
+  try {
+    return await dns.lookup(hostname, { all: true, verbatim: false });
+  } catch (error) {
+    console.error('DNS resolution failed for hostname:', hostname, error);
+    throw new Error('Unable to resolve hostname');
+  }
+}
+
+function isPrivateIPv4(address) {
+  const ipInt = ipv4ToInt(address);
+  if (ipInt === null) {
+    return true;
+  }
+  return PRIVATE_IPV4_RANGES.some(range => isIPv4InRange(ipInt, range));
+}
+
+function ipv4ToInt(ip) {
+  const parts = ip.split('.');
+  if (parts.length !== 4) {
+    return null;
+  }
+  let result = 0;
+  for (const part of parts) {
+    const octet = Number(part);
+    if (!Number.isInteger(octet) || octet < 0 || octet > 255) {
+      return null;
+    }
+    result = (result << 8) + octet;
+  }
+  return result >>> 0;
+}
+
+function isIPv4InRange(ipInt, { base, mask }) {
+  const baseInt = ipv4ToInt(base);
+  if (baseInt === null) {
+    return false;
+  }
+  if (mask === 0) {
+    return true;
+  }
+  const maskInt = mask === 32 ? 0xffffffff : ((0xffffffff << (32 - mask)) >>> 0);
+  return (ipInt & maskInt) === (baseInt & maskInt);
+}
+
+function isPrivateIPv6(address) {
+  const normalized = address.toLowerCase();
+  if (normalized === '::' || normalized === '::1') {
+    return true;
+  }
+  if (normalized.startsWith('::ffff:')) {
+    const mappedIPv4 = normalized.replace('::ffff:', '');
+    if (isPrivateIPv4(mappedIPv4)) {
+      return true;
+    }
+  }
+  const firstBlock = normalized.split(':')[0];
+  if (firstBlock.startsWith('fc') || firstBlock.startsWith('fd')) {
+    return true;
+  }
+  if (/^fe[89ab]/.test(firstBlock)) {
+    return true;
+  }
+  return false;
+}

@@ -1,4 +1,3 @@
-import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
@@ -21,4 +20,3 @@ export * from "./analytics";
 export * from "./auth-triggers";
 export * from "./billing";
 export * from "./scheduled-tasks";
-export * from "./temp-admin-tool";
