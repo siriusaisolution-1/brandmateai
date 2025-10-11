@@ -1,6 +1,6 @@
 // src/app/api/media/get-read-url/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { adminStorage } from "@/lib/firebase-admin";
+import { getBucket } from "@/lib/firebase-admin";
 
 function assertString(name: string, val: unknown) {
   if (typeof val !== "string" || !val.trim()) {
@@ -14,8 +14,7 @@ export async function POST(req: NextRequest) {
     const { storagePath } = body || {};
     assertString("storagePath", storagePath);
 
-    const storage = adminStorage();
-    const bucket = storage.bucket();
+    const bucket = getBucket();
     const file = bucket.file(storagePath);
 
     // Kreiraj signed URL za čitanje (GET)

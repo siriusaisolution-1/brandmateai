@@ -1,50 +1,39 @@
-// src/lib/firebase-admin.ts
-import { getApps, initializeApp, cert, App } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import { getStorage } from 'firebase-admin/storage';
+import * as admin from 'firebase-admin';
 
-let app: App | null = null;
+let _app: admin.app.App | undefined;
 
-function getServiceAccountFromEnv() {
-  const b64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
-  if (!b64) {
-    throw new Error('FIREBASE_SERVICE_ACCOUNT_BASE64 is not set');
+export function getAdminApp(): admin.app.App {
+  if (_app) return _app;
+
+  const svcB64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+  if (!svcB64) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_BASE64 is missing');
   }
-  const jsonStr = Buffer.from(b64, 'base64').toString('utf-8');
-  const svc = JSON.parse(jsonStr);
 
-  for (const k of ['project_id', 'client_email', 'private_key'] as const) {
-    if (!svc[k]) throw new Error(`Service account JSON missing ${k}`);
-  }
-  return svc;
-}
-
-export function getAdminApp() {
-  if (app) return app;
-
-  const svc = getServiceAccountFromEnv();
   const bucket = process.env.FIREBASE_STORAGE_BUCKET;
   if (!bucket) {
-    throw new Error(
-      'FIREBASE_STORAGE_BUCKET is not set (expected e.g. brandmate-ai.appspot.com)'
-    );
+    throw new Error('FIREBASE_STORAGE_BUCKET is missing');
   }
-  if (!bucket.endsWith('.appspot.com')) {
+
+  const bucketOk = /\.(firebasestorage\.app|appspot\.com)$/i.test(bucket);
+  if (!bucketOk) {
     console.warn(
-      `[firebase-admin] WARN: FIREBASE_STORAGE_BUCKET="${bucket}" ne izgleda kao GCS bucket (*.appspot.com).`
+      `Suspicious bucket name "${bucket}". Expected *.firebasestorage.app or *.appspot.com`
     );
   }
 
-  app = initializeApp({
-    credential: cert({
-      projectId: svc.project_id,
-      clientEmail: svc.client_email,
-      privateKey: svc.private_key,
-    }),
+  const serviceAccount = JSON.parse(
+    Buffer.from(svcB64, 'base64').toString('utf8')
+  );
+
+  _app = admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
     storageBucket: bucket,
   });
-  return app;
+
+  return _app;
 }
 
-export const adminAuth = () => getAuth(getAdminApp());
-export const adminStorage = () => getStorage(getAdminApp());
+export function getBucket() {
+  return getAdminApp().storage().bucket();
+}
