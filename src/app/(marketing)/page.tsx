@@ -2,9 +2,9 @@ import { Button } from "@/components/ui/button";
 import { MarketingHeader } from "@/components/marketing-header";
 import { MarketingFooter } from "@/components/marketing-footer";
 import { SocialProofBar } from "@/components/social-proof-bar";
-import { CheckCircle2, Bot, Calendar, BarChart } from "lucide-react";
+import { Bot, Calendar, BarChart } from "lucide-react";
 import Link from "next/link";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export default function HomePage() {
   return (

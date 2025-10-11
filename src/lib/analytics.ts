@@ -11,7 +11,7 @@ const trackEventFunction = httpsCallable(functions, 'trackEvent');
  * @param eventName The name of the event to track.
  * @param properties Optional metadata for the event.
  */
-export const track = (eventName: string, properties?: Record<string, any>): void => {
+export const track = (eventName: string, properties?: Record<string, unknown>): void => {
     trackEventFunction({ eventName, properties })
         .catch(error => {
             // We log the error to the console for debugging, but don't interrupt the user.

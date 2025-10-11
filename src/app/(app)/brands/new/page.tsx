@@ -7,19 +7,17 @@ import { Input } from '@/components/ui/input'; // <-- Updated import
 import { Label } from '@/components/ui/label'; // <-- Updated import
 import { Textarea } from '@/components/ui/textarea'; // <-- Assuming this is also a shadcn component
 import { useConfetti } from '@/hooks/use-confetti';
-import { run, GenkitError } from '@genkit-ai/flow';
-import { performBrandAuditFlow } from '@/ai/flows/brand-audit';
-import { saveBrandFlow } from '@/ai/flows/manage-brand';
 import { useToast } from "@/hooks/use-toast";
 import { track } from '@/lib/analytics';
-import { z } from 'zod';
+import { performBrandAudit, saveBrand } from '@/lib/flows-client';
+import type { BrandAuditResponse } from '@/lib/flows-client';
 
 // ... (schema and type definitions are unchanged)
 
 export default function NewBrandPage() {
   const [url, setUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [brandKit, setBrandKit] = useState<any | null>(null);
+  const [brandKit, setBrandKit] = useState<BrandAuditResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [competitors, setCompetitors] = useState('');
   const [industry, setIndustry] = useState('');
@@ -27,9 +25,60 @@ export default function NewBrandPage() {
   const { fire } = useConfetti();
   const { toast } = useToast();
 
-  const handleAudit = async () => { /* ... */ };
+  const handleAudit = async () => {
+    if (!url) {
+      setError('Please enter a brand URL before running the audit.');
+      return;
+    }
 
-  const handleSaveBrand = async () => { /* ... */ };
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const audit = await performBrandAudit({ url, brandId: 'preview' });
+      setBrandKit(audit);
+      setAuditSource('ai');
+      track('brand_audit_run', { url });
+      toast({ title: 'Audit complete', description: 'We generated a draft brand kit from the provided URL.' });
+    } catch (auditError) {
+      console.error('Brand audit failed:', auditError);
+      setError('We could not audit that URL. Please double-check it and try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveBrand = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const competitorWebsites = competitors
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+
+      const payload = {
+        name: brandKit?.name || 'Untitled Brand',
+        brandVoice: brandKit?.brandVoice || '',
+        keyInfo: brandKit?.keyInfo || '',
+        colors: brandKit?.suggestedColors || [],
+        industry: industry || undefined,
+        competitorWebsites,
+      };
+
+      const response = await saveBrand(payload);
+
+      fire();
+      track('brand_saved', { brandId: response.brandId, source: auditSource });
+      toast({ title: 'Brand saved', description: 'Your brand profile is ready to review.' });
+    } catch (saveError) {
+      console.error('Saving brand failed:', saveError);
+      setError('We could not save the brand right now. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="p-4 md:p-8">
@@ -49,7 +98,44 @@ export default function NewBrandPage() {
             </div>
           </div>
           
-          {/* ... (rest of the component using shadcn components implicitly) ... */}
+          {error && (
+            <p className="text-sm text-red-500" role="alert">
+              {error}
+            </p>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="industry">Industry</Label>
+            <Input
+              id="industry"
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+              placeholder="E-commerce"
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="competitors">Key Competitors</Label>
+            <Textarea
+              id="competitors"
+              value={competitors}
+              onChange={(e) => setCompetitors(e.target.value)}
+              placeholder="https://competitor-a.com, https://competitor-b.com"
+              disabled={isLoading}
+            />
+          </div>
+
+          <div className="flex justify-end gap-2">
+            <Button variant="secondary" onClick={() => setBrandKit(null)} disabled={isLoading}>
+              Reset
+            </Button>
+            <Button onClick={handleSaveBrand} disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Save Brand'}
+            </Button>
+          </div>
+
+          {/* zašto: Keep future customization entrypoint while ensuring lint sees all state in use. */}
 
         </CardContent>
       </Card>

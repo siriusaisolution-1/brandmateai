@@ -15,18 +15,18 @@ const PLAN_QUOTAS: Record<string, number> = {
   agency: 9000,
 };
 
-export function BmkUsageDisplay() {
-  const { data: user } = useUser();
-  const firestore = useFirestore();
+function UsageSkeleton() {
+  return <div className="h-10 w-full animate-pulse rounded-md bg-gray-700" />;
+}
 
-  // ✅ Uvek pozovi hook; koristi placeholder UID kad nema user-a
-  const uid = user?.uid ?? '__no_user__';
-  const userRef = useMemo(() => doc(firestore, 'users', uid), [firestore, uid]);
+function UsageContent({ userId }: { userId: string }) {
+  const firestore = useFirestore();
+  // Zašto: Firestore hook mora da dobije validan reference kada postoji user
+  const userRef = useMemo(() => doc(firestore, 'users', userId), [firestore, userId]);
   const { status, data } = useFirestoreDocData(userRef, { idField: 'id' });
 
-  // Loading skeleton (ili kad je placeholder uid => data undefined)
-  if (status === 'loading' || !user || !data) {
-    return <div className="h-10 w-full animate-pulse rounded-md bg-gray-700" />;
+  if (status === 'loading' || !data) {
+    return <UsageSkeleton />;
   }
 
   const appUser = data as AppUser;
@@ -53,4 +53,15 @@ export function BmkUsageDisplay() {
       </Link>
     </div>
   );
+}
+
+export function BmkUsageDisplay() {
+  const { data: user, status } = useUser();
+
+  if (status !== 'success' || !user) {
+    // Zašto: nema user-a => ne smemo zvati doc hook, prikaži skeleton
+    return <UsageSkeleton />;
+  }
+
+  return <UsageContent userId={user.uid} />;
 }

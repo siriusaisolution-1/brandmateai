@@ -2,6 +2,7 @@
 import { ai } from "../../genkit/ai";
 import { z } from "zod";
 import { NOVITA_API_KEY } from "../../config";
+import { novitaAsyncTaskSchema } from "./novita-schemas";
 
 const NOVITA_BASE = "https://api.novita.ai";
 
@@ -51,7 +52,8 @@ export const generateImageFlow = ai.defineFlow(
       throw new Error(`Novita txt2img failed: ${res.status} ${t}`);
     }
 
-    const json: any = await res.json();
-    return { taskId: json?.task_id ?? "stub-task" };
+    const json = await res.json();
+    const parsed = novitaAsyncTaskSchema.parse(json);
+    return { taskId: parsed.task_id };
   }
 );

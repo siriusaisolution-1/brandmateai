@@ -2,7 +2,6 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
 import type { MediaAsset } from "@/types/firestore";
 
 interface Props {
@@ -19,14 +18,14 @@ export default function MediaLibraryPicker({ assets, onSelect }: Props) {
         <button
           key={asset.id ?? asset.url}
           onClick={() => onSelect?.(asset)}
-          className="border border-border rounded-md overflow-hidden hover:ring-2 hover:ring-primary transition"
+          className="border border-border rounded-md overflow-hidden hover:ring-2 hover:ring-primary transition relative h-40 w-full"
         >
           <Image
             src={asset.url!}
             alt={asset.fileName ?? "media"}
-            width={400}
-            height={400}
-            className="object-cover w-full h-40"
+            fill
+            sizes="(min-width: 768px) 25vw, 50vw"
+            style={{ objectFit: "cover" }}
           />
         </button>
       ))}

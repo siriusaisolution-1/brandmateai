@@ -10,7 +10,13 @@ export const socialBurstFlow = ai.defineFlow({
 }, async ({ userId, brandId, topic }) => {
   const ok = await deductBmkCredits(userId, BMK_COSTS.SOCIAL_BURST);
   if(!ok) throw new Error('Payment failed');
-  const enhanced:any = await (enhancePromptFlow as any).run({ userId, brandId, basePrompt: `Create a series of social media posts about: ${topic}`, taskType: 'social' });
-  const out = await ai.generate({ prompt: enhanced?.enhancedPrompt ?? `Create social posts about: ${topic}` });
+  const enhanced = await enhancePromptFlow.run({
+    userId,
+    brandId,
+    basePrompt: `Create a series of social media posts about: ${topic}`,
+    taskType: 'social',
+  });
+  const prompt = enhanced.enhancedPrompt ?? `Create social posts about: ${topic}`;
+  const out = await ai.generate({ prompt });
   return { success: true, content: out.text ?? '' };
 });
