@@ -1,19 +1,60 @@
+// functions/src/utils/firebase.ts
 import * as admin from 'firebase-admin';
 
-try {
-  if (!admin.apps.length) admin.initializeApp();
-} catch {}
+let _app: admin.app.App | undefined;
 
+export function getAdminApp(): admin.app.App {
+  if (_app) return _app;
+
+  const svcB64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
+  if (!svcB64) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_BASE64 is missing');
+  }
+
+  const bucket = process.env.FIREBASE_STORAGE_BUCKET;
+  if (!bucket) {
+    throw new Error('FIREBASE_STORAGE_BUCKET is missing');
+  }
+
+  // Dozvoli i moderni i legacy domen
+  const bucketOk = /\.(firebasestorage\.app|appspot\.com)$/i.test(bucket);
+  if (!bucketOk) {
+    console.warn(
+      `Suspicious bucket name "${bucket}". Expected *.firebasestorage.app or *.appspot.com`
+    );
+  }
+
+  const serviceAccount = JSON.parse(
+    Buffer.from(svcB64, 'base64').toString('utf8')
+  );
+
+  _app = admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket: bucket,
+  });
+
+  return _app;
+}
+
+export function getBucket() {
+  return getAdminApp().storage().bucket();
+}
+
+/**
+ * Resolve real media asset URL:
+ * - ako doc ima `url`, vrati ga direktno
+ * - ako ima `storagePath`, izdati potpisani READ URL (1h)
+ */
 export async function getAssetUrl(assetId: string): Promise<string> {
-  // zašto: Resolve real media asset URLs needed by Novita flows.
-  const doc = await admin.firestore().collection('mediaAssets').doc(assetId).get();
+  const app = getAdminApp(); // garantuje da je Admin inicijalizovan
+  const db = app.firestore();
 
-  if (!doc.exists) {
+  const snap = await db.collection('mediaAssets').doc(assetId).get();
+  if (!snap.exists) {
     throw new Error(`Media asset ${assetId} does not exist.`);
   }
 
-  const data = doc.data() as { url?: string; storagePath?: string } | undefined;
-
+  const data = snap.data() as { url?: string; storagePath?: string } | undefined;
   if (!data) {
     throw new Error(`Media asset ${assetId} is missing data.`);
   }
@@ -23,7 +64,7 @@ export async function getAssetUrl(assetId: string): Promise<string> {
   }
 
   if (data.storagePath) {
-    const [signedUrl] = await admin
+    const [signedUrl] = await app
       .storage()
       .bucket()
       .file(data.storagePath)

@@ -1,0 +1,1 @@
+- After deploy/preview, CI should GET /health and assert { ok: true }.

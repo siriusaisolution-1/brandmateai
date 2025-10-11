@@ -1,3 +1,4 @@
+// src/app/layout.tsx
 import "@/app/globals.css";
 import { cn } from "@/lib/utils";
 import { Providers } from "@/components/providers";
@@ -16,7 +17,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn("min-h-screen bg-background font-sans antialiased")} suppressHydrationWarning>
+      <body
+        className={cn("min-h-screen bg-background font-sans antialiased")}
+        suppressHydrationWarning
+      >
         <Providers>{children}</Providers>
       </body>
     </html>
