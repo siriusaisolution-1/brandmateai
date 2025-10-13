@@ -16,6 +16,7 @@
     "test:unit": "vitest run --coverage",
     "test:e2e": "playwright test",
     "audit:local": "bash scripts/bm_audit.sh",
+    "env:probe": "node scripts/env_probe.mjs",
     "check:deps": "bash scripts/check_dependencies.sh || true",
     "check:quality": "bash scripts/check_code_quality.sh || true",
     "check:tests": "bash scripts/check_tests.sh || true",
