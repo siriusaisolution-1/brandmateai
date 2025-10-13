@@ -1,3 +1,5 @@
+import Noop from './_noop-client'
+
 // src/app/(app)/pricing/page.tsx
 import Link from "next/link";
 import { Check, Crown, Rocket, Building2 } from "lucide-react";

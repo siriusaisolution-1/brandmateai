@@ -1,3 +1,5 @@
+import Noop from './_noop-client'
+
 import { Button } from "@/components/ui/button";
 import { MarketingHeader } from "@/components/marketing-header";
 import { MarketingFooter } from "@/components/marketing-footer";
