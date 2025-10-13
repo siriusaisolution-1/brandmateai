@@ -13,14 +13,16 @@ export function getAdminApp(): admin.app.App {
 
   const bucket = process.env.FIREBASE_STORAGE_BUCKET;
   if (!bucket) {
-    throw new Error('FIREBASE_STORAGE_BUCKET is missing');
+    throw new Error(
+      'FIREBASE_STORAGE_BUCKET is not set (expected e.g. brandmate-ai.appspot.com or brandmate-ai.firebasestorage.app)'
+    );
   }
 
-  // Dozvoli moderni (.firebasestorage.app) i legacy (.appspot.com) domen
-  const bucketOk = /\.(firebasestorage\.app|appspot\.com)$/i.test(bucket);
-  if (!bucketOk) {
+  const isAppspot = bucket.endsWith('.appspot.com');
+  const isFirebaseStorageApp = bucket.endsWith('.firebasestorage.app');
+  if (!isAppspot && !isFirebaseStorageApp) {
     console.warn(
-      `Suspicious bucket name "${bucket}". Expected *.firebasestorage.app or *.appspot.com`
+      `[firebase-admin] WARN: FIREBASE_STORAGE_BUCKET="${bucket}" does not match expected storage host patterns (*.appspot.com or *.firebasestorage.app).`
     );
   }
 
@@ -40,6 +42,5 @@ export function getBucket() {
   return getAdminApp().storage().bucket();
 }
 
-export function getAuth() {
-  return getAdminApp().auth();
-}
+export const adminAuth = () => getAuth(getAdminApp());
+export const adminStorage = () => getStorage(getAdminApp());

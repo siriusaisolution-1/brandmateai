@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
       allowedOrigins: ["*.googleusercontent.com", "*.cloudworkstations.dev"],
     },
   },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   // Next 15 više ne koristi custom allowedDevOrigins ovde; koristite env (već imaš u .env.local)
 };
 

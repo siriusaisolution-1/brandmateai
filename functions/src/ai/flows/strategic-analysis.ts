@@ -1,6 +1,6 @@
 import { ai } from '../../genkit/ai';
 import { z } from 'zod';
-import { Brand } from '../../types/firestore';
+import type { Brand } from '../../types/firestore';
 
 export const analyzeCompetitorsFlow = ai.defineFlow({
   name: 'analyzeCompetitorsFlow',

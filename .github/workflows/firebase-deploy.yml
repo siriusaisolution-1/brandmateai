@@ -23,8 +23,17 @@ jobs:
           pnpm --filter functions install
           pnpm --filter functions run build
       - name: Deploy to Firebase
+        id: firebase_deploy
         uses: w9jds/firebase-action@master
         with:
           args: deploy --only hosting,functions
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+      - name: Run health check
+        # If the deploy action does not emit a preview URL output, capture it from the Firebase CLI
+        # logs (for example by parsing the hosting deploy response) and expose it via
+        # `echo "preview_url=<value>" >> "$GITHUB_OUTPUT"`, then pass it here.
+        uses: ./.github/workflows/health-check.yml
+        with:
+          url: ${{ steps.firebase_deploy.outputs.preview_url }}
+        if: ${{ steps.firebase_deploy.outputs.preview_url != '' }}
