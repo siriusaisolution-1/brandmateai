@@ -19,6 +19,7 @@
     "check:deps": "bash scripts/check_dependencies.sh || true",
     "check:quality": "bash scripts/check_code_quality.sh || true",
     "check:tests": "bash scripts/check_tests.sh || true",
+    "ensure:client-manifests": "node scripts/ensure-client-manifest.mjs",
     "fb:emul": "firebase emulators:start",
     "fb:preview": "firebase hosting:channel:deploy preview-$(git rev-parse --abbrev-ref HEAD)",
     "fb:deploy": "firebase deploy",
