@@ -56,12 +56,17 @@ export default function RegisterPage() {
 
       setIsSuccess(true);
       
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Registration failed:", error);
-      if (error.code === 'auth/email-already-in-use') {
-        setError("This email address is already in use.");
-      } else if (error.code === 'auth/weak-password') {
-        setError("Password should be at least 6 characters long.");
+      if (typeof error === 'object' && error && 'code' in error) {
+        const code = String((error as { code: unknown }).code);
+        if (code === 'auth/email-already-in-use') {
+          setError("This email address is already in use.");
+        } else if (code === 'auth/weak-password') {
+          setError("Password should be at least 6 characters long.");
+        } else {
+          setError("An unexpected error occurred. Please try again.");
+        }
       } else {
         setError("An unexpected error occurred. Please try again.");
       }
@@ -80,7 +85,7 @@ export default function RegisterPage() {
                 </div>
                 <CardTitle>Registration Successful!</CardTitle>
                 <CardDescription>
-                    We've sent a verification link to <strong>{email}</strong>. Please check your inbox to activate your account.
+                    We’ve sent a verification link to <strong>{email}</strong>. Please check your inbox to activate your account.
                 </CardDescription>
             </CardHeader>
             <CardFooter>

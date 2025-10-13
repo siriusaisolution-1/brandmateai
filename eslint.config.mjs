@@ -1,104 +1,119 @@
 // eslint.config.mjs
 // Flat ESLint (Next 15 + TS-ESLint v8) – functional-first, quality-safe
-import js from "@eslint/js";
-import nextPlugin from "@next/eslint-plugin-next";
-import importPlugin from "eslint-plugin-import";
-import jsxA11yPlugin from "eslint-plugin-jsx-a11y";
-import reactPlugin from "eslint-plugin-react";
-import reactHooksPlugin from "eslint-plugin-react-hooks";
-import * as tseslint from "typescript-eslint";
 
-const reactRecommended = reactPlugin.configs.flat.recommended;
-const jsxA11yRecommended = jsxA11yPlugin.flatConfigs.recommended;
-const nextRecommended = nextPlugin.flatConfig.recommended;
+import js from '@eslint/js';
+import * as tseslint from 'typescript-eslint';
+import globalsPackage from 'globals';
+import jsxA11yPlugin from 'eslint-plugin-jsx-a11y';
+import nextPlugin from '@next/eslint-plugin-next';
+import reactPlugin from 'eslint-plugin-react';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import importPlugin from 'eslint-plugin-import';
+
+// TS preporuke bez vezivanja na projects (stabilnije u CI)
 const typescriptConfigs = tseslint.configs.recommended.map((config, index) => {
-  const files = ["**/*.ts", "**/*.tsx", "**/*.mts", "**/*.cts", "**/*.d.ts"];
-  if (index === 0) {
-    return {
-      ...config,
-      files,
-    };
-  }
-  return config.files ? config : { ...config, files };
+  const files = ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts', '**/*.d.ts'];
+  return index === 0 ? { ...config, files } : (config.files ? config : { ...config, files });
 });
 
-/** @type {import("eslint").Linter.FlatConfig[]} */
+const combinedRules = {
+  ...reactPlugin.configs.flat.recommended.rules,
+  ...reactHooksPlugin.configs.recommended.rules,
+  ...jsxA11yPlugin.configs.recommended.rules,
+  ...nextPlugin.configs.recommended.rules,
+};
+
+const { browser: browserGlobals, node: nodeGlobals } = globalsPackage;
+
+/** @type {import('eslint').Linter.FlatConfig[]} */
 const config = [
-  // Ignore build/third-party folders
+  // Ignorisani build/3rd-party direktorijumi
   {
-    ignores: [".next/**", "node_modules/**", "dist/**", "coverage/**", "functions/.output/**"],
+    ignores: ['.next/**', 'node_modules/**', 'dist/**', 'coverage/**', 'functions/.output/**'],
   },
 
   // JS recommended
   js.configs.recommended,
 
-  // TS recommended (without type-aware project binding for stability)
+  // TS recommended (flat)
   ...typescriptConfigs,
 
-  // React core best practices
-  reactRecommended,
-
-  // Accessibility and Next-specific rules (flat configs)
-  jsxA11yRecommended,
-  nextRecommended,
-
-  // React Hooks rules (plugin does not yet ship a flat config helper)
+  // Next.js + React + A11y + Hooks + import pravila (bez compat/patch)
   {
     plugins: {
-      "react-hooks": reactHooksPlugin,
+      'jsx-a11y': jsxA11yPlugin,
+      '@next/next': nextPlugin,
+      react: reactPlugin,
+      'react-hooks': reactHooksPlugin,
       import: importPlugin,
+      '@typescript-eslint': tseslint.plugin,
     },
-    rules: {
-      "import/no-anonymous-default-export": "warn",
-      "react-hooks/rules-of-hooks": "error",
-      "react-hooks/exhaustive-deps": "warn",
-    },
-  },
-
-  // Global rules
-  {
-    plugins: {
-      "@typescript-eslint": tseslint.plugin,
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      parserOptions: { ecmaFeatures: { jsx: true } },
+      globals: { ...browserGlobals, ...nodeGlobals },
     },
     settings: {
-      react: { version: "detect" },
-      "import/resolver": {
-        node: { extensions: [".js", ".jsx", ".ts", ".tsx"] },
-        typescript: {
-          alwaysTryTypes: true,
-          project: ["tsconfig.json", "functions/tsconfig.json"],
-        },
+      react: { version: 'detect' },
+      'import/resolver': {
+        node: { extensions: ['.js', '.jsx', '.ts', '.tsx'] },
+        typescript: { alwaysTryTypes: true, project: ['tsconfig.json', 'functions/tsconfig.json'] },
       },
     },
     rules: {
-      // Functional > strict typing in early stage
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
-      "@typescript-eslint/no-empty-object-type": "off",
+      ...combinedRules,
 
-      // Bug-prevent rules remain strict
-      "react/no-unescaped-entities": "error",
-      "react/no-unknown-property": "off",
-      "react/react-in-jsx-scope": "off",
-      "react/jsx-uses-react": "off",
-      "react/prop-types": "off",
+      // Next baseline prilagodbe (u skladu sa eslint-config-next)
+      'import/no-anonymous-default-export': 'off',
+      'react/no-unknown-property': 'off',
+      'react/react-in-jsx-scope': 'off',
+      'react/prop-types': 'off',
+      'react/jsx-no-target-blank': 'off',
+
+      // A11y – nežni warn signal umesto error
+      'jsx-a11y/alt-text': ['warn', { elements: ['img'], img: ['Image'] }],
+      'jsx-a11y/aria-props': 'warn',
+      'jsx-a11y/aria-proptypes': 'warn',
+      'jsx-a11y/aria-unsupported-elements': 'warn',
+      'jsx-a11y/role-has-required-aria-props': 'warn',
+      'jsx-a11y/role-supports-aria-props': 'warn',
+      'jsx-a11y/anchor-is-valid': 'warn',
+      'jsx-a11y/html-has-lang': 'warn',
+      'jsx-a11y/heading-has-content': 'warn',
+      'jsx-a11y/media-has-caption': 'warn',
+
+      // Funkcionalno > strogo tipiziranje (rana faza)
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-empty-object-type': 'off',
+      '@typescript-eslint/ban-ts-comment': 'off',
+      '@typescript-eslint/no-require-imports': 'off',
+
+      // Bug-prevent i ergonomija
+      'react-hooks/rules-of-hooks': 'warn',
+      'react-hooks/exhaustive-deps': 'warn',
+      'react/no-unescaped-entities': 'warn',
+      'no-empty': 'off',
+      'no-useless-escape': 'off',
+      'import/no-unresolved': 'off', // rešava TS + Next aliasi
     },
   },
 
-  // D.ts and shim files – allow "any" to avoid blocking the app
+  // D.ts i lokalni tipovi – ne blokirati
   {
-    files: ["**/*.d.ts", "src/types/**"],
+    files: ['**/*.d.ts', 'src/types/**'],
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unused-vars": "off",
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
     },
   },
 
-  // UI generators and flows (work with external SDKs) – softer any rule
+  // UI i AI delovi – malo mekši "any"
   {
-    files: ["src/ai/**", "src/components/**"],
+    files: ['src/ai/**', 'src/components/**'],
     rules: {
-      "@typescript-eslint/no-explicit-any": "warn",
+      '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
 ];

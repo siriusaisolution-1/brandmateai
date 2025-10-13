@@ -5,16 +5,14 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useFlow } from '@/lib/genkit-react';
-import { trainLoraModelFlow, getUploadUrlFlow } from '@/ai/flows/train-lora-model';
+import { requestUploadUrl, trainLoraModel } from '@/lib/flows-client';
 import { Loader2 } from 'lucide-react';
 
 export function LoraTrainingManager({ brandId, userId }: { brandId: string; userId: string }) {
   const [files, setFiles] = useState<File[]>([]);
   const [modelName, setModelName] = useState(`${brandId}_style`);
-
-  const [runTrainModel, trainingState] = useFlow(trainLoraModelFlow);
-  const [runGetUploadUrl, uploadUrlState] = useFlow(getUploadUrlFlow);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isTraining, setIsTraining] = useState(false);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -31,17 +29,24 @@ export function LoraTrainingManager({ brandId, userId }: { brandId: string; user
     alert('This is a high-cost operation. Starting the training process...');
 
     try {
+      setIsUploading(true);
       const uploadPromises = files.map(async (file) => {
-        const urlResponse: any = await runGetUploadUrl({ file_extension: 'png' });
-        if (urlResponse?.upload_url) {
-          await fetch(urlResponse.upload_url, { method: 'PUT', body: file });
+        const extension = file.name.split('.').pop() ?? 'png';
+        const { uploadUrl, assetId } = await requestUploadUrl({ fileExtension: extension });
+
+        if (uploadUrl) {
+          await fetch(uploadUrl, { method: 'PUT', body: file });
         }
-        return urlResponse?.assets_id ?? null;
+
+        return assetId || null;
       });
 
       const assetIds = (await Promise.all(uploadPromises)).filter(Boolean) as string[];
 
-      await runTrainModel({
+      setIsUploading(false);
+      setIsTraining(true);
+
+      await trainLoraModel({
         userId,
         brandId,
         modelName,
@@ -53,6 +58,9 @@ export function LoraTrainingManager({ brandId, userId }: { brandId: string; user
     } catch (error) {
       console.error('Training failed:', error);
       alert('An error occurred during the training process.');
+    } finally {
+      setIsUploading(false);
+      setIsTraining(false);
     }
   };
 
@@ -74,8 +82,8 @@ export function LoraTrainingManager({ brandId, userId }: { brandId: string; user
           <Label htmlFor="images">Upload Images (10+)</Label>
           <Input id="images" type="file" multiple onChange={handleFileChange} />
         </div>
-        <Button onClick={handleTrainModel} disabled={trainingState.loading || uploadUrlState.loading}>
-          {(trainingState.loading || uploadUrlState.loading) && (
+        <Button onClick={handleTrainModel} disabled={isTraining || isUploading}>
+          {(isTraining || isUploading) && (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           )}
           Train Personal Model

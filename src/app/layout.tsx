@@ -1,3 +1,4 @@
+// src/app/layout.tsx
 import "@/app/globals.css";
 import { cn } from "@/lib/utils";
 import { Providers } from "@/components/providers";
@@ -6,6 +7,8 @@ export const metadata = {
   title: "BrandMate AI",
   description: "Your AI Marketing Co-pilot",
 };
+
+export const dynamic = "force-dynamic";
 
 export default function RootLayout({
   children,

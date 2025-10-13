@@ -61,6 +61,9 @@ export interface UserProfile extends BaseDocument {
   settings?: Record<string, unknown>;
 }
 
+// Kompatibilnost sa starijim importima koji su koristili `User`
+export type User = UserProfile;
+
 export interface BrandReportSection {
   title: string;
   summary?: string;

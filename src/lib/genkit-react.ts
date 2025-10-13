@@ -5,12 +5,11 @@
 import { z } from 'zod';
 
 // A generic type for a flow.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Flow<I extends z.ZodTypeAny, O extends z.ZodTypeAny> = (input: z.infer<I>) => Promise<z.infer<O>>;
 
 // A mock implementation of the useFlow hook.
 export function useFlow<I extends z.ZodTypeAny, O extends z.ZodTypeAny>(
-  flow: Flow<I, O>
+  _flow: Flow<I, O>
 ): [(input: z.infer<I>) => void, { loading: boolean; error?: Error; data?: z.infer<O> }] {
   const runFlow = (input: z.infer<I>) => {
     console.log('useFlow STUB: Running flow with input:', input);

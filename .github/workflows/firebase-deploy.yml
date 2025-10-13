@@ -7,16 +7,21 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Use pnpm
-        uses: pnpm/action-setup@v2
+      - uses: actions/checkout@v4
+      - name: Use Node 20
+        uses: actions/setup-node@v4
         with:
-          version: 8
+          node-version: '20'
+          cache: 'pnpm'
+      - name: Enable pnpm 10.2.1 via Corepack
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.2.1 --activate
       - name: Install Dependencies & Build
         run: |
           pnpm install
-          pnpm --prefix functions install
-          pnpm --prefix functions run build
+          pnpm --filter functions install
+          pnpm --filter functions run build
       - name: Deploy to Firebase
         id: firebase_deploy
         uses: w9jds/firebase-action@master
