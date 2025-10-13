@@ -1,0 +1,29 @@
+name: Health Check
+
+on:
+  workflow_call:
+    inputs:
+      url:
+        description: URL of the deployed preview to validate
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      url:
+        description: URL of the deployed preview to validate
+        required: true
+        type: string
+
+jobs:
+  verify-health:
+    name: Verify /health endpoint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        run: |
+          set -e
+          echo "Pinging ${{ inputs.url }}/health"
+          body=$(curl -fsSL "${{ inputs.url }}/health")
+          echo "$body" | jq .
+          ok=$(echo "$body" | jq -r '.ok')
+          test "$ok" = "true"

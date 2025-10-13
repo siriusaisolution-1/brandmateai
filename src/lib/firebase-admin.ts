@@ -26,12 +26,15 @@ export function getAdminApp() {
   const bucket = process.env.FIREBASE_STORAGE_BUCKET;
   if (!bucket) {
     throw new Error(
-      'FIREBASE_STORAGE_BUCKET is not set (expected e.g. brandmate-ai.appspot.com)'
+      'FIREBASE_STORAGE_BUCKET is not set (expected e.g. brandmate-ai.appspot.com or brandmate-ai.firebasestorage.app)'
     );
   }
-  if (!bucket.endsWith('.appspot.com')) {
+
+  const isAppspot = bucket.endsWith('.appspot.com');
+  const isFirebaseStorageApp = bucket.endsWith('.firebasestorage.app');
+  if (!isAppspot && !isFirebaseStorageApp) {
     console.warn(
-      `[firebase-admin] WARN: FIREBASE_STORAGE_BUCKET="${bucket}" ne izgleda kao GCS bucket (*.appspot.com).`
+      `[firebase-admin] WARN: FIREBASE_STORAGE_BUCKET="${bucket}" does not match expected storage host patterns (*.appspot.com or *.firebasestorage.app).`
     );
   }
 
