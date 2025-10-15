@@ -14,7 +14,6 @@ module.exports = {
     },
     extend: {
       colors: {
-        /* „border“ боја → омогућава класу  border-border  */
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
@@ -52,13 +51,10 @@ module.exports = {
   plugins: [
     require('tailwindcss-animate'),
     require('@tailwindcss/typography'),
-    // ⇣⇣⇣  исправни mini-plugin  ⇣⇣⇣
     require('tailwindcss/plugin')(function ({ addUtilities, theme }) {
       addUtilities({
         '.border-border': {
-          'border-color':
-            // ако је дефинисан .border.DEFAULT користи њега, иначе само .border
-            theme('colors.border.DEFAULT', theme('colors.border')),
+          'border-color': theme('colors.border.DEFAULT', theme('colors.border')),
         },
       });
     }),
