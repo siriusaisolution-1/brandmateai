@@ -5,6 +5,7 @@ import { SocialProofBar } from "@/components/social-proof-bar";
 import { Bot, Calendar, BarChart } from "lucide-react";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import Noop from './_noop-client';
 
 export default function HomePage() {
   return (
