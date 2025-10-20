@@ -1,5 +1,4 @@
-import Noop from './_noop-client'
-
+import './_noop-client';
 // This is the root page for authenticated users.
 // We will build the main dashboard here later.
 

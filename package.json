@@ -8,7 +8,7 @@
   "packageManager": "pnpm@10.2.1",
   "scripts": {
     "dev": "next dev",
-    "build": "next build --no-lint",
+    "build": "next build --no-lint && node scripts/postbuild-client-manifest.mjs",
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",
