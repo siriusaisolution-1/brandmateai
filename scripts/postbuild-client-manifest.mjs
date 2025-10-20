@@ -29,13 +29,11 @@ async function fileExists(targetPath) {
 async function main() {
   stats.source_exists = await fileExists(manifestSource);
   if (!stats.source_exists) {
-    console.log(JSON.stringify(stats));
     return;
   }
 
   stats.destination_exists = await fileExists(manifestDest);
   if (stats.destination_exists) {
-    console.log(JSON.stringify(stats));
     return;
   }
 
@@ -43,7 +41,14 @@ async function main() {
   await copyFile(manifestSource, manifestDest);
   stats.patched = true;
   stats.destination_exists = true;
-  console.log(JSON.stringify(stats));
 }
 
-await main();
+try {
+  await main();
+  console.log(JSON.stringify(stats, null, 2));
+  process.exit(0);
+} catch (err) {
+  console.error('[postbuild] non-fatal error:', err?.message || err);
+  console.log(JSON.stringify(stats, null, 2));
+  process.exit(0);
+}

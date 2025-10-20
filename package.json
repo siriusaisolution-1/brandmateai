@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=20"
+    "node": "20.x"
   },
   "packageManager": "pnpm@10.2.1",
   "scripts": {
@@ -25,7 +25,8 @@
     "fb:preview": "firebase hosting:channel:deploy preview-$(git rev-parse --abbrev-ref HEAD)",
     "fb:deploy": "firebase deploy",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "prebuild": "pnpm run ensure:client-manifests"
+    "prebuild": "pnpm run ensure:client-manifests",
+    "check:vercel-output": "node -e \"const fs=require('fs'); const p='.vercel/output/functions/index.func'; console.log('functions dir exists?', fs.existsSync('.vercel/output/functions')); console.log('some func?', fs.existsSync(p));\""
   },
   "dependencies": {
     "@genkit-ai/core": "1.17.1",

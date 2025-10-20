@@ -2,13 +2,23 @@
 import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
+const experimentalConfig = {
+  serverActions: {
+    allowedOrigins: ["*.googleusercontent.com", "*.cloudworkstations.dev"],
+  },
+  outputFileTracingIgnores: [
+    "**/@google-cloud/*/protos/**",
+    "**/@google-cloud/*/**/test/**",
+    "**/grpc-tools/**",
+    "**/node-pre-gyp/**",
+  ],
+} as NextConfig["experimental"] & {
+  outputFileTracingIgnores: string[];
+};
+
 const nextConfig: NextConfig = {
   transpilePackages: ["@genkit-ai/react"],
-  experimental: {
-    serverActions: {
-      allowedOrigins: ["*.googleusercontent.com", "*.cloudworkstations.dev"],
-    },
-  },
+  experimental: experimentalConfig,
   eslint: {
     ignoreDuringBuilds: true,
   },
