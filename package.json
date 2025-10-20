@@ -24,7 +24,8 @@
     "fb:emul": "firebase emulators:start",
     "fb:preview": "firebase hosting:channel:deploy preview-$(git rev-parse --abbrev-ref HEAD)",
     "fb:deploy": "firebase deploy",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prebuild": "pnpm run ensure:client-manifests"
   },
   "dependencies": {
     "@genkit-ai/core": "1.17.1",
@@ -87,6 +88,7 @@
     "postcss": "8.5.6",
     "prettier": "3.6.2",
     "tailwindcss": "^3.4.17",
+    "tailwindcss-animate": "^1.0.7",
     "typescript": "5.5.3",
     "typescript-eslint": "8.42.0",
     "vitest": "^2.1.1"

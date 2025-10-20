@@ -1,3 +1,5 @@
+'use client';
+
 import Noop from './_noop-client'
 
 import { Button } from "@/components/ui/button";

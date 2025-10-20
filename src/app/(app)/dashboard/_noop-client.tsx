@@ -1,2 +1,4 @@
 'use client';
-export default function Noop(){ return null; }
+export default function Noop() {
+  return null;
+}
