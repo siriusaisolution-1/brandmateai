@@ -8,10 +8,13 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 const appRoot = path.join(rootDir, 'src', 'app');
 
+const IMPORT_STATEMENT = "import './_noop-client';\n";
+
 const stats = {
   scanned: 0,
+  modified: 0,
   noop_created: 0,
-  imports_injected: 0,
+  side_effect_imports_injected: 0,
 };
 
 function isRouteGroupDir(name) {
@@ -44,6 +47,7 @@ async function ensureNoopClientFile(dir) {
   const existing = await readFile(targetPath, 'utf8');
   if (existing !== content) {
     await writeFile(targetPath, content, 'utf8');
+    stats.modified += 1;
   }
 }
 
@@ -52,7 +56,7 @@ function hasUseClientDirective(source) {
 }
 
 function hasNoopImport(source) {
-  return /import\s+[^;]+from\s+['"]\.\/_noop-client['"];?/u.test(source);
+  return /import\s+['"]\.\/_noop-client['"];?/um.test(source);
 }
 
 async function processPageFile(filePath) {
@@ -66,9 +70,10 @@ async function processPageFile(filePath) {
   const dir = path.dirname(filePath);
   await ensureNoopClientFile(dir);
 
-  const updatedSource = `import Noop from './_noop-client';\n\n${source}`;
+  const updatedSource = `${IMPORT_STATEMENT}${source}`;
   await writeFile(filePath, updatedSource, 'utf8');
-  stats.imports_injected += 1;
+  stats.modified += 1;
+  stats.side_effect_imports_injected += 1;
 }
 
 async function traverseDirectory(dirPath, insideRouteGroup = false) {

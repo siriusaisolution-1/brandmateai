@@ -1,4 +1,4 @@
-import Noop from './_noop-client'
+import './_noop-client';
 
 // src/app/(app)/pricing/page.tsx
 import Link from "next/link";
