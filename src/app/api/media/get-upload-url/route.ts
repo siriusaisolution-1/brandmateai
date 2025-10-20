@@ -1,6 +1,6 @@
 // src/app/api/media/get-upload-url/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { getAdminApp, getBucket } from '@/lib/firebase-admin';
+import { getAuth, getStorage } from '@/lib/firebase-admin';
 
 function stripBOM(s: string) {
   return s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s;
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     if (authHeader?.startsWith('Bearer ')) {
       try {
         const token = authHeader.slice('Bearer '.length).trim();
-        const decoded = await getAdminApp().auth().verifyIdToken(token);
+        const decoded = await getAuth().verifyIdToken(token);
         userId = decoded.uid;
       } catch {
         // u produkciji vratiti 401
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     const safeName = String(filename).replace(/\s+/g, '_');
     const objectPath = `brands/${brandId}/${userId}/${timestamp}_${safeName}`;
 
-    const bucket = getBucket();
+    const bucket = getStorage().bucket();
     const file = bucket.file(objectPath);
 
     const [signedUrl] = await file.getSignedUrl({

@@ -1,46 +1,90 @@
-// src/lib/firebase-admin.ts
-import * as admin from 'firebase-admin';
+import { getApps, initializeApp, cert, getApp } from 'firebase-admin/app';
+import { getAuth as _getAuth } from 'firebase-admin/auth';
+import { getStorage as _getStorage } from 'firebase-admin/storage';
 
-let _app: admin.app.App | undefined;
+/**
+ * Pokuša da pročita service account iz:
+ * - FIREBASE_SERVICE_ACCOUNT (JSON)
+ * - FIREBASE_SERVICE_ACCOUNT_BASE64 (base64 kodiran JSON)
+ */
+function parseServiceAccount(): null | {
+  project_id: string;
+  client_email: string;
+  private_key: string;
+} {
+  const rawJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+  const rawB64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
 
-export function getAdminApp(): admin.app.App {
-  if (_app) return _app;
-
-  const svcB64 = process.env.FIREBASE_SERVICE_ACCOUNT_BASE64;
-  if (!svcB64) {
-    throw new Error('FIREBASE_SERVICE_ACCOUNT_BASE64 is missing');
+  try {
+    if (rawJson) {
+      const svc = JSON.parse(rawJson);
+      return {
+        project_id: svc.project_id,
+        client_email: svc.client_email,
+        private_key: (svc.private_key || '').replace(/\\n/g, '\n'),
+      };
+    }
+    if (rawB64) {
+      const decoded = Buffer.from(rawB64, 'base64').toString('utf8');
+      const svc = JSON.parse(decoded);
+      return {
+        project_id: svc.project_id,
+        client_email: svc.client_email,
+        private_key: (svc.private_key || '').replace(/\\n/g, '\n'),
+      };
+    }
+  } catch (e) {
+    console.warn('Failed to parse FIREBASE service account from env:', (e as Error).message);
   }
-
-  const bucket = process.env.FIREBASE_STORAGE_BUCKET;
-  if (!bucket) {
-    throw new Error(
-      'FIREBASE_STORAGE_BUCKET is not set (expected e.g. brandmate-ai.appspot.com or brandmate-ai.firebasestorage.app)'
-    );
-  }
-
-  const isAppspot = bucket.endsWith('.appspot.com');
-  const isFirebaseStorageApp = bucket.endsWith('.firebasestorage.app');
-  if (!isAppspot && !isFirebaseStorageApp) {
-    console.warn(
-      `[firebase-admin] WARN: FIREBASE_STORAGE_BUCKET="${bucket}" does not match expected storage host patterns (*.appspot.com or *.firebasestorage.app).`
-    );
-  }
-
-  const serviceAccount = JSON.parse(
-    Buffer.from(svcB64, 'base64').toString('utf8')
-  );
-
-  _app = admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    storageBucket: bucket,
-  });
-
-  return _app;
+  return null;
 }
 
-export function getBucket() {
-  return getAdminApp().storage().bucket();
+function desiredBucket(projectIdFromSA?: string) {
+  const envBucket = process.env.FIREBASE_STORAGE_BUCKET || null;
+  if (envBucket) return envBucket;
+  if (projectIdFromSA) return `${projectIdFromSA}.appspot.com`;
+  return undefined; // dozvoli default ponašanje
 }
 
-export const adminAuth = () => getAuth(getAdminApp());
-export const adminStorage = () => getStorage(getAdminApp());
+function initApp() {
+  if (!getApps().length) {
+    const svc = parseServiceAccount();
+    const projectId =
+      process.env.GOOGLE_CLOUD_PROJECT ||
+      process.env.GCP_PROJECT ||
+      process.env.FIREBASE_PROJECT_ID ||
+      svc?.project_id;
+
+    const bucket = desiredBucket(svc?.project_id);
+
+    if (svc) {
+      initializeApp({
+        credential: cert({
+          projectId: svc.project_id,
+          clientEmail: svc.client_email,
+          privateKey: svc.private_key,
+        }),
+        storageBucket: bucket,
+      });
+    } else {
+      // Fallback na ADC / varijable okruženja koje već postoje
+      initializeApp({
+        projectId,
+        storageBucket: bucket,
+      });
+    }
+  } else {
+    getApp();
+  }
+}
+
+// Public helpers
+export function getAuth() {
+  initApp();
+  return _getAuth();
+}
+
+export function getStorage() {
+  initApp();
+  return _getStorage();
+}

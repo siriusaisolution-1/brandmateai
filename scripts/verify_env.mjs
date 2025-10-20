@@ -1,0 +1,9 @@
+const snapshot = {
+  HAS_FIREBASE_SERVICE_ACCOUNT: !!process.env.FIREBASE_SERVICE_ACCOUNT,
+  HAS_FIREBASE_SERVICE_ACCOUNT_BASE64: !!process.env.FIREBASE_SERVICE_ACCOUNT_BASE64,
+  FIREBASE_STORAGE_BUCKET: process.env.FIREBASE_STORAGE_BUCKET || null,
+  NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || null,
+  NODE_VERSION: process.version,
+  NODE_ENV: process.env.NODE_ENV || null,
+};
+console.log(JSON.stringify(snapshot, null, 2));

@@ -6,28 +6,12 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
-const candidateAppDirs = [
-  path.join(rootDir, 'app'),
-  path.join(rootDir, 'src', 'app'),
-];
-
-async function filterExistingDirs(paths) {
-  const results = [];
-  for (const dirPath of paths) {
-    try {
-      await access(dirPath);
-      results.push(dirPath);
-    } catch (error) {
-      // ignore missing directories
-    }
-  }
-  return results;
-}
+const appRoot = path.join(rootDir, 'src', 'app');
 
 const stats = {
-  scannedPages: 0,
-  noopCreated: 0,
-  importsAdded: 0,
+  scanned: 0,
+  noop_created: 0,
+  imports_injected: 0,
 };
 
 function isRouteGroupDir(name) {
@@ -38,38 +22,41 @@ function isPageFile(name) {
   return name === 'page.ts' || name === 'page.tsx';
 }
 
-async function ensureNoopClientFile(dir) {
-  const targetPath = path.join(dir, '_noop-client.tsx');
-  const content = "'use client';\nexport default function Noop(){ return null; }\n";
-
-  let exists = true;
+async function pathExists(targetPath) {
   try {
     await access(targetPath);
+    return true;
   } catch (error) {
-    exists = false;
+    return false;
+  }
+}
+
+async function ensureNoopClientFile(dir) {
+  const targetPath = path.join(dir, '_noop-client.tsx');
+  const content = "'use client';\nexport default function Noop() {\n  return null;\n}\n";
+
+  if (!(await pathExists(targetPath))) {
+    await writeFile(targetPath, content, 'utf8');
+    stats.noop_created += 1;
+    return;
   }
 
-  if (!exists) {
+  const existing = await readFile(targetPath, 'utf8');
+  if (existing !== content) {
     await writeFile(targetPath, content, 'utf8');
-    stats.noopCreated += 1;
-  } else {
-    const existing = await readFile(targetPath, 'utf8');
-    if (existing !== content) {
-      await writeFile(targetPath, content, 'utf8');
-    }
   }
 }
 
 function hasUseClientDirective(source) {
-  return source.includes("'use client'") || source.includes('"use client"');
+  return /['"]use client['"]/u.test(source);
 }
 
 function hasNoopImport(source) {
-  return /import\s+.+\s+from\s+['"]\.\/_noop-client['"]/.test(source);
+  return /import\s+[^;]+from\s+['"]\.\/_noop-client['"];?/u.test(source);
 }
 
-async function processPage(filePath) {
-  stats.scannedPages += 1;
+async function processPageFile(filePath) {
+  stats.scanned += 1;
   const source = await readFile(filePath, 'utf8');
 
   if (hasUseClientDirective(source) || hasNoopImport(source)) {
@@ -79,12 +66,9 @@ async function processPage(filePath) {
   const dir = path.dirname(filePath);
   await ensureNoopClientFile(dir);
 
-  const importLine = "import Noop from './_noop-client'";
-  const prefix = `${importLine}\n\n`;
-  const updatedSource = prefix + source;
-
+  const updatedSource = `import Noop from './_noop-client';\n\n${source}`;
   await writeFile(filePath, updatedSource, 'utf8');
-  stats.importsAdded += 1;
+  stats.imports_injected += 1;
 }
 
 async function traverseDirectory(dirPath, insideRouteGroup = false) {
@@ -97,25 +81,23 @@ async function traverseDirectory(dirPath, insideRouteGroup = false) {
 
   for (const entry of entries) {
     const fullPath = path.join(dirPath, entry.name);
+
     if (entry.isDirectory()) {
       const nextInsideRouteGroup = insideRouteGroup || isRouteGroupDir(entry.name);
       await traverseDirectory(fullPath, nextInsideRouteGroup);
-    } else if (insideRouteGroup && entry.isFile() && isPageFile(entry.name)) {
-      await processPage(fullPath);
+      continue;
+    }
+
+    if (insideRouteGroup && entry.isFile() && isPageFile(entry.name)) {
+      await processPageFile(fullPath);
     }
   }
 }
 
-const appDirs = await filterExistingDirs(candidateAppDirs);
-
-for (const dir of appDirs) {
-  await traverseDirectory(dir);
+if (await pathExists(appRoot)) {
+  await traverseDirectory(appRoot);
+} else {
+  console.warn('No src/app directory found.');
 }
 
-if (appDirs.length === 0) {
-  console.warn('No app directories found to scan.');
-}
-
-console.log(`Scanned page files: ${stats.scannedPages}`);
-console.log(`Noop clients created: ${stats.noopCreated}`);
-console.log(`Imports added: ${stats.importsAdded}`);
+console.log(JSON.stringify(stats));
