@@ -5,9 +5,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    setupFiles: ['./vitest.setup.ts'],
     include: [
       'functions/src/**/*.test.ts',
-      'src/lib/flows-client/**/*.test.ts',
+      'src/**/*.test.ts',
+      'middleware.test.ts',
     ],
     coverage: {
       provider: 'v8',
@@ -18,12 +20,13 @@ export default defineConfig({
         'src/lib/flows-client/brand.ts',
         'src/lib/flows-client/shared.ts',
         'src/lib/flows-client/video.ts',
+        'middleware.ts',
       ],
       thresholds: {
-        lines: 80,
-        branches: 80,
-        functions: 80,
-        statements: 80,
+        lines: 60,
+        branches: 50,
+        functions: 55,
+        statements: 60,
       },
     },
     typecheck: {

@@ -1,45 +1,17 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const firebaseAdminMock = globalThis.__vitestFirebaseAdmin;
+
+if (!firebaseAdminMock) {
+  throw new Error('Firebase admin mock was not initialised');
+}
 
 const {
-  setMock,
-  docMock,
-  collectionMock,
-  incrementMock,
-  serverTimestampMock,
-} = vi.hoisted(() => {
-  const set = vi.fn();
-  const doc = vi.fn(() => ({ set }));
-  const collection = vi.fn(() => ({ doc }));
-  const increment = vi.fn((value: number) => value);
-  const serverTimestamp = vi.fn(() => 'timestamp');
-  return {
-    setMock: set,
-    docMock: doc,
-    collectionMock: collection,
-    incrementMock: increment,
-    serverTimestampMock: serverTimestamp,
-  };
-});
-
-vi.mock('firebase-admin', () => {
-  const firestore = () => ({ collection: collectionMock });
-  (firestore as unknown as { FieldValue: unknown }).FieldValue = {
-    increment: incrementMock,
-    serverTimestamp: serverTimestampMock,
-  };
-
-  return {
-    __esModule: true,
-    default: {
-      apps: [],
-      initializeApp: vi.fn(),
-      firestore,
-    },
-    apps: [],
-    initializeApp: vi.fn(),
-    firestore,
-  };
-});
+  collection: collectionMock,
+  doc: docMock,
+  set: setMock,
+  FieldValue,
+} = firebaseAdminMock.mocks;
 
 import { trackAiCall, _test } from './ai-usage-tracker';
 
@@ -47,6 +19,7 @@ const { extractUsage } = _test;
 
 describe('ai-usage-tracker', () => {
   beforeEach(() => {
+    firebaseAdminMock.reset();
     vi.clearAllMocks();
   });
 
@@ -85,8 +58,9 @@ describe('ai-usage-tracker', () => {
       },
       { merge: true },
     );
-    expect(incrementMock).toHaveBeenCalledWith(5);
-    expect(incrementMock).toHaveBeenCalledWith(3);
-    expect(incrementMock).toHaveBeenCalledWith(2);
+    expect(FieldValue.increment).toHaveBeenCalledWith(5);
+    expect(FieldValue.increment).toHaveBeenCalledWith(3);
+    expect(FieldValue.increment).toHaveBeenCalledWith(2);
+    expect(FieldValue.serverTimestamp).toHaveBeenCalledTimes(1);
   });
 });

@@ -31,7 +31,7 @@ async function pathExists(targetPath) {
   try {
     await fs.access(targetPath);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -145,7 +145,7 @@ async function getFirebaseProjectId() {
     const parsed = JSON.parse(raw);
     const projectId = parsed?.projects?.default;
     return typeof projectId === 'string' ? projectId : null;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
