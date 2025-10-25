@@ -11,6 +11,6 @@ test.describe('BrandMate smoke', () => {
     const response = await request.get('/health');
     expect(response.status()).toBe(200);
     const json = await response.json();
-    expect(json).toMatchObject({ status: 'ok' });
+    expect(json).toMatchObject({ ok: true });
   });
 });

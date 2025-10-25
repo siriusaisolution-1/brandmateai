@@ -29,7 +29,7 @@ async function pathExists(targetPath) {
   try {
     await access(targetPath);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 }
@@ -80,7 +80,7 @@ async function traverseDirectory(dirPath, insideRouteGroup = false) {
   let entries;
   try {
     entries = await readdir(dirPath, { withFileTypes: true });
-  } catch (error) {
+  } catch {
     return;
   }
 

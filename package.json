@@ -10,7 +10,7 @@
     "dev": "next dev",
     "build": "next build --no-lint && node scripts/postbuild-client-manifest.mjs",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "test": "pnpm test:unit && pnpm test:e2e",
     "test:unit": "vitest run --coverage",

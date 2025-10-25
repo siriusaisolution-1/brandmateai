@@ -1,56 +1,25 @@
-import { describe, expect, it, beforeEach, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const {
-  getMock,
-  docMock: _docMock,
-  collectionMock,
-  getSignedUrlMock,
-  fileMock,
-  bucketMock,
-  storageMock,
-} = vi.hoisted(() => {
-  const get = vi.fn();
-  const doc = vi.fn(() => ({ get }));
-  const collection = vi.fn(() => ({ doc }));
-  const getSignedUrl = vi.fn();
-  const file = vi.fn(() => ({ getSignedUrl }));
-  const bucket = vi.fn(() => ({ file }));
-  const storage = vi.fn(() => ({ bucket }));
-  return {
-    getMock: get,
-    docMock: doc,
-    collectionMock: collection,
-    getSignedUrlMock: getSignedUrl,
-    fileMock: file,
-    bucketMock: bucket,
-    storageMock: storage,
-  };
+type FirebaseAdminHarness = NonNullable<typeof globalThis.__vitestFirebaseAdmin>;
+const firebaseAdminMock = globalThis.__vitestFirebaseAdmin as FirebaseAdminHarness;
+const assetUrlMock = globalThis.__vitestGetAssetUrlMock as ReturnType<typeof vi.fn>;
+
+let getAssetUrl: (assetId: string) => Promise<string>;
+
+beforeAll(async () => {
+  const actual = await vi.importActual<typeof import('./firebase')>('./firebase');
+  getAssetUrl = actual.getAssetUrl;
 });
 
-vi.mock('firebase-admin', () => {
-  const firestore = () => ({ collection: collectionMock });
-  return {
-    __esModule: true,
-    default: {
-      apps: [],
-      initializeApp: vi.fn(),
-      firestore,
-      storage: storageMock,
-    },
-    apps: [],
-    initializeApp: vi.fn(),
-    firestore,
-    storage: storageMock,
-  };
-});
+const { mocks } = firebaseAdminMock;
+const { get: getMock, doc: docMock, collection: collectionMock, bucket: bucketMock, file: fileMock, getSignedUrl: getSignedUrlMock } = mocks;
 
-import { getAssetUrl } from './firebase';
+beforeEach(() => {
+  firebaseAdminMock.reset();
+  assetUrlMock.mockClear();
+});
 
 describe('getAssetUrl', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it('returns the direct URL when present', async () => {
     getMock.mockResolvedValueOnce({
       exists: true,
@@ -61,6 +30,7 @@ describe('getAssetUrl', () => {
 
     expect(url).toBe('https://cdn.example.com/file.png');
     expect(getSignedUrlMock).not.toHaveBeenCalled();
+    expect(assetUrlMock).not.toHaveBeenCalled();
   });
 
   it('signs storage paths when url is missing', async () => {
@@ -72,6 +42,8 @@ describe('getAssetUrl', () => {
 
     const url = await getAssetUrl('asset-2');
 
+    expect(collectionMock).toHaveBeenCalledWith('mediaAssets');
+    expect(docMock).toHaveBeenCalledWith('asset-2');
     expect(bucketMock).toHaveBeenCalled();
     expect(fileMock).toHaveBeenCalledWith('media/asset.png');
     expect(url).toBe('https://signed.example.com');
