@@ -42,12 +42,17 @@ describe('ai-usage-tracker', () => {
     expect(collectionMock).not.toHaveBeenCalled();
   });
 
-  it('increments firestore counters when usage is present', async () => {
-    await trackAiCall('user-123', {
-      usage: { inputTokens: 3, outputTokens: 2 },
-    });
+  it('records usage counters and audit document when usage is present', async () => {
+    await trackAiCall(
+      'user-123',
+      {
+        usage: { inputTokens: 3, outputTokens: 2 },
+      },
+      { flow: 'generateNewsletterFlow', latencyMs: 1200 }
+    );
 
     expect(collectionMock).toHaveBeenCalledWith('aiUsage');
+    expect(collectionMock).toHaveBeenCalledWith('aiCalls');
     expect(docMock).toHaveBeenCalledWith('user-123');
     expect(setMock).toHaveBeenCalledWith(
       {
@@ -61,6 +66,6 @@ describe('ai-usage-tracker', () => {
     expect(FieldValue.increment).toHaveBeenCalledWith(5);
     expect(FieldValue.increment).toHaveBeenCalledWith(3);
     expect(FieldValue.increment).toHaveBeenCalledWith(2);
-    expect(FieldValue.serverTimestamp).toHaveBeenCalledTimes(1);
+    expect(FieldValue.serverTimestamp).toHaveBeenCalledTimes(2);
   });
 });
