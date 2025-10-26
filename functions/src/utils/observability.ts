@@ -110,12 +110,13 @@ const captureFunctionException = (
   const normalizedError =
     error instanceof Error ? error : new Error(typeof error === 'string' ? error : JSON.stringify(error));
 
-  Sentry.captureException(normalizedError, scope => {
-    scope?.setTag('function', name);
+  Sentry.captureException(normalizedError, (scope: unknown) => {
+    const sentryScope = scope as Sentry.Scope;
+    sentryScope.setTag('function', name);
     Object.entries(context).forEach(([key, value]) => {
-      scope?.setExtra(key, value);
+      sentryScope.setExtra(key, value);
     });
-    return scope;
+    return sentryScope;
   });
 };
 
