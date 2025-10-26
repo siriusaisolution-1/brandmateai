@@ -2,11 +2,26 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isSelf(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function brandOwner(brandId) {
+      return get(/databases/$(database)/documents/brands/$(brandId)).data.ownerId;
+    }
+
+    function isBrandOwner(brandId) {
+      return isAuthenticated() && brandOwner(brandId) == request.auth.uid;
+    }
+
     // Users can only read/create their own document and cannot change their own role/plan.
     match /users/{userId} {
-      allow read, create: if request.auth != null && request.auth.uid == userId;
-      allow update: if request.auth != null && request.auth.uid == userId
+      allow read, create: if isSelf(userId);
+      allow update: if isSelf(userId)
                     && request.resource.data.role == resource.data.role
                     && request.resource.data.subscriptionPlan == resource.data.subscriptionPlan;
     }
@@ -14,38 +29,43 @@ service cloud.firestore {
     // Anyone authenticated can create a brand, as long as they set themselves as the owner.
     // Only the owner of a brand can read, update, or delete it.
     match /brands/{brandId} {
-      allow read, update, delete: if request.auth != null && get(/databases/$(database)/documents/brands/$(brandId)).data.ownerId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow read, update, delete: if isBrandOwner(brandId);
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
     }
 
-    // MediaAssets follow the same pattern: ownership is checked via the brand document.
+    // Media assets are registered exclusively through the backend.
     match /mediaAssets/{assetId} {
-      allow read, update, delete: if request.auth != null && get(/databases/$(database)/documents/brands/$(get(/databases/$(database)/documents/mediaAssets/$(assetId)).data.brandId)).data.ownerId == request.auth.uid;
-      allow create: if request.auth != null && get(/databases/$(database)/documents/brands/$(request.resource.data.brandId)).data.ownerId == request.auth.uid;
+      allow read: if isBrandOwner(resource.data.brandId);
+      allow create, update, delete: if false;
+    }
+
+    // Upload sessions are backend only.
+    match /mediaUploads/{uploadId} {
+      allow read, write: if false;
     }
 
     // The scraped cache is read-only for clients, but writable by server-side functions.
     match /scrapedCache/{cacheId} {
-      allow read: if request.auth != null;
+      allow read: if isAuthenticated();
       allow write: if false; // Only backend (admin SDK) can write
     }
 
     // Notifications are private to the owner.
     match /notifications/{notificationId} {
-        allow read, update: if request.auth != null && resource.data.ownerId == request.auth.uid;
-        allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow read, update: if isSelf(resource.data.ownerId);
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
     }
-    
+
     // Calendar events are private to the owner.
     match /calendarEvents/{eventId} {
-        allow read, write: if request.auth != null && resource.data.ownerId == request.auth.uid;
-        allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow read, write: if isSelf(resource.data.ownerId);
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
     }
-    
+
     // Ad campaigns are private to the owner.
-     match /adCampaigns/{campaignId} {
-        allow read, write: if request.auth != null && resource.data.ownerId == request.auth.uid;
-        allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+    match /adCampaigns/{campaignId} {
+      allow read, write: if isSelf(resource.data.ownerId);
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
     }
   }
 }

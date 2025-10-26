@@ -1,103 +1,122 @@
-// src/app/api/media/get-upload-url/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'node:crypto';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getAuth, getStorage } from '@/lib/firebase-admin';
 
-function stripBOM(s: string) {
-  return s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s;
-}
-function assertString(name: string, val: unknown): asserts val is string {
-  if (typeof val !== 'string' || !val.trim()) {
+const ALLOWED_CONTENT_PREFIXES = ['image/', 'video/'];
+const ALLOWED_EXACT_CONTENT_TYPES = new Set([
+  'application/pdf',
+]);
+
+function assertString(name: string, value: unknown): asserts value is string {
+  if (typeof value !== 'string' || !value.trim()) {
     throw new Error(`Invalid "${name}"`);
   }
 }
 
-export async function POST(req: NextRequest) {
-  // ----- DEBUG BLOK: vrati šta zaista stiže -----
-  const debug = req.nextUrl.searchParams.get('debug');
-  const raw = await req.text();
-  const clean = stripBOM(raw || '').trim();
+function normaliseFilename(filename: string) {
+  return filename.replace(/[^a-zA-Z0-9_.-]/g, '_').slice(0, 120);
+}
 
-  if (debug === '1') {
-    // pokaži sve što može pomoći da uočimo “nevidljive” znakove
-    const preview = clean.slice(0, 200);
-    const rawPreview = raw.slice(0, 200);
-    const rawHex = Buffer.from(rawPreview, 'utf8').toString('hex').slice(0, 200);
-    return NextResponse.json({
-      note: 'DEBUG ECHO',
-      headers: Object.fromEntries(req.headers),
-      rawPreview,
-      cleanPreview: preview,
-      rawHexPreview: rawHex,
-      rawLength: raw.length,
-      cleanLength: clean.length,
-      contentType: req.headers.get('content-type') || null,
-    });
+function isAllowedContentType(contentType: string) {
+  if (ALLOWED_EXACT_CONTENT_TYPES.has(contentType)) {
+    return true;
   }
-  // ------------------------------------------------
+
+  return ALLOWED_CONTENT_PREFIXES.some((prefix) => contentType.startsWith(prefix));
+}
+
+async function authenticate(request: NextRequest) {
+  const header = request.headers.get('authorization') || request.headers.get('Authorization');
+  if (!header?.startsWith('Bearer ')) {
+    throw Object.assign(new Error('Missing bearer token'), { status: 401 });
+  }
+
+  const token = header.slice('Bearer '.length).trim();
+  if (!token) {
+    throw Object.assign(new Error('Missing bearer token'), { status: 401 });
+  }
 
   try {
-    let body: unknown = {};
-    if (clean.length > 0) {
-      try {
-        body = JSON.parse(clean) as unknown;
-      } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : 'Unexpected parse failure';
-        return NextResponse.json(
-          {
-            error: 'Invalid JSON body',
-            details: message,
-            sample: clean.slice(0, 200),
-          },
-          { status: 400 }
-        );
-      }
-    }
+    return await getAuth().verifyIdToken(token);
+  } catch (error) {
+    throw Object.assign(new Error('Invalid authentication token'), { status: 401, cause: error });
+  }
+}
 
-    const parsedBody = (body ?? {}) as Record<string, unknown>;
-    const { filename, contentType, brandId } = parsedBody;
+async function assertBrandOwnership(brandId: string, userId: string) {
+  const db = getFirestore();
+  const brandRef = db.collection('brands').doc(brandId);
+  const brandSnap = await brandRef.get();
+
+  if (!brandSnap.exists) {
+    throw Object.assign(new Error('Brand not found'), { status: 404 });
+  }
+
+  const ownerId = brandSnap.get('ownerId');
+  if (ownerId !== userId) {
+    throw Object.assign(new Error('Forbidden'), { status: 403 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const authUser = await authenticate(request);
+    const body = await request.json().catch(() => ({}));
+    const { brandId, filename, contentType } = (body ?? {}) as Record<string, unknown>;
+
+    assertString('brandId', brandId);
     assertString('filename', filename);
     assertString('contentType', contentType);
-    assertString('brandId', brandId);
 
-    // (Opcioni) Auth verifikacija — tolerantan DEV
-    let userId = 'anonymous';
-    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-      try {
-        const token = authHeader.slice('Bearer '.length).trim();
-        const decoded = await getAuth().verifyIdToken(token);
-        userId = decoded.uid;
-      } catch {
-        // u produkciji vratiti 401
-      }
+    const safeContentType = contentType.trim();
+    if (!isAllowedContentType(safeContentType)) {
+      throw Object.assign(new Error('Unsupported content type'), { status: 415 });
     }
 
-    const timestamp = Date.now();
-    const safeName = String(filename).replace(/\s+/g, '_');
-    const objectPath = `brands/${brandId}/${userId}/${timestamp}_${safeName}`;
+    await assertBrandOwnership(brandId, authUser.uid);
 
     const bucket = getStorage().bucket();
-    const file = bucket.file(objectPath);
+    const timestamp = Date.now();
+    const safeFilename = normaliseFilename(filename);
+    const storagePath = `brands/${brandId}/${authUser.uid}/${timestamp}_${safeFilename}`;
+    const downloadToken = crypto.randomUUID();
 
-    const [signedUrl] = await file.getSignedUrl({
-      version: 'v4',
-      action: 'write',
-      expires: Date.now() + 15 * 60 * 1000,
-      contentType,
+    const [uploadUrl] = await bucket
+      .file(storagePath)
+      .getSignedUrl({
+        version: 'v4',
+        action: 'write',
+        expires: Date.now() + 15 * 60 * 1000,
+        contentType: safeContentType,
+        extensionHeaders: {
+          'x-goog-meta-firebaseStorageDownloadTokens': downloadToken,
+        },
+      });
+
+    const db = getFirestore();
+    const pendingRef = await db.collection('mediaUploads').add({
+      brandId,
+      userId: authUser.uid,
+      storagePath,
+      fileName: safeFilename,
+      contentType: safeContentType,
+      downloadToken,
+      createdAt: FieldValue.serverTimestamp(),
+      status: 'pending',
     });
 
     return NextResponse.json({
-      uploadUrl: signedUrl,
-      storagePath: objectPath,
-      publicUrl: `https://storage.googleapis.com/${bucket.name}/${encodeURIComponent(objectPath)}`,
+      uploadUrl,
+      storagePath,
+      expectedContentType: safeContentType,
+      uploadId: pendingRef.id,
+      downloadToken,
       bucket: bucket.name,
     });
-  } catch (err: unknown) {
-    console.error('get-upload-url error', err);
-    const message = err instanceof Error ? err.message : 'Unknown error';
-    return NextResponse.json(
-      { error: message },
-      { status: 400 }
-    );
+  } catch (error) {
+    const status = (error as { status?: number }).status ?? 400;
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.json({ error: message }, { status });
   }
 }
