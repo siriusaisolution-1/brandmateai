@@ -13,16 +13,16 @@ function createRequest(pathname: string, cookieNames: string[] = []) {
 }
 
 describe('middleware auth redirects', () => {
-  it('redirects unauthenticated users away from /app routes', () => {
-    const request = createRequest('/app/projects');
+  it('redirects unauthenticated users away from app routes', () => {
+    const request = createRequest('/dashboard');
 
     const response = middleware(request);
 
     expect(response.headers.get('location')).toBe('https://example.com/login');
   });
 
-  it('allows authenticated users to stay on /app routes', () => {
-    const request = createRequest('/app/dashboard', ['firebase-auth']);
+  it('allows authenticated users to stay on app routes', () => {
+    const request = createRequest('/dashboard', ['firebase-auth']);
 
     const response = middleware(request);
 
@@ -34,7 +34,7 @@ describe('middleware auth redirects', () => {
 
     const response = middleware(request);
 
-    expect(response.headers.get('location')).toBe('https://example.com/app/dashboard');
+    expect(response.headers.get('location')).toBe('https://example.com/dashboard');
   });
 
   it('leaves marketing pages untouched for anonymous users', () => {
@@ -48,6 +48,18 @@ describe('middleware auth redirects', () => {
 
 describe('middleware matcher', () => {
   it('covers marketing and app routes', () => {
-    expect(config.matcher).toEqual(['/', '/pricing', '/app/:path*']);
+    expect(config.matcher).toEqual([
+      '/',
+      '/pricing',
+      '/dashboard/:path*',
+      '/brands/:path*',
+      '/media-library/:path*',
+      '/settings/:path*',
+      '/content/:path*',
+      '/calendar/:path*',
+      '/notifications/:path*',
+      '/reports/:path*',
+      '/admin/:path*',
+    ]);
   });
 });

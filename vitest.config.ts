@@ -23,10 +23,10 @@ export default defineConfig({
         'middleware.ts',
       ],
       thresholds: {
-        lines: 60,
-        branches: 50,
-        functions: 55,
-        statements: 60,
+        lines: 80,
+        branches: 80,
+        functions: 80,
+        statements: 80,
       },
     },
     typecheck: {

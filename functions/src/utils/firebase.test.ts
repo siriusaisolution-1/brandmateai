@@ -5,10 +5,12 @@ const firebaseAdminMock = globalThis.__vitestFirebaseAdmin as FirebaseAdminHarne
 const assetUrlMock = globalThis.__vitestGetAssetUrlMock as ReturnType<typeof vi.fn>;
 
 let getAssetUrl: (assetId: string) => Promise<string>;
+let getBucket: () => unknown;
 
 beforeAll(async () => {
   const actual = await vi.importActual<typeof import('./firebase')>('./firebase');
   getAssetUrl = actual.getAssetUrl;
+  getBucket = actual.getBucket;
 });
 
 const { mocks } = firebaseAdminMock;
@@ -53,5 +55,28 @@ describe('getAssetUrl', () => {
     getMock.mockResolvedValueOnce({ exists: false });
 
     await expect(getAssetUrl('missing')).rejects.toThrow('Media asset missing does not exist.');
+  });
+
+  it('throws when the asset document has no data', async () => {
+    getMock.mockResolvedValueOnce({ exists: true, data: () => undefined });
+
+    await expect(getAssetUrl('empty')).rejects.toThrow('Media asset empty is missing data.');
+  });
+
+  it('throws when asset lacks url and storagePath', async () => {
+    getMock.mockResolvedValueOnce({ exists: true, data: () => ({}) });
+
+    await expect(getAssetUrl('broken')).rejects.toThrow(
+      'Media asset broken is missing a url or storagePath.'
+    );
+  });
+});
+
+describe('getBucket', () => {
+  it('returns the initialized storage bucket', () => {
+    const bucket = getBucket();
+
+    expect(bucketMock).toHaveBeenCalled();
+    expect(bucket).toBeDefined();
   });
 });

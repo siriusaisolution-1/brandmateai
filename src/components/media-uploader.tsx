@@ -13,11 +13,13 @@ interface Props {
 
 export default function MediaUploader({ brandId, onUploaded }: Props) {
   const { currentUser } = useAuth();
+  const e2eMocks = typeof window !== "undefined" ? window.__E2E_MOCKS__ : undefined;
+  const effectiveUser = currentUser ?? e2eMocks?.currentUser ?? null;
   const [busy, setBusy] = useState(false);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
-      if (!currentUser || acceptedFiles.length === 0) return;
+      if (!effectiveUser || acceptedFiles.length === 0) return;
       setBusy(true);
 
       try {
@@ -99,7 +101,7 @@ export default function MediaUploader({ brandId, onUploaded }: Props) {
         setBusy(false);
       }
     },
-    [brandId, currentUser, onUploaded]
+    [brandId, effectiveUser, e2eMocks, onUploaded]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

@@ -6,7 +6,8 @@ import { useParams } from 'next/navigation';
 import MediaUploader from '@/components/media-uploader';
 import { useFirestore, useFirestoreCollectionData } from 'reactfire';
 import { collection, query, where } from 'firebase/firestore';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import type { E2EMediaAsset } from '@/types/e2e-mocks';
 
 type MediaAsset = {
   id: string;
@@ -32,7 +33,37 @@ export default function BrandMediaLibraryPage() {
   );
 
   const { status, data } = useFirestoreCollectionData(q, { idField: 'id' });
-  const assets = (data as unknown as MediaAsset[])?.filter(a => !!a.url) ?? [];
+  const assetsFromFirestore = (data as unknown as MediaAsset[])?.filter(a => !!a.url) ?? [];
+
+  const e2eMocks = typeof window !== 'undefined' ? window.__E2E_MOCKS__ : undefined;
+  const [mockAssets, setMockAssets] = useState<E2EMediaAsset[]>(() =>
+    e2eMocks?.getMediaAssets?.(brandId) ?? []
+  );
+
+  useEffect(() => {
+    if (!e2eMocks?.subscribeToMediaUpdates) {
+      return;
+    }
+
+    setMockAssets(e2eMocks.getMediaAssets?.(brandId) ?? []);
+
+    const unsubscribe = e2eMocks.subscribeToMediaUpdates(brandId, updates => {
+      setMockAssets(updates);
+    });
+
+    return unsubscribe;
+  }, [brandId, e2eMocks]);
+
+  const usingE2E = Boolean(e2eMocks?.getMediaAssets || e2eMocks?.subscribeToMediaUpdates);
+  const assets = usingE2E
+    ? mockAssets.map<MediaAsset>(asset => ({
+        id: asset.id,
+        brandId: asset.brandId,
+        url: asset.url,
+        fileName: asset.fileName,
+      }))
+    : assetsFromFirestore;
+  const resolvedStatus = usingE2E ? 'success' : status;
 
   return (
     <div className="p-4 md:p-8 space-y-6">
@@ -41,9 +72,9 @@ export default function BrandMediaLibraryPage() {
         <MediaUploader brandId={brandId} />
       </div>
 
-      {status === 'loading' && <div className="h-24 animate-pulse rounded-lg bg-gray-800" />}
+      {resolvedStatus === 'loading' && <div className="h-24 animate-pulse rounded-lg bg-gray-800" />}
 
-      {status === 'success' && (
+      {resolvedStatus === 'success' && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {assets.map((asset) => (
             <div key={asset.id} className="relative w-full aspect-square rounded-md overflow-hidden border border-gray-700">
