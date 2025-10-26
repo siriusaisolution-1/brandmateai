@@ -5,6 +5,13 @@ import { z } from 'zod';
 
 import { requireEnv } from './config';
 import { BMK_COSTS } from './utils/bmk-costs';
+import {
+  getTraceIdFromHeader,
+  instrumentCallable,
+  instrumentRequest,
+  recordHandledException,
+  structuredLogger,
+} from './utils/observability';
 
 const STRIPE_SECRET_KEY = requireEnv('STRIPE_SECRET_KEY');
 const STRIPE_WEBHOOK_SECRET = requireEnv('STRIPE_WEBHOOK_SECRET');
@@ -32,7 +39,10 @@ type CheckoutRequest = z.infer<typeof checkoutRequestSchema>;
 const firestore = admin.firestore();
 const processedEventsCollection = firestore.collection('stripeEvents');
 
-export const createCheckoutSession = functions.https.onCall(async (data, context) => {
+const createCheckoutSessionHandler = async (
+  data: CheckoutRequest,
+  context: functions.https.CallableContext,
+) => {
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'You must be signed in to start checkout.');
   }
@@ -69,15 +79,44 @@ export const createCheckoutSession = functions.https.onCall(async (data, context
       url: session.url,
     };
   } catch (error) {
-    functions.logger.error('Failed to create Stripe checkout session', error);
+    const traceId = getTraceIdFromHeader(context.rawRequest?.headers?.['x-cloud-trace-context']);
+    recordHandledException(
+      'billing.createCheckoutSession',
+      error,
+      'Failed to create Stripe checkout session',
+      {
+        traceId,
+        userId: context.auth.uid,
+        brandId: payload.metadata?.brandId ?? null,
+        flow: 'billing.createCheckoutSession',
+        latencyMs: null,
+        mode: payload.mode,
+      },
+    );
     throw new functions.https.HttpsError('internal', 'Unable to create checkout session.');
   }
-});
+};
+
+export const createCheckoutSession = instrumentCallable(
+  'billing.createCheckoutSession',
+  createCheckoutSessionHandler,
+  {
+    flow: 'billing.createCheckoutSession',
+    getBrandId: (payload: CheckoutRequest) => payload.metadata?.brandId ?? null,
+  },
+);
 
 const handleCheckoutCompleted = async (session: Stripe.Checkout.Session) => {
   const userId = session.metadata?.userId;
   if (!userId) {
-    functions.logger.warn('Checkout session missing user metadata', session.id);
+    structuredLogger.warn('Checkout session missing user metadata', {
+      traceId: null,
+      userId: null,
+      brandId: session.metadata?.brandId ?? null,
+      flow: 'billing.checkoutCompleted',
+      latencyMs: null,
+      sessionId: session.id,
+    });
     return;
   }
 
@@ -86,9 +125,13 @@ const handleCheckoutCompleted = async (session: Stripe.Checkout.Session) => {
     : undefined;
 
   if (!creditAmount || Number.isNaN(creditAmount)) {
-    functions.logger.info('Checkout completed without BMK credit metadata', {
-      sessionId: session.id,
+    structuredLogger.info('Checkout completed without BMK credit metadata', {
+      traceId: null,
       userId,
+      brandId: session.metadata?.brandId ?? null,
+      flow: 'billing.checkoutCompleted',
+      latencyMs: null,
+      sessionId: session.id,
     });
     return;
   }
@@ -114,7 +157,9 @@ const handleCheckoutCompleted = async (session: Stripe.Checkout.Session) => {
   });
 };
 
-export const stripeWebhook = functions.https.onRequest(async (req, res) => {
+const stripeWebhookHandler: (req: functions.Request, res: functions.Response) => Promise<void> = async (req, res) => {
+  const traceId = getTraceIdFromHeader(req.headers['x-cloud-trace-context']);
+
   if (req.method !== 'POST') {
     res.set('Allow', 'POST');
     res.status(405).send('Method Not Allowed');
@@ -129,10 +174,18 @@ export const stripeWebhook = functions.https.onRequest(async (req, res) => {
 
   let event: Stripe.Event;
   try {
-    event = stripe.webhooks.constructEvent(req.rawBody, signature, STRIPE_WEBHOOK_SECRET);
+    const rawBody = (req as functions.Request & { rawBody: Buffer }).rawBody;
+    event = stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown webhook error';
-    functions.logger.error('Stripe webhook signature verification failed', message);
+    recordHandledException('billing.stripeWebhook', error, 'Stripe webhook signature verification failed', {
+      traceId,
+      userId: null,
+      brandId: null,
+      flow: 'billing.stripeWebhook',
+      latencyMs: null,
+      signaturePresent: Boolean(signature),
+    });
     res.status(400).send(`Webhook Error: ${message}`);
     return;
   }
@@ -157,15 +210,34 @@ export const stripeWebhook = functions.https.onRequest(async (req, res) => {
         await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
         break;
       default:
-        functions.logger.info('Unhandled Stripe event type', event.type);
+        structuredLogger.info('Unhandled Stripe event type', {
+          traceId,
+          userId: null,
+          brandId: null,
+          flow: 'billing.stripeWebhook',
+          latencyMs: null,
+          eventType: event.type,
+        });
     }
 
     res.status(200).json({ received: true });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown webhook processing error';
-    functions.logger.error('Failed to process Stripe webhook', { eventId: event.id, message });
+    recordHandledException('billing.stripeWebhook', error, 'Failed to process Stripe webhook', {
+      traceId,
+      userId: null,
+      brandId: null,
+      flow: 'billing.stripeWebhook',
+      latencyMs: null,
+      eventId: event.id,
+      message,
+    });
     res.status(500).send('Webhook handler failed');
   }
+};
+
+export const stripeWebhook = instrumentRequest('billing.stripeWebhook', stripeWebhookHandler, {
+  flow: 'billing.stripeWebhook',
 });
 
 export { BMK_COSTS };
@@ -187,7 +259,15 @@ export async function deductBmkCredits(userId: string, amount: number) {
     return true;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    functions.logger.error('Failed to deduct BMK credits', { userId, amount, message });
+    structuredLogger.error('Failed to deduct BMK credits', {
+      traceId: null,
+      userId,
+      brandId: null,
+      flow: 'billing.deductBmkCredits',
+      latencyMs: null,
+      amount,
+      message,
+    });
     return false;
   }
 }

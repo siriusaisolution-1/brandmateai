@@ -28,6 +28,16 @@ export const shouldInitialize = (key: SentryFlagKey): boolean => {
   return true;
 };
 
+export const resetInitFlagsForTesting = (): void => {
+  const globalScope = globalThis as typeof globalThis & {
+    __sentryInitFlags?: Record<SentryFlagKey, boolean>;
+  };
+
+  if (globalScope.__sentryInitFlags) {
+    globalScope.__sentryInitFlags = { client: false, edge: false, server: false };
+  }
+};
+
 const parseRate = (value: string | undefined, fallback: number): number => {
   const parsed = value !== undefined ? Number(value) : NaN;
   return Number.isFinite(parsed) ? parsed : fallback;

@@ -1,10 +1,9 @@
-// src/instrumentation.ts
+// instrumentation.ts
 import * as Sentry from '@sentry/nextjs';
-import { getEdgeOptions, getServerOptions, shouldInitialize } from '../sentry.config.shared';
+import { getEdgeOptions, getServerOptions, shouldInitialize } from './sentry.config.shared';
 
-// Zašto: Next App Router traži ovaj hook kako bismo inicijalizovali Sentry per-runtime samo kada DSN postoji.
-
-export function register() {
+// Next App Router calls this hook during bootstrap for each runtime (nodejs & edge).
+export function register(): void {
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     const options = getServerOptions();
 

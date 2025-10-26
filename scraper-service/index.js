@@ -4,6 +4,10 @@ const admin = require('firebase-admin');
 const dns = require('dns').promises;
 const net = require('net');
 
+const { version } = require('./package.json');
+
+const serviceStartedAt = Date.now();
+
 // Initialize Firebase Admin SDK
 admin.initializeApp();
 const db = admin.firestore();
@@ -13,6 +17,27 @@ const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 8080;
+
+app.get('/health', (req, res) => {
+  const uptimeSeconds = Math.round(process.uptime());
+  const integrations = [
+    { name: 'firebase', ok: admin.apps.length > 0 },
+    { name: 'puppeteer', ok: true },
+  ];
+
+  const ok = integrations.every(integration => integration.ok);
+
+  res.status(ok ? 200 : 503).json({
+    ok,
+    service: 'scraper-service',
+    version,
+    environment: process.env.NODE_ENV || 'development',
+    startedAt: serviceStartedAt,
+    uptimeSeconds,
+    timestamp: new Date().toISOString(),
+    integrations,
+  });
+});
 
 app.get('/healthz', (req, res) => res.status(200).send('ok'));
 

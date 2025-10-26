@@ -29,7 +29,14 @@ const { browser: browserGlobals, node: nodeGlobals } = globalsPackage;
 const config = [
   // Ignorisani build/3rd-party direktorijumi
   {
-    ignores: ['.next/**', 'node_modules/**', 'dist/**', 'coverage/**', 'functions/.output/**'],
+    ignores: [
+      '.next/**',
+      'node_modules/**',
+      'dist/**',
+      'coverage/**',
+      'functions/.output/**',
+      'functions/lib/**',
+    ],
   },
 
   // JS recommended
