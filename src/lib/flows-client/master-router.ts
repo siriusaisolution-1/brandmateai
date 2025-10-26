@@ -1,5 +1,13 @@
 import { callFlow } from './shared';
 
+function getE2EMocks() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return window.__E2E_MOCKS__ ?? null;
+}
+
 interface RawRouterResponse {
   flow: string;
   input: unknown;
@@ -30,6 +38,11 @@ function buildRouterMessage(flow: string, payload: unknown): string {
 export async function requestMasterRouter(
   request: MasterRouterRequest
 ): Promise<MasterRouterResponse> {
+  const mock = getE2EMocks()?.requestMasterRouter;
+  if (mock) {
+    return mock(request);
+  }
+
   if (request.isFirstMessage) {
     return {
       message: 'Hi! I am BrandMate, your marketing co-pilot. How can I help today?',

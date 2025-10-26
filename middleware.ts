@@ -10,7 +10,18 @@ export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   
   const isMarketingPath = url.pathname === '/' || url.pathname.startsWith('/pricing');
-  const isAppPath = url.pathname.startsWith('/app');
+  const APP_ROUTE_PREFIXES = [
+    '/dashboard',
+    '/brands',
+    '/media-library',
+    '/settings',
+    '/content',
+    '/calendar',
+    '/notifications',
+    '/reports',
+    '/admin',
+  ];
+  const isAppPath = APP_ROUTE_PREFIXES.some(prefix => url.pathname.startsWith(prefix));
 
   if (isAppPath && !hasAuthCookie) {
     url.pathname = '/login';
@@ -18,7 +29,7 @@ export function middleware(request: NextRequest) {
   }
 
   if (isMarketingPath && hasAuthCookie) {
-    url.pathname = '/app/dashboard';
+    url.pathname = '/dashboard';
     return NextResponse.redirect(url);
   }
   
@@ -26,5 +37,17 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/pricing', '/app/:path*'],
+  matcher: [
+    '/',
+    '/pricing',
+    '/dashboard/:path*',
+    '/brands/:path*',
+    '/media-library/:path*',
+    '/settings/:path*',
+    '/content/:path*',
+    '/calendar/:path*',
+    '/notifications/:path*',
+    '/reports/:path*',
+    '/admin/:path*',
+  ],
 }

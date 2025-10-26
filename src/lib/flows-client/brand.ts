@@ -1,5 +1,13 @@
 import { callFlow } from './shared';
 
+function getE2EMocks() {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  return window.__E2E_MOCKS__ ?? null;
+}
+
 export interface BrandAuditRequest {
   url: string;
   brandId: string;
@@ -16,6 +24,11 @@ export interface BrandAuditResponse {
 export async function performBrandAudit(
   input: BrandAuditRequest
 ): Promise<BrandAuditResponse> {
+  const mock = getE2EMocks()?.performBrandAudit;
+  if (mock) {
+    return mock(input);
+  }
+
   return callFlow<BrandAuditRequest, BrandAuditResponse>('brandAuditFlow', input);
 }
 
@@ -35,6 +48,11 @@ export interface SaveBrandResponse {
 }
 
 export async function saveBrand(input: SaveBrandRequest): Promise<SaveBrandResponse> {
+  const mock = getE2EMocks()?.saveBrand;
+  if (mock) {
+    return mock(input);
+  }
+
   return callFlow<SaveBrandRequest, SaveBrandResponse>('manageBrandFlow', input);
 }
 
@@ -50,6 +68,11 @@ export interface UploadMediaAssetResponse {
 export async function uploadMediaAsset(
   input: UploadMediaAssetRequest
 ): Promise<UploadMediaAssetResponse> {
+  const mock = getE2EMocks()?.uploadMediaAsset;
+  if (mock) {
+    return mock(input);
+  }
+
   return callFlow<UploadMediaAssetRequest, UploadMediaAssetResponse>(
     'uploadMediaAssetFlow',
     input

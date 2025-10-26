@@ -2,6 +2,7 @@
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
 import { CommandPalette } from "@/components/command-palette";
+import { MasterAiChat } from "@/components/master-ai-chat";
 import QueryProvider from "@/components/query-provider";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -23,6 +24,7 @@ export default function AppLayout({
       </div>
 
       <CommandPalette />
+      <MasterAiChat />
       <Toaster />
     </QueryProvider>
   );

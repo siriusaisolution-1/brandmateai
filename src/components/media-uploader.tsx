@@ -16,14 +16,22 @@ interface Props {
 
 export default function MediaUploader({ brandId, onUploaded }: Props) {
   const { currentUser } = useAuth();
+  const e2eMocks = typeof window !== "undefined" ? window.__E2E_MOCKS__ : undefined;
+  const effectiveUser = currentUser ?? e2eMocks?.currentUser ?? null;
   const [busy, setBusy] = useState(false);
 
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
-      if (!currentUser || acceptedFiles.length === 0) return;
+      if (!effectiveUser || acceptedFiles.length === 0) return;
       setBusy(true);
 
       try {
+        if (e2eMocks?.handleUpload) {
+          await e2eMocks.handleUpload(acceptedFiles, { brandId });
+          onUploaded?.();
+          return;
+        }
+
         const app = getApp();
         const db = getFirestore(app);
         const storage = getStorage(app);
@@ -31,7 +39,7 @@ export default function MediaUploader({ brandId, onUploaded }: Props) {
         await Promise.all(
           acceptedFiles.map(async (file) => {
             // 1) upload u Storage
-            const path = `brands/${brandId}/${currentUser.uid}/${Date.now()}_${file.name}`;
+            const path = `brands/${brandId}/${effectiveUser.uid}/${Date.now()}_${file.name}`;
             const storageRef = ref(storage, path);
             await uploadBytes(storageRef, file);
 
@@ -41,7 +49,7 @@ export default function MediaUploader({ brandId, onUploaded }: Props) {
             // 3) upis u Firestore
             await addDoc(collection(db, "mediaAssets"), {
               brandId,
-              userId: currentUser.uid,
+              userId: effectiveUser.uid,
               fileName: file.name,
               contentType: file.type || "application/octet-stream",
               url,
@@ -57,7 +65,7 @@ export default function MediaUploader({ brandId, onUploaded }: Props) {
         setBusy(false);
       }
     },
-    [brandId, currentUser, onUploaded]
+    [brandId, effectiveUser, e2eMocks, onUploaded]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

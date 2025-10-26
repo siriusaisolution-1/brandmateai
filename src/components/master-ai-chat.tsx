@@ -20,6 +20,9 @@ export function MasterAiChat() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const auth = useAuth();
+  const fallbackUser =
+    typeof window !== 'undefined' ? window.__E2E_MOCKS__?.currentUser ?? null : null;
+  const currentUser = auth.currentUser ?? fallbackUser;
   const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -69,11 +72,12 @@ export function MasterAiChat() {
     }
   };
 
-  if (!auth.currentUser) return null; // Don't render if user not logged in.
+  if (!currentUser) return null; // Don't render if user not logged in.
 
   if (!isOpen) {
     return (
       <button
+        data-testid="master-ai-chat-trigger"
         onClick={() => setIsOpen(true)}
         className="fixed bottom-6 right-6 w-16 h-16 bg-primary rounded-full shadow-lg text-white flex items-center justify-center hover:bg-primary/90 transition-transform hover:scale-110"
         aria-label="Open AI Chat"
@@ -84,7 +88,10 @@ export function MasterAiChat() {
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-full max-w-md h-[70vh] flex flex-col shadow-2xl bg-gray-900 border-gray-700">
+    <Card
+      data-testid="master-ai-chat-panel"
+      className="fixed bottom-6 right-6 w-full max-w-md h-[70vh] flex flex-col shadow-2xl bg-gray-900 border-gray-700"
+    >
       <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-gray-700">
         <div className="flex items-center gap-2">
           <Bot className="text-primary" />

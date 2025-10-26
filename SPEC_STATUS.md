@@ -2,11 +2,8 @@
 
 | Item | Status | Notes | Reference |
 | --- | --- | --- | --- |
-| Sprint 1 – Foundation | ✅ | pnpm install/lint/typecheck/build green under pnpm 10.2.1. | `chore/setup-pnpm-10` |
-| Sprint 2 – AI Core | ✅ | Genkit flows migrated with Zod validation and Novita polling. | `chore: ESLint zero warnings` |
-| Sprint 3 – Security & Runtime | ✅ | Secrets moved to `process.env`, SSRF guard on scraper, temp admin removed. | `chore/functions-env-migration`, `sec/scraper-ssrf-hardening`, `sec/remove-temp-admin-tool` |
-| Sprint 4 – Ops & Scale | ✅ | Structured logging, rate limiting, CI gates before deploy. | `feat: add rate limiting and ci gates` |
-| Sprint 5 – Polish & Maintenance | ✅ | Vitest + Playwright harness runs in CI with coverage >80%, docs/playbook shipped. | `feat/sprint5-quality` |
-| Test Coverage ≥80% | ✅ | `pnpm test:unit` reports 84.6% statements via V8 coverage. | `feat/sprint5-quality` |
-| /health endpoint | ✅ | JSON heartbeat at `/health`. | `feat/sprint5-quality` |
-| Operations Playbook | ✅ | `docs/PLAYBOOK.md` details runbooks and incident response. | `feat/sprint5-quality` |
+| Toolchain readiness | ✅ | `pnpm install`, `pnpm lint`, `pnpm typecheck`, and `pnpm build` succeed on Node 20. | `main` |
+| Unit & integration coverage | ✅ | `pnpm test --coverage` enforces 80% thresholds; Vitest suite covers Firebase utils, middleware, and flow clients. | `functions/src/utils/*.test.ts`, `src/app/api/**/route.test.ts` |
+| Playwright journeys | ✅ | `pnpm exec playwright test` exercises brand onboarding, AI content generation, and media upload/library review. | `e2e/flows.spec.ts` |
+| Health & diagnostics | ✅ | `/health` responds with `{ ok: true }`; `/api/diag` exposes runtime env metadata. | `src/app/health/route.ts`, `src/app/api/diag/route.ts` |
+| Operations playbook | ✅ | `docs/PLAYBOOK.md` documents setup, secrets, deployment, monitoring, and rollback procedures. | `docs/PLAYBOOK.md` |
