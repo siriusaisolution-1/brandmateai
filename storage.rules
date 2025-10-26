@@ -2,9 +2,14 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow write access only to the user's own folder, based on their UID.
-    match /users/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Media assets must be uploaded via signed URLs issued by the backend.
+    match /brands/{brandId}/{userId}/{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // Deny any other direct client interaction.
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }
