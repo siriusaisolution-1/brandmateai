@@ -10,7 +10,8 @@
     "strict": true,
     "moduleResolution": "node",
     "baseUrl": "./src",
-    "noImplicitAny": false
+    "noImplicitAny": false,
+    "types": ["node"]
   },
   "include": ["src/**/*.ts"],
   "exclude": ["node_modules", "lib"]

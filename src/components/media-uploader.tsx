@@ -6,6 +6,14 @@ import { useDropzone } from "react-dropzone";
 
 import { useAuth } from "reactfire";
 
+type TokenUser = { getIdToken: () => Promise<string> };
+
+const hasGetIdToken = (user: unknown): user is TokenUser =>
+  typeof user === "object" &&
+  user !== null &&
+  "getIdToken" in user &&
+  typeof (user as { getIdToken?: unknown }).getIdToken === "function";
+
 interface Props {
   brandId: string;
   onUploaded?: () => void;
@@ -20,10 +28,14 @@ export default function MediaUploader({ brandId, onUploaded }: Props) {
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       if (!effectiveUser || acceptedFiles.length === 0) return;
+      if (!hasGetIdToken(effectiveUser)) {
+        console.error("Media upload requires an authenticated Firebase user");
+        return;
+      }
       setBusy(true);
 
       try {
-        const token = await currentUser.getIdToken();
+        const token = await effectiveUser.getIdToken();
 
         await Promise.all(
           acceptedFiles.map(async (file) => {
