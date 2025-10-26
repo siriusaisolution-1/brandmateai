@@ -19,6 +19,30 @@ export const novitaAsyncTaskSchema = z.object({
 
 export type NovitaAsyncTask = z.infer<typeof novitaAsyncTaskSchema>;
 
+export const novitaProgressSchema = z.object({
+  task: z.object({
+    task_id: z.string(),
+    status: z.string(),
+    reason: z.string().optional(),
+  }),
+  videos: z
+    .array(
+      z.object({
+        video_url: z.string().url(),
+        video_type: z.string().optional(),
+      })
+    )
+    .optional(),
+  images: z
+    .array(
+      z.object({
+        image_url: z.string().url(),
+        image_type: z.string().optional(),
+      })
+    )
+    .optional(),
+});
+
 export const novitaImageTransformResultSchema = z.object({
   image_base64: z.string(),
   image_type: z.string(),
