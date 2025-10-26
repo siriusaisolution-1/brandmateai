@@ -1,5 +1,7 @@
 import * as admin from 'firebase-admin';
 
+import { structuredLogger } from './observability';
+
 if (!admin.apps.length) {
   admin.initializeApp();
 }
@@ -49,7 +51,13 @@ export async function trackAiCall(
   details: TrackAiCallMetadata = {}
 ): Promise<void> {
   if (!uid) {
-    console.warn('[ai-usage-tracker] trackAiCall invoked without uid');
+    structuredLogger.warn('[ai-usage-tracker] trackAiCall invoked without uid', {
+      traceId: null,
+      userId: null,
+      brandId: null,
+      flow: 'aiUsage.trackAiCall',
+      latencyMs: null,
+    });
     return;
   }
 

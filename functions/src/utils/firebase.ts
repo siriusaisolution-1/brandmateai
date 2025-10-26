@@ -1,6 +1,8 @@
 // functions/src/utils/firebase.ts
 import * as admin from 'firebase-admin';
 
+import { structuredLogger } from './observability';
+
 let _app: admin.app.App | undefined;
 
 export function getAdminApp(): admin.app.App {
@@ -19,9 +21,14 @@ export function getAdminApp(): admin.app.App {
   // Dozvoli i moderni i legacy domen
   const bucketOk = /\.(firebasestorage\.app|appspot\.com)$/i.test(bucket);
   if (!bucketOk) {
-    console.warn(
-      `Suspicious bucket name "${bucket}". Expected *.firebasestorage.app or *.appspot.com`
-    );
+    structuredLogger.warn('Suspicious Firebase storage bucket', {
+      traceId: null,
+      userId: null,
+      brandId: null,
+      flow: 'firebase.getAdminApp',
+      latencyMs: null,
+      bucket,
+    });
   }
 
   const serviceAccount = JSON.parse(

@@ -4,6 +4,16 @@ import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { Encryption } from './utils/encryption';
 import { ENCRYPTION_KEY, HAS_VALID_ENCRYPTION_KEY } from './config';
+import { instrumentBeforeSignIn, structuredLogger } from './utils/observability';
+
+type BeforeSignInContext = functions.auth.UserRecordMetadata & {
+  credential?: {
+    providerId: string;
+    accessToken?: string;
+    refreshToken?: string | null;
+  };
+  eventId?: string;
+};
 
 // Init Admin SDK
 if (admin.apps.length === 0) {
@@ -12,11 +22,13 @@ if (admin.apps.length === 0) {
 const db = admin.firestore();
 
 if (!HAS_VALID_ENCRYPTION_KEY) {
-  console.warn(
-    'ENCRYPTION_KEY nije postavljen ili nije tačno 32 znaka. ' +
-    'Privremeno ću preskočiti čuvanje OAuth tokena dok ne postaviš ključ. ' +
-    'Preporuka: postavi ENCRYPTION_KEY preko env var u Codex Secrets.'
-  );
+  structuredLogger.warn('Invalid or missing encryption key', {
+    traceId: null,
+    userId: null,
+    brandId: null,
+    flow: 'auth.storeUserCredential',
+    latencyMs: null,
+  });
 }
 
 /**
@@ -24,23 +36,33 @@ if (!HAS_VALID_ENCRYPTION_KEY) {
  * Ako sign-in ima OAuth credential, enkriptuje i snima access token u
  * users/{uid}/integrations/{providerId}.
  */
-export const storeUserCredential = functions.auth.user().beforeSignIn(async (user, context) => {
-  // Ako nema validnog ključa, ne pokušavamo da pišemo
+const storeUserCredentialHandler = async (
+  user: functions.auth.UserRecord,
+  context: BeforeSignInContext,
+) => {
   if (!HAS_VALID_ENCRYPTION_KEY || !ENCRYPTION_KEY) {
-    console.warn('Skipping credential storage due to invalid/missing ENCRYPTION_KEY.');
+    structuredLogger.warn('Skipping credential storage due to invalid encryption key', {
+      traceId: context.eventId ?? null,
+      userId: user.uid,
+      brandId: null,
+      flow: 'auth.storeUserCredential',
+      latencyMs: null,
+    });
     return;
   }
 
-  if (!context.credential || !context.credential.accessToken) {
+  if (!('credential' in context) || !context.credential || !context.credential.accessToken) {
     return;
   }
 
   const { credential } = context;
-  const providerId = credential.providerId; // npr. 'facebook.com'
+  const providerId = credential.providerId;
   const accessToken = credential.accessToken;
   const refreshToken = credential.refreshToken ?? null;
 
-  if (!accessToken) return;
+  if (!accessToken) {
+    return;
+  }
 
   const encryptedAccessToken = Encryption.encrypt(accessToken, ENCRYPTION_KEY);
 
@@ -58,5 +80,18 @@ export const storeUserCredential = functions.auth.user().beforeSignIn(async (use
     .doc(providerId);
 
   await integrationRef.set(integrationData, { merge: true });
-  console.log(`Stored credential for user ${user.uid} and provider ${providerId}.`);
-});
+  structuredLogger.info('Stored OAuth credential', {
+    traceId: context.eventId ?? null,
+    userId: user.uid,
+    brandId: null,
+    flow: 'auth.storeUserCredential',
+    latencyMs: null,
+    providerId,
+  });
+};
+
+export const storeUserCredential = instrumentBeforeSignIn(
+  'auth.storeUserCredential',
+  storeUserCredentialHandler,
+  { flow: 'auth.storeUserCredential' },
+);

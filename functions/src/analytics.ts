@@ -1,37 +1,50 @@
-import * as functions from "firebase-functions";
-import * as admin from "firebase-admin";
+import * as functions from 'firebase-functions';
+import * as admin from 'firebase-admin';
+
+import {
+  getTraceIdFromHeader,
+  instrumentCallable,
+  structuredLogger,
+} from './utils/observability';
 
 if (admin.apps.length === 0) {
-    admin.initializeApp();
+  admin.initializeApp();
 }
 
-/**
- * A generic, callable function to track user events from the frontend.
- * This provides a single entry point for all product analytics.
- * @param eventName The name of the event (e.g., 'Brand Created').
- * @param properties An object containing event metadata (e.g., { source: 'ai_audit' }).
- */
-export const trackEvent = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        // We only track events for authenticated users.
-        throw new functions.https.HttpsError('unauthenticated', 'You must be logged in to track events.');
-    }
+type TrackEventRequest = {
+  eventName: string;
+  properties?: Record<string, unknown>;
+  brandId?: string;
+};
 
-    const uid = context.auth.uid;
-    const { eventName, properties } = data;
+const trackEventHandler = async (data: TrackEventRequest, context: functions.https.CallableContext) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'You must be logged in to track events.');
+  }
 
-    if (typeof eventName !== 'string' || !eventName) {
-        throw new functions.https.HttpsError('invalid-argument', 'A valid eventName string is required.');
-    }
+  const uid = context.auth.uid;
+  const { eventName, properties } = data;
 
-    // For now, we just log the event to Google Cloud's default logging.
-    // In the future, you would add your analytics provider's SDK here.
-    // For example: await posthog.capture({ distinctId: uid, event: eventName, properties });
-    console.log(`Analytics Event Tracked:`, {
-        userId: uid,
-        event: eventName,
-        properties: properties || {},
-    });
+  if (typeof eventName !== 'string' || eventName.length === 0) {
+    throw new functions.https.HttpsError('invalid-argument', 'A valid eventName string is required.');
+  }
 
-    return { success: true };
+  const traceId = getTraceIdFromHeader(context.rawRequest?.headers?.['x-cloud-trace-context']);
+
+  structuredLogger.info('Analytics event tracked', {
+    traceId,
+    userId: uid,
+    brandId: typeof data.brandId === 'string' ? data.brandId : null,
+    flow: 'analytics.trackEvent',
+    latencyMs: null,
+    eventName,
+    properties: properties ?? {},
+  });
+
+  return { success: true };
+};
+
+export const trackEvent = instrumentCallable('analytics.trackEvent', trackEventHandler, {
+  flow: 'analytics.trackEvent',
+  getBrandId: (payload: TrackEventRequest) => (typeof payload.brandId === 'string' ? payload.brandId : null),
 });
