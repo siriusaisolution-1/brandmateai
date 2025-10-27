@@ -67,7 +67,10 @@ export function CommandPalette() {
         {brands && brands.length > 0 && (
             <CommandGroup heading="Brands">
                 {(brands as Brand[]).map(brand => (
-                    <CommandItem key={brand.id} onSelect={() => runCommand(() => router.push(`/brand/${brand.id}/dashboard`))}>
+                    <CommandItem
+                        key={brand.id}
+                        onSelect={() => runCommand(() => router.push(`/media-library/${brand.id}`))}
+                    >
                         <Building className="mr-2 h-4 w-4" />
                         <span>{brand.name}</span>
                     </CommandItem>
