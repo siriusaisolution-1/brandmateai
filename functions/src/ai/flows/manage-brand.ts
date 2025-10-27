@@ -38,7 +38,7 @@ export const manageBrandFlow = ai.defineFlow(
     const brandsCollection = firestore.collection('brands');
     const now = FieldValue.serverTimestamp();
 
-    let docRef = input.brandId ? brandsCollection.doc(input.brandId) : brandsCollection.doc();
+    const docRef = input.brandId ? brandsCollection.doc(input.brandId) : brandsCollection.doc();
     let existingOwner: string | undefined;
     let isCreate = !input.brandId;
 
