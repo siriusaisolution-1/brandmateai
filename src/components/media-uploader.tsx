@@ -113,7 +113,7 @@ export default function MediaUploader({ brandId, onUploaded }: Props) {
         setBusy(false);
       }
     },
-    [brandId, effectiveUser, e2eMocks, onUploaded]
+    [brandId, effectiveUser, onUploaded]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

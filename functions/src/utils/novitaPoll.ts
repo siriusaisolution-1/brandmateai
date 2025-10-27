@@ -2,12 +2,7 @@ import * as admin from 'firebase-admin';
 import { NovitaSDK } from 'novita-sdk';
 
 import { NOVITA_API_KEY } from '../config';
-import {
-  novitaAsyncTaskSchema,
-  novitaProgressSchema,
-  novitaTaskStatusSchema,
-  type NovitaAsyncTask,
-} from '../ai/flows/novita-schemas';
+import { novitaAsyncTaskSchema, novitaProgressSchema, type NovitaAsyncTask } from '../ai/flows/novita-schemas';
 import { upsertNovitaTask } from './novita-tasks';
 
 const novitaSdk = new NovitaSDK(NOVITA_API_KEY);

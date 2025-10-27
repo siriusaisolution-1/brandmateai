@@ -98,8 +98,8 @@ const config = [
       '@typescript-eslint/no-require-imports': 'off',
 
       // Bug-prevent i ergonomija
-      'react-hooks/rules-of-hooks': 'warn',
-      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'error',
       'react/no-unescaped-entities': 'warn',
       'no-empty': 'off',
       'no-useless-escape': 'off',
