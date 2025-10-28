@@ -152,3 +152,20 @@ jobs:
         with:
           name: functions-lib
           path: functions/lib
+
+      - name: Update SPEC_STATUS.md
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: pnpm node scripts/update_spec_status.mjs
+
+      - name: Commit SPEC_STATUS.md update
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: |
+          if git diff --quiet --exit-code SPEC_STATUS.md; then
+            echo "No SPEC_STATUS.md changes to commit."
+          else
+            git config user.name "brandmate-bot"
+            git config user.email "brandmate-bot@users.noreply.github.com"
+            git add SPEC_STATUS.md
+            git commit -m "ci: update SPEC_STATUS for run ${GITHUB_RUN_ID:-manual}"
+            git push
+          fi

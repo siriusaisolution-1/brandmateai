@@ -1,5 +1,14 @@
 # BrandMate Specification Status
 
+## CI Checklist
+
+- ☐ Lint
+- ☐ Typecheck
+- ☐ Test (unit + e2e)
+- ☐ Build
+
+Last successful CI run: manual
+
 | Item | Status | Notes | Reference |
 | --- | --- | --- | --- |
 | Toolchain readiness | ✅ | `pnpm install`, `pnpm lint`, `pnpm typecheck`, and `pnpm build` succeed on Node 20. | `main` |
