@@ -23,6 +23,19 @@ type WatchtowerAction =
   | 'trendAndOpportunityRadar'
   | 'syncAdPerformance';
 
+type WatchtowerFunctionResponse = {
+  status: 202;
+  accepted: true;
+  recorded: true;
+  message: string;
+};
+
+const actionLabels: Record<WatchtowerAction, string> = {
+  competitorWatchtower: 'Competitor watchtower',
+  trendAndOpportunityRadar: 'Trend & Opportunity Radar watchtower',
+  syncAdPerformance: 'Ad performance sync',
+};
+
 function extractBrandId(payload: unknown): string | null {
   if (!payload || typeof payload !== 'object') {
     return null;
@@ -71,12 +84,26 @@ async function handleWatchtowerInvocation(
   action: WatchtowerAction,
   rawPayload: unknown,
   context: functions.https.CallableContext
-): Promise<{ recorded: true }> {
+): Promise<WatchtowerFunctionResponse> {
   const payload = parsePayload(action, rawPayload);
   const requestedBy = context.auth?.uid ?? null;
 
+  if (!requestedBy) {
+    structuredLogger.warn(`[watchtower] ${action} blocked unauthenticated call`, {
+      flow: action,
+      brandId: payload.brandId ?? null,
+      userId: null,
+    });
+    throw new HttpsError('unauthenticated', 'Authentication is required to trigger watchtowers.');
+  }
+
   await writeAuditEntry(action, payload, requestedBy);
-  return { recorded: true };
+  return {
+    status: 202,
+    accepted: true,
+    recorded: true,
+    message: `${actionLabels[action]} accepted for processing.`,
+  } satisfies WatchtowerFunctionResponse;
 }
 
 export const competitorWatchtower = instrumentCallable(
