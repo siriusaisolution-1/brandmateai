@@ -75,6 +75,9 @@ test.describe('End-to-end customer journeys', () => {
           window.addEventListener('e2e:media-updated', handler as EventListener);
           return () => window.removeEventListener('e2e:media-updated', handler as EventListener);
         },
+        features: {
+          watchtowersEnabled: false,
+        },
       };
     }, TEST_BRAND_ID);
   });
@@ -120,5 +123,31 @@ test.describe('End-to-end customer journeys', () => {
     });
 
     await expect(page.locator('img[alt="hero.png"]')).toBeVisible();
+  });
+
+  test('watchtower actions hidden when feature flag is disabled', async ({ page }) => {
+    await page.goto('/admin/dashboard');
+
+    await expect(page.getByTestId('watchtower-actions')).toHaveCount(0);
+    await expect(page.getByTestId('watchtower-action-competitor')).toHaveCount(0);
+  });
+
+  test('watchtower actions appear when feature flag is enabled', async ({ page }) => {
+    await page.addInitScript(() => {
+      if (!window.__E2E_MOCKS__) {
+        window.__E2E_MOCKS__ = {};
+      }
+      window.__E2E_MOCKS__.features = {
+        ...(window.__E2E_MOCKS__.features ?? {}),
+        watchtowersEnabled: true,
+      };
+    });
+
+    await page.goto('/admin/dashboard');
+
+    await expect(page.getByTestId('watchtower-actions')).toBeVisible();
+    await expect(page.getByTestId('watchtower-action-competitor')).toBeVisible();
+    await expect(page.getByTestId('watchtower-action-trend')).toBeVisible();
+    await expect(page.getByTestId('watchtower-action-ads')).toBeVisible();
   });
 });

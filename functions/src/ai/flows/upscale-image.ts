@@ -1,10 +1,12 @@
-import { ai } from '../../genkit/ai';
-import { z } from 'zod';
+import { HttpsError } from 'firebase-functions/v1/https';
 import { NovitaSDK } from 'novita-sdk';
+import { z } from 'zod';
+
 import { NOVITA_API_KEY } from '../../config';
+import { ai } from '../../genkit/ai';
 import { novitaAsyncTaskSchema } from './novita-schemas';
 
-const novitaSdk = new NovitaSDK(NOVITA_API_KEY);
+const novitaSdk = NOVITA_API_KEY ? new NovitaSDK(NOVITA_API_KEY) : null;
 
 type UpscaleFn = (params: {
   image_base64: string;
@@ -25,10 +27,18 @@ export const upscaleImageFlow = ai.defineFlow({
   }),
   outputSchema: z.object({ taskId: z.string() }),
 }, async (input) => {
+  if (!novitaSdk) {
+    throw new HttpsError('failed-precondition', 'NOVITA_API_KEY is not configured.');
+  }
+
   const upscale = (novitaSdk as unknown as { upscale?: UpscaleFn }).upscale;
   if (!upscale) {
-    return { taskId: 'stub-task' };
+    throw new HttpsError(
+      'failed-precondition',
+      'Novita upscale API is not available in the current SDK version.'
+    );
   }
+
   const response = await upscale(input);
   const parsed = novitaAsyncTaskSchema.parse(response);
   return { taskId: parsed.task_id };
