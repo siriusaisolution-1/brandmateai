@@ -2,6 +2,7 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createNextRouteHandler } from '../../../../../tests/utils/create-next-route-handler';
+import { withTestAuth } from '../../../../../tests/utils/test-auth';
 import { POST } from './route';
 
 const getSignedUrl = vi.fn(async () => ['https://read.example.com']);
@@ -23,8 +24,9 @@ describe('POST /api/media/get-read-url', () => {
   it('returns a signed read url when storagePath is provided', async () => {
     const handler = createNextRouteHandler({ POST });
 
-    const response = await request(handler)
-      .post('/api/media/get-read-url')
+    const response = await withTestAuth(
+      request(handler).post('/api/media/get-read-url')
+    )
       .send({ storagePath: 'brands/brand-1/user/file.png' });
 
     expect(response.status).toBe(200);
@@ -43,8 +45,9 @@ describe('POST /api/media/get-read-url', () => {
   it('validates storagePath', async () => {
     const handler = createNextRouteHandler({ POST });
 
-    const response = await request(handler)
-      .post('/api/media/get-read-url')
+    const response = await withTestAuth(
+      request(handler).post('/api/media/get-read-url')
+    )
       .send({ storagePath: '' });
 
     expect(response.status).toBe(400);
