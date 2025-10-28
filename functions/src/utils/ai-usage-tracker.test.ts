@@ -1,5 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const structuredLoggerMock = vi.hoisted(() => ({
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  debug: vi.fn(),
+}));
+
+vi.mock('./observability', () => ({
+  structuredLogger: structuredLoggerMock,
+}));
+
 const firebaseAdminMock = globalThis.__vitestFirebaseAdmin;
 
 if (!firebaseAdminMock) {
@@ -21,6 +32,10 @@ describe('ai-usage-tracker', () => {
   beforeEach(() => {
     firebaseAdminMock.reset();
     vi.clearAllMocks();
+    structuredLoggerMock.info.mockClear();
+    structuredLoggerMock.warn.mockClear();
+    structuredLoggerMock.error.mockClear();
+    structuredLoggerMock.debug.mockClear();
   });
 
   it('coerces missing usage fields to zero', () => {
@@ -39,6 +54,16 @@ describe('ai-usage-tracker', () => {
   it('skips firestore writes when no tokens are recorded', async () => {
     await trackAiCall('user-123', {});
 
+    expect(collectionMock).not.toHaveBeenCalled();
+  });
+
+  it('logs a warning when uid is missing', async () => {
+    await trackAiCall('', {});
+
+    expect(structuredLoggerMock.warn).toHaveBeenCalledWith(
+      '[ai-usage-tracker] trackAiCall invoked without uid',
+      expect.objectContaining({ flow: 'aiUsage.trackAiCall' }),
+    );
     expect(collectionMock).not.toHaveBeenCalled();
   });
 
@@ -67,5 +92,24 @@ describe('ai-usage-tracker', () => {
     expect(FieldValue.increment).toHaveBeenCalledWith(3);
     expect(FieldValue.increment).toHaveBeenCalledWith(2);
     expect(FieldValue.serverTimestamp).toHaveBeenCalledTimes(2);
+  });
+
+  it('records latency metrics even when no tokens are tracked', async () => {
+    await trackAiCall(
+      'user-456',
+      {},
+      { latencyMs: 450, metadata: { reason: 'cache-miss' } },
+    );
+
+    expect(collectionMock).toHaveBeenCalledWith('aiCalls');
+    expect(collectionMock).not.toHaveBeenCalledWith('aiUsage');
+    expect(setMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-456',
+        latencyMs: 450,
+        metadata: { reason: 'cache-miss' },
+      }),
+    );
+    expect(FieldValue.serverTimestamp).toHaveBeenCalledTimes(1);
   });
 });
