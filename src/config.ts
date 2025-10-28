@@ -24,8 +24,13 @@ export function isWatchtowerEnabled(): boolean {
     }
   }
 
-  return normalizeFlag(process.env.NEXT_PUBLIC_FEATURE_WATCHTOWERS, false);
+  return FEATURE_WATCHTOWERS;
 }
+
+export const FEATURE_WATCHTOWERS = normalizeFlag(
+  process.env.NEXT_PUBLIC_FEATURE_WATCHTOWERS,
+  false
+);
 
 export const featureFlags = {
   watchtowers: isWatchtowerEnabled,

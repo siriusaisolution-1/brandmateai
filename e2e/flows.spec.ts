@@ -141,6 +141,23 @@ test.describe('End-to-end customer journeys', () => {
         ...(window.__E2E_MOCKS__.features ?? {}),
         watchtowersEnabled: true,
       };
+      window.__E2E_MOCKS__.watchtowers = {
+        runCompetitorWatchtower: async () => ({
+          status: 202,
+          accepted: true,
+          recorded: true,
+        }),
+        runTrendAndOpportunityRadar: async () => ({
+          status: 202,
+          accepted: true,
+          recorded: true,
+        }),
+        runSyncAdPerformance: async () => ({
+          status: 202,
+          accepted: true,
+          recorded: true,
+        }),
+      };
     });
 
     await page.goto('/admin/dashboard');
@@ -149,5 +166,10 @@ test.describe('End-to-end customer journeys', () => {
     await expect(page.getByTestId('watchtower-action-competitor')).toBeVisible();
     await expect(page.getByTestId('watchtower-action-trend')).toBeVisible();
     await expect(page.getByTestId('watchtower-action-ads')).toBeVisible();
+    await expect(page.getByTestId('watchtower-feature-badge')).toBeVisible();
+
+    await page.getByTestId('watchtower-action-competitor').click();
+
+    await expect(page.getByText('status: 202')).toBeVisible();
   });
 });

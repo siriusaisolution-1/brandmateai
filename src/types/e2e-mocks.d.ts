@@ -10,6 +10,10 @@ import type {
   MasterRouterRequest,
   MasterRouterResponse,
 } from '@/lib/flows-client/master-router';
+import type {
+  WatchtowerRequest,
+  WatchtowerResponse,
+} from '@/lib/flows-client/watchtowers';
 
 export type E2EMediaAsset = {
   id: string;
@@ -34,6 +38,17 @@ declare global {
       ) => () => void;
       features?: {
         watchtowersEnabled?: boolean;
+      };
+      watchtowers?: {
+        runCompetitorWatchtower?: (
+          input: WatchtowerRequest
+        ) => Promise<WatchtowerResponse>;
+        runTrendAndOpportunityRadar?: (
+          input: WatchtowerRequest
+        ) => Promise<WatchtowerResponse>;
+        runSyncAdPerformance?: (
+          input: WatchtowerRequest
+        ) => Promise<WatchtowerResponse>;
       };
     };
   }
