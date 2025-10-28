@@ -1,10 +1,12 @@
-import { ai } from '../../genkit/ai';
-import { z } from 'zod';
+import { HttpsError } from 'firebase-functions/v1/https';
 import { NovitaSDK } from 'novita-sdk';
+import { z } from 'zod';
+
 import { NOVITA_API_KEY } from '../../config';
+import { ai } from '../../genkit/ai';
 import { novitaAsyncTaskSchema } from './novita-schemas';
 
-const novitaSdk = new NovitaSDK(NOVITA_API_KEY);
+const novitaSdk = NOVITA_API_KEY ? new NovitaSDK(NOVITA_API_KEY) : null;
 
 type TrainPayload = {
   name: string;
@@ -33,11 +35,18 @@ export const trainLoraModelFlow = ai.defineFlow({
     trainSubject?: TrainFn;
     trainStyle?: TrainFn;
   };
+  if (!novitaSdk) {
+    throw new HttpsError('failed-precondition', 'NOVITA_API_KEY is not configured.');
+  }
+
   const response = await (input.trainingType === 'subject'
     ? client.trainSubject?.(payload)
     : client.trainStyle?.(payload));
   if (!response) {
-    return { taskId: 'stub-task' };
+    throw new HttpsError(
+      'failed-precondition',
+      'Required Novita LoRA training API is not available in the current SDK.'
+    );
   }
   const parsed = novitaAsyncTaskSchema.parse(response);
   return { taskId: parsed.task_id };

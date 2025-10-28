@@ -32,6 +32,9 @@ declare global {
         brandId: string,
         callback: (assets: E2EMediaAsset[]) => void,
       ) => () => void;
+      features?: {
+        watchtowersEnabled?: boolean;
+      };
     };
   }
 }
