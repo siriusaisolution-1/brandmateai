@@ -1,71 +1,17 @@
 name: CI
 
 on:
+  pull_request:
   push:
     branches:
       - main
-  pull_request:
 
 env:
   NODE_VERSION: '20.x'
 
 jobs:
-  lint:
+  checks:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.2.1
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm -r install --frozen-lockfile
-
-      - name: Lint Next.js workspace
-        run: pnpm lint --max-warnings=0
-
-      - name: Lint Cloud Functions
-        run: pnpm --filter functions lint
-
-  typecheck:
-    runs-on: ubuntu-latest
-    needs: lint
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.2.1
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm -r install --frozen-lockfile
-
-      - name: Typecheck Next.js workspace
-        run: pnpm typecheck
-
-      - name: Typecheck Cloud Functions
-        run: pnpm --filter functions typecheck
-
-  test:
-    runs-on: ubuntu-latest
-    needs: typecheck
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -93,10 +39,19 @@ jobs:
       - name: Install Firebase CLI & emulators
         run: pnpm dlx firebase-tools@latest setup:emulators:firestore
 
-      - name: Run tests
-        run: |
-          pnpm test --coverage
-          xvfb-run -a pnpm exec playwright test
+      - name: Run fast quality checks
+        if: ${{ github.event_name == 'pull_request' }}
+        run: pnpm run check:fast
+
+      - name: Run full quality checks
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          RUN_E2E: '1'
+          PLAYWRIGHT_BASE_URL: 'http://127.0.0.1:4300'
+          PORT: '4300'
+          NEXT_TELEMETRY_DISABLED: '1'
+          NODE_ENV: production
+        run: pnpm run check:all
 
       - name: Upload coverage report
         if: always()
@@ -113,33 +68,6 @@ jobs:
           name: playwright-report
           path: playwright-report
           if-no-files-found: ignore
-
-  build:
-    runs-on: ubuntu-latest
-    needs: test
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10.2.1
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm -r install --frozen-lockfile
-
-      - name: Build Next.js application
-        run: pnpm build
-
-      - name: Build Cloud Functions
-        run: pnpm --filter functions build
 
       - name: Upload Next.js build artifacts
         uses: actions/upload-artifact@v4

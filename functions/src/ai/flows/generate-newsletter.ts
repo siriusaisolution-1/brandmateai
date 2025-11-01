@@ -28,7 +28,12 @@ export const generateNewsletterFlow = ai.defineFlow(
     const out = await ai.generate({ prompt });
     const latencyMs = Date.now() - startedAt;
 
-    await trackAiCall(uid, out.response ?? out, {
+    const responseForMetrics =
+      typeof out === 'object' && out !== null && 'response' in out
+        ? (out as { response?: unknown }).response ?? out
+        : out;
+
+    await trackAiCall(uid, responseForMetrics, {
       flow: 'generateNewsletter',
       brandId,
       latencyMs,

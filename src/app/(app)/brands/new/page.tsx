@@ -92,7 +92,11 @@ export default function NewBrandPage() {
             <Label htmlFor="url">Import from Website (AI Audit)</Label>
             <div className="flex gap-2">
               <Input id="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://example.com" disabled={isLoading} />
-              <Button onClick={handleAudit} disabled={isLoading}>
+              <Button
+                onClick={handleAudit}
+                disabled={isLoading}
+                data-testid="brand-audit-button"
+              >
                 {isLoading ? 'Auditing...' : 'Run AI Audit'}
               </Button>
             </div>
@@ -130,7 +134,11 @@ export default function NewBrandPage() {
             <Button variant="secondary" onClick={() => setBrandKit(null)} disabled={isLoading}>
               Reset
             </Button>
-            <Button onClick={handleSaveBrand} disabled={isLoading}>
+            <Button
+              onClick={handleSaveBrand}
+              disabled={isLoading}
+              data-testid="brand-save-button"
+            >
               {isLoading ? 'Saving...' : 'Save Brand'}
             </Button>
           </div>
