@@ -75,9 +75,16 @@ export default function BrandMediaLibraryPage() {
       {resolvedStatus === 'loading' && <div className="h-24 animate-pulse rounded-lg bg-gray-800" />}
 
       {resolvedStatus === 'success' && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div
+          className="grid grid-cols-2 md:grid-cols-4 gap-4"
+          data-testid="media-library"
+        >
           {assets.map((asset) => (
-            <div key={asset.id} className="relative w-full aspect-square rounded-md overflow-hidden border border-gray-700">
+            <div
+              key={asset.id}
+              className="relative w-full aspect-square rounded-md overflow-hidden border border-gray-700"
+              data-testid="media-item"
+            >
               <Image
                 src={asset.url!}
                 alt={asset.fileName ?? 'asset'}

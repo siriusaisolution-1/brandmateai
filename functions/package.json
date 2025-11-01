@@ -1,7 +1,7 @@
 {
   "name": "functions",
   "scripts": {
-    "lint": "eslint --ext .js,.ts .",
+    "lint": "eslint --config ../eslint.config.mjs \"src/**/*.{ts,tsx,js,jsx}\"",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
     "serve": "firebase emulators:start --only functions",

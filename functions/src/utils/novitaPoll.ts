@@ -10,7 +10,7 @@ const NOVITA_BASE = 'https://api.novita.ai';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export type NovitaStatus = 'queued' | 'processing' | 'succeeded' | 'failed' | 'timeout';
+export type NovitaStatus = 'queued' | 'processing' | 'succeeded' | 'failed';
 
 function mapTaskStatus(status: string | undefined): NovitaStatus {
   if (!status) return 'queued';

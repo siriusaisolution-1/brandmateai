@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+// @staging
+test.describe.configure({ annotations: [{ type: 'tag', description: '@staging' }] });
+
 const baseUrl = process.env.STAGING_BASE_URL;
 const requiredEnv = [
   'NEXT_PUBLIC_FIREBASE_API_KEY',

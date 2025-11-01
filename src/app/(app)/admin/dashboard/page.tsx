@@ -32,7 +32,7 @@ export default function AdminDashboardPage() {
       id: 'competitor',
       label: 'Run Competitor Watchtower',
       description: 'Capture competitor updates and file an audit trail.',
-      testId: 'watchtower-action-competitor',
+      testId: 'watchtower-cta',
       run: async () => runCompetitorWatchtower(buildWatchtowerRequest()),
     },
     {
@@ -104,7 +104,7 @@ export default function AdminDashboardPage() {
               Watchtower Automations
               <span
                 className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-primary"
-                data-testid="watchtower-feature-badge"
+                data-testid="watchtower-toggle"
               >
                 Feature Flag
               </span>

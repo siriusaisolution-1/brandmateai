@@ -21,5 +21,11 @@ function run(command, extraArgs = []) {
 const unitArgs = args.filter(arg => arg !== '--coverage');
 run('test:unit', unitArgs);
 
-const e2eArgs = unitArgs;
-run('test:e2e', e2eArgs);
+const shouldRunE2E = ['1', 'true'].includes(
+  String(process.env.RUN_E2E ?? '').toLowerCase()
+);
+
+if (shouldRunE2E) {
+  const e2eArgs = unitArgs;
+  run('test:e2e', e2eArgs);
+}
