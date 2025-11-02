@@ -41,7 +41,33 @@ function deriveManifestPath(pageFilePath) {
   return path.join(dirname, `${basename}_client-reference-manifest.js`);
 }
 
-async function ensureManifest(manifestPath) {
+function normalizeImportPath(from, to) {
+  const relativePath = path.relative(path.dirname(from), to);
+  let normalized = relativePath.split(path.sep).join('/');
+  if (!normalized.startsWith('.')) {
+    normalized = `./${normalized}`;
+  }
+  return normalized;
+}
+
+function buildFallbackContent(pageFilePath, manifestPath) {
+  const marketingPageSuffix = `${path.sep}(marketing)${path.sep}page.js`;
+  if (pageFilePath.endsWith(marketingPageSuffix)) {
+    const rootManifestPath = path.join(NEXT_APP_DIR, 'page_client-reference-manifest.js');
+    const importPath = normalizeImportPath(manifestPath, rootManifestPath);
+    return [
+      `import manifest from "${importPath}";`,
+      "const globalManifest = (globalThis.__RSC_MANIFEST = globalThis.__RSC_MANIFEST || {});",
+      "globalManifest['/(marketing)/page'] = globalManifest['/(marketing)/page'] || manifest;",
+      "export default globalManifest['/(marketing)/page'];",
+      '',
+    ].join('\n');
+  }
+
+  return 'export default {};\n';
+}
+
+async function ensureManifest(manifestPath, pageFilePath) {
   try {
     await access(manifestPath, constants.F_OK);
     return false;
@@ -51,7 +77,8 @@ async function ensureManifest(manifestPath) {
     }
   }
 
-  await writeFile(manifestPath, 'export default {};\n');
+  const fallbackContent = buildFallbackContent(pageFilePath, manifestPath);
+  await writeFile(manifestPath, fallbackContent);
   return true;
 }
 
@@ -65,7 +92,7 @@ async function main() {
   let createdCount = 0;
   for (const pageFile of pageFiles) {
     const manifestPath = deriveManifestPath(pageFile);
-    const created = await ensureManifest(manifestPath);
+    const created = await ensureManifest(manifestPath, pageFile);
     if (created) {
       createdCount += 1;
     }

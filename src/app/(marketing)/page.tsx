@@ -1,8 +1,9 @@
-import './_noop-client';
+import "./_noop-client";
 import { redirect } from "next/navigation";
 
 import { HomePageClient } from "./_components/home-page-client";
 import { FirebaseAuthError, getServerAuthSession } from "@/lib/auth/verify-id-token";
+import ManifestNop from "@/components/manifest-nop";
 
 export default async function HomePage() {
   try {
@@ -18,5 +19,10 @@ export default async function HomePage() {
     }
   }
 
-  return <HomePageClient />;
+  return (
+    <>
+      <ManifestNop />
+      <HomePageClient />
+    </>
+  );
 }

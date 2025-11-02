@@ -9,6 +9,7 @@ export default defineConfig({
     include: [
       'functions/src/**/*.test.ts',
       'src/**/*.test.ts',
+      'tests/**/*.test.ts',
       'middleware.test.ts',
     ],
     coverage: {
