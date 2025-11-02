@@ -1,9 +1,9 @@
 {
-  "buildCommand": "pnpm run clean && pnpm build",
   "installCommand": "pnpm -r i --frozen-lockfile",
+  "buildCommand": "pnpm run clean && pnpm build",
   "outputDirectory": ".next",
-  "framework": "nextjs",
   "functions": {
-    "maxDuration": 10
+    "app/**": { "maxDuration": 10, "memory": 1024 },
+    "api/**": { "maxDuration": 10, "memory": 1024 }
   }
 }
