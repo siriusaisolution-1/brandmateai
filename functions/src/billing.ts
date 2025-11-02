@@ -265,6 +265,7 @@ export { BMK_COSTS };
 export async function deductBmkCredits(userId: string, amount: number) {
   try {
     const userRef = firestore.collection('users').doc(userId);
+    const ledgerCollection = firestore.collection('bmkLedger');
     await firestore.runTransaction(async (tx) => {
       const snapshot = await tx.get(userRef);
       const currentCredits = snapshot.get('billing.credits') ?? 0;
@@ -275,6 +276,13 @@ export async function deductBmkCredits(userId: string, amount: number) {
         'billing.credits': currentCredits - amount,
         'billing.updatedAt': admin.firestore.FieldValue.serverTimestamp(),
       });
+    });
+    await ledgerCollection.add({
+      userId,
+      amount,
+      direction: 'debit',
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      source: 'flow',
     });
     return true;
   } catch (error) {
