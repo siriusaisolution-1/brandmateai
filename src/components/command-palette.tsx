@@ -13,18 +13,21 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/components/ui/command" // We need to create this component
-import { useFirestore, useFirestoreCollectionData, useUser } from "reactfire"
+import { useFirestore, useFirestoreCollectionData } from "reactfire"
 import { collection, query, where } from "firebase/firestore"
 import { Brand } from "@/types/firestore"
 
-export function CommandPalette() {
+interface CommandPaletteProps {
+  userId: string
+}
+
+export function CommandPalette({ userId }: CommandPaletteProps) {
   const [open, setOpen] = React.useState(false)
   const router = useRouter()
-  const { data: user } = useUser()
   const firestore = useFirestore()
 
   const brandsCollection = collection(firestore, 'brands');
-  const brandsQuery = query(brandsCollection, where('ownerId', '==', user?.uid || ''));
+  const brandsQuery = query(brandsCollection, where('ownerId', '==', userId));
   const { data: brands } = useFirestoreCollectionData(brandsQuery, { idField: 'id' });
 
   React.useEffect(() => {

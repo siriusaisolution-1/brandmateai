@@ -2,7 +2,7 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createNextRouteHandler } from '../../../../../tests/utils/create-next-route-handler';
-import { withTestAuth } from '../../../../../tests/utils/test-auth';
+import { TEST_AUTH_TOKEN, withTestAuth } from '../../../../../tests/utils/test-auth';
 import { POST } from './route';
 
 const rateLimitState = vi.hoisted(() => {
@@ -27,6 +27,28 @@ vi.mock('../rate-limit', () => ({
 }));
 
 const getSignedUrl = vi.fn(async () => ['https://read.example.com']);
+const requireBearerAuth = vi.hoisted(() =>
+  vi.fn(async (request: Request) => {
+    const header = request.headers.get('authorization') ?? request.headers.get('Authorization');
+    if (!header?.startsWith('Bearer ')) {
+      throw Object.assign(new Error('Missing bearer token'), { status: 401 });
+    }
+
+    const token = header.slice('Bearer '.length).trim();
+    if (!token) {
+      throw Object.assign(new Error('Missing bearer token'), { status: 401 });
+    }
+
+    if (token !== TEST_AUTH_TOKEN) {
+      throw Object.assign(new Error('Invalid authentication token'), { status: 401 });
+    }
+
+    return {
+      token,
+      claims: { uid: 'user-1' },
+    };
+  })
+);
 
 vi.mock('@/lib/firebase-admin', () => ({
   getStorage: () => ({
@@ -35,6 +57,10 @@ vi.mock('@/lib/firebase-admin', () => ({
       file: () => ({ getSignedUrl }),
     }),
   }),
+}));
+
+vi.mock('@/lib/auth/verify-id-token', () => ({
+  requireBearerAuth,
 }));
 
 describe('POST /api/media/get-read-url', () => {
@@ -73,6 +99,7 @@ describe('POST /api/media/get-read-url', () => {
       bucket: 'test-bucket',
       storagePath: 'brands/brand-1/user/file.png',
     });
+    expect(requireBearerAuth).toHaveBeenCalledTimes(1);
   });
 
   it('validates storagePath', async () => {
