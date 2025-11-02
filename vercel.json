@@ -1,9 +1,5 @@
 {
   "installCommand": "pnpm -r i --frozen-lockfile",
   "buildCommand": "pnpm run clean && pnpm build",
-  "outputDirectory": ".next",
-  "functions": {
-    "app/**": { "maxDuration": 10, "memory": 1024 },
-    "api/**": { "maxDuration": 10, "memory": 1024 }
-  }
+  "outputDirectory": ".next"
 }
