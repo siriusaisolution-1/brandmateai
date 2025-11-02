@@ -1,10 +1,24 @@
-import { ai } from '../../genkit/ai';
+import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
 import { z } from 'zod';
 import { NovitaSDK } from 'novita-sdk';
-import { NOVITA_API_KEY } from '../../config';
+import { getNovitaApiKey } from '../../config';
 import { novitaImageTransformResultSchema } from './novita-schemas';
 
-const novitaSdk = new NovitaSDK(NOVITA_API_KEY);
+let novitaSdkPromise: Promise<NovitaSDK | null> | null = null;
+
+const getNovitaSdk = async (): Promise<NovitaSDK | null> => {
+  if (!novitaSdkPromise) {
+    novitaSdkPromise = (async () => {
+      try {
+        const apiKey = await getNovitaApiKey();
+        return new NovitaSDK(apiKey);
+      } catch (error) {
+        return null;
+      }
+    })();
+  }
+  return novitaSdkPromise;
+};
 
 type RemoveBgFn = (params: { image_base64: string }) =>
   | Promise<unknown>
@@ -18,7 +32,10 @@ export const removeBackgroundFlow = ai.defineFlow({
     image_type: z.string(),
   }),
 }, async ({ image_base64 }) => {
-  const removeBg = (novitaSdk as unknown as { removeBg?: RemoveBgFn }).removeBg;
+  await ensureGoogleGenAiApiKeyReady();
+
+  const novitaSdk = await getNovitaSdk();
+  const removeBg = (novitaSdk as unknown as { removeBg?: RemoveBgFn })?.removeBg;
   if (!removeBg) {
     return { image_base64, image_type: 'image/png' };
   }

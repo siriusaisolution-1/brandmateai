@@ -2,11 +2,25 @@ import { HttpsError } from 'firebase-functions/v1/https';
 import { NovitaSDK } from 'novita-sdk';
 import { z } from 'zod';
 
-import { NOVITA_API_KEY } from '../../config';
-import { ai } from '../../genkit/ai';
+import { getNovitaApiKey } from '../../config';
+import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
 import { novitaAsyncTaskSchema } from './novita-schemas';
 
-const novitaSdk = NOVITA_API_KEY ? new NovitaSDK(NOVITA_API_KEY) : null;
+let novitaSdkPromise: Promise<NovitaSDK | null> | null = null;
+
+const getNovitaSdk = async (): Promise<NovitaSDK | null> => {
+  if (!novitaSdkPromise) {
+    novitaSdkPromise = (async () => {
+      try {
+        const apiKey = await getNovitaApiKey();
+        return new NovitaSDK(apiKey);
+      } catch (error) {
+        return null;
+      }
+    })();
+  }
+  return novitaSdkPromise;
+};
 
 type TrainPayload = {
   name: string;
@@ -26,11 +40,14 @@ export const trainLoraModelFlow = ai.defineFlow({
   }),
   outputSchema: z.object({ taskId: z.string() }),
 }, async (input) => {
+  await ensureGoogleGenAiApiKeyReady();
+
   const payload: TrainPayload = {
     name: input.modelName,
     image_dataset_items: input.imageAssetIds.map((id) => ({ assets_id: id })),
   };
 
+  const novitaSdk = await getNovitaSdk();
   const client = novitaSdk as unknown as {
     trainSubject?: TrainFn;
     trainStyle?: TrainFn;

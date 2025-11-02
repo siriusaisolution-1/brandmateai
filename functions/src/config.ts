@@ -1,31 +1,25 @@
-// Centralized environment configuration for Cloud Functions runtime.
+import { getRequiredSecretValue, getSecretValue } from './utils/secrets';
 
-/**
- * Fetches an environment variable from `process.env`.
- * Throws a descriptive error when the variable is required but missing.
- */
-const requireEnv = (name: string): string => {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
+export const getRequiredSecret = (name: string): Promise<string> => {
+  return getRequiredSecretValue(name);
 };
 
-/**
- * Optional helper for environment variables that may fall back to a default.
- */
-const optionalEnv = (name: string): string | undefined => {
-  const value = process.env[name];
-  return value && value.length > 0 ? value : undefined;
+export const getOptionalSecret = (name: string): Promise<string | undefined> => {
+  return getSecretValue(name);
 };
 
-export const NOVITA_API_KEY = requireEnv('NOVITA_API_KEY');
-export const GOOGLE_GENAI_API_KEY = requireEnv('GOOGLE_GENAI_API_KEY');
-export const GEMINI_MODEL_ID = optionalEnv('GEMINI_MODEL_ID') ?? 'gemini-1.5-pro-latest';
+export const getNovitaApiKey = (): Promise<string> => getRequiredSecret('NOVITA_API_KEY');
 
-export const ENCRYPTION_KEY = optionalEnv('ENCRYPTION_KEY');
-export const HAS_VALID_ENCRYPTION_KEY =
-  typeof ENCRYPTION_KEY === 'string' && ENCRYPTION_KEY.length === 32;
+export const getGoogleGenAiApiKey = (): Promise<string> => getRequiredSecret('GOOGLE_GENAI_API_KEY');
 
-export { requireEnv, optionalEnv };
+export const getGeminiModelId = async (): Promise<string> => {
+  return (await getOptionalSecret('GEMINI_MODEL_ID')) ?? 'gemini-1.5-pro-latest';
+};
+
+export const getEncryptionKey = (): Promise<string | undefined> => getOptionalSecret('ENCRYPTION_KEY');
+
+export const hasValidEncryptionKey = async (): Promise<boolean> => {
+  const encryptionKey = await getEncryptionKey();
+  return typeof encryptionKey === 'string' && encryptionKey.length === 32;
+};
+

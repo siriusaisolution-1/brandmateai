@@ -49,6 +49,11 @@ This project relies on a small set of environment variables for Firebase, Sentry
 | `NEXT_TELEMETRY_DISABLED` | Set to `1` to disable Next.js telemetry during local/dev runs. |
 | `PLAYWRIGHT_TEST_BASE_PORT` | Base port used when spinning up the dev server for Playwright tests. |
 
+## Cloud Functions Secrets
+
+- **Local development:** store required values in `functions/.env` (or export them before launching the Firebase emulator). Keys include `NOVITA_API_KEY`, `GOOGLE_GENAI_API_KEY`, Stripe credentials, and the `ENCRYPTION_KEY` used by auth triggers.
+- **Production:** configure the same keys as Google Secret Manager secrets. Cloud Functions retrieve them at runtime via `@google-cloud/secret-manager` (see `functions/src/utils/secrets.ts`), so no environment variables need to be set manually in the deployed service.
+
 ## Templates
 
 - Copy `env/.example` to `env/.local` (or your preferred filename) and inject local secrets.
