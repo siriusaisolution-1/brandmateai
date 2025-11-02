@@ -23,7 +23,7 @@
     "check:fast": "pnpm lint --max-warnings=0 && pnpm typecheck && pnpm test --coverage && pnpm build",
     "check:quality": "pnpm run check:all",
     "check:tests": "bash scripts/check_tests.sh || true",
-    "ensure:client-manifests": "node scripts/ensure-client-manifest.mjs",
+    "ensure:client-manifests": "node -e \"console.log('ensure-client-manifest noop');\"",
     "fb:emul": "firebase emulators:start",
     "fb:preview": "firebase hosting:channel:deploy preview-$(git rev-parse --abbrev-ref HEAD)",
     "fb:deploy": "firebase deploy",
