@@ -47,6 +47,7 @@ infrastructure documentation.
 
 ## Deployments
 
-- **Vercel** – Trigger redeploys with the "Clear cache" option whenever route
-  groups (directories in `src/app/(...)`) change. This ensures the build picks
-  up the new layout without stale artifacts from previous deployments.
+- **Vercel** – When redeploying after route group changes (directories in
+  `src/app/(...)`), use the **Clear Build Cache** option so the build starts
+  from a clean slate and picks up the new layout without stale artifacts from
+  previous deployments.

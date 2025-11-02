@@ -15,12 +15,15 @@ const nextConfig: NextConfig = {
   // Next 15 više ne koristi custom allowedDevOrigins ovde; koristite env (već imaš u .env.local)
 };
 
-export default withSentryConfig(
-  nextConfig,
-  {
-    org: process.env.SENTRY_ORG,
-    project: process.env.SENTRY_PROJECT,
-    silent: true,
-    // modern SDK: build-time opcije svedene; sourcemaps/hideSourceMaps podešava se kroz SENTRY build flags
-  }
-);
+const sentryWrappedConfig = withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  silent: true,
+  // modern SDK: build-time opcije svedene; sourcemaps/hideSourceMaps podešava se kroz SENTRY build flags
+});
+
+if (sentryWrappedConfig.experimental?.clientTraceMetadata) {
+  delete sentryWrappedConfig.experimental.clientTraceMetadata;
+}
+
+export default sentryWrappedConfig;
