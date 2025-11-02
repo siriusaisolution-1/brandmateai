@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import Stripe from 'stripe';
 import { z } from 'zod';
 
-import { requireEnv } from './config';
+import { getRequiredSecret } from './config';
 import { BMK_COSTS } from './utils/bmk-costs';
 import {
   getTraceIdFromHeader,
@@ -13,17 +13,32 @@ import {
   structuredLogger,
 } from './utils/observability';
 
-const STRIPE_SECRET_KEY = requireEnv('STRIPE_SECRET_KEY');
-const STRIPE_WEBHOOK_SECRET = requireEnv('STRIPE_WEBHOOK_SECRET');
-
 const STRIPE_API_VERSION = '2024-04-10' as const satisfies Stripe.LatestApiVersion;
 
-const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: STRIPE_API_VERSION,
-  appInfo: {
-    name: 'BrandMate Functions',
-  },
-});
+let stripeClientPromise: Promise<Stripe> | null = null;
+let stripeWebhookSecretPromise: Promise<string> | null = null;
+
+const getStripeClient = async (): Promise<Stripe> => {
+  if (!stripeClientPromise) {
+    stripeClientPromise = (async () => {
+      const apiKey = await getRequiredSecret('STRIPE_SECRET_KEY');
+      return new Stripe(apiKey, {
+        apiVersion: STRIPE_API_VERSION,
+        appInfo: {
+          name: 'BrandMate Functions',
+        },
+      });
+    })();
+  }
+  return stripeClientPromise;
+};
+
+const getStripeWebhookSecret = (): Promise<string> => {
+  if (!stripeWebhookSecretPromise) {
+    stripeWebhookSecretPromise = getRequiredSecret('STRIPE_WEBHOOK_SECRET');
+  }
+  return stripeWebhookSecretPromise;
+};
 
 const checkoutRequestSchema = z.object({
   priceId: z.string().min(1),
@@ -56,6 +71,7 @@ const createCheckoutSessionHandler = async (
   }
 
   try {
+    const stripe = await getStripeClient();
     const session = await stripe.checkout.sessions.create({
       mode: payload.mode,
       customer: payload.customerId,
@@ -175,7 +191,11 @@ const stripeWebhookHandler: (req: functions.Request, res: functions.Response) =>
   let event: Stripe.Event;
   try {
     const rawBody = (req as functions.Request & { rawBody: Buffer }).rawBody;
-    event = stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET);
+    const [stripe, webhookSecret] = await Promise.all([
+      getStripeClient(),
+      getStripeWebhookSecret(),
+    ]);
+    event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown webhook error';
     recordHandledException('billing.stripeWebhook', error, 'Stripe webhook signature verification failed', {

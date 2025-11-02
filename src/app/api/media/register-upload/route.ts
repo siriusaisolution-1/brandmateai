@@ -3,6 +3,8 @@ import { FieldValue, getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from '@/lib/firebase-admin';
 import { requireBearerAuth } from '@/lib/auth/verify-id-token';
 
+import { getMediaRateLimiter } from '../rate-limit';
+
 function assertString(name: string, value: unknown): asserts value is string {
   if (typeof value !== 'string' || !value.trim()) {
     throw new Error(`Invalid "${name}"`);
@@ -52,6 +54,19 @@ export async function POST(request: NextRequest) {
 
     await assertBrandOwnership(brandId, authUser.uid);
     validateStoragePath(storagePath, brandId, authUser.uid);
+
+    const rateKey = `${authUser.uid}:${brandId}`;
+    const rateResult = await getMediaRateLimiter().attempt(rateKey);
+
+    if (!rateResult.ok) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAfter: rateResult.retryAfterSeconds },
+        {
+          status: 429,
+          headers: { 'Retry-After': rateResult.retryAfterSeconds.toString() },
+        },
+      );
+    }
 
     const db = getFirestore();
     const bucket = getStorage().bucket();

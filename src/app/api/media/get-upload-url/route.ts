@@ -4,6 +4,8 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { getStorage } from '@/lib/firebase-admin';
 import { requireBearerAuth } from '@/lib/auth/verify-id-token';
 
+import { getMediaRateLimiter } from '../rate-limit';
+
 const ALLOWED_CONTENT_PREFIXES = ['image/', 'video/'];
 const ALLOWED_EXACT_CONTENT_TYPES = new Set([
   'application/pdf',
@@ -58,6 +60,19 @@ export async function POST(request: NextRequest) {
     }
 
     await assertBrandOwnership(brandId, authUser.uid);
+
+    const rateKey = `${authUser.uid}:${brandId}`;
+    const rateResult = await getMediaRateLimiter().attempt(rateKey);
+
+    if (!rateResult.ok) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAfter: rateResult.retryAfterSeconds },
+        {
+          status: 429,
+          headers: { 'Retry-After': rateResult.retryAfterSeconds.toString() },
+        },
+      );
+    }
 
     const bucket = getStorage().bucket();
     const timestamp = Date.now();

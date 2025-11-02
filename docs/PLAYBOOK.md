@@ -18,6 +18,7 @@ Authoritative runbook for the BrandMate monorepo. All commands assume Node.js 20
    - `NEXT_PUBLIC_FIREBASE_*` – client SDK bootstrap (API key, auth domain, project id, storage bucket, messaging sender id, app id).
    - `NEXT_PUBLIC_USE_LONG_POLLING` – set to `1` in restricted networks (otherwise leave at `0`).
    - Sentry DSNs (`SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`) when observability is desired.
+4. Cloud Functions secrets: place values in `functions/.env` (or export them in your shell) when using the Firebase emulator. In production the same keys (`NOVITA_API_KEY`, `GOOGLE_GENAI_API_KEY`, Stripe secrets, encryption key, etc.) are stored in Google Secret Manager and loaded lazily at runtime—no manual environment configuration is required on deployed functions.
 
 ## Daily developer commands
 

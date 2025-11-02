@@ -1,9 +1,10 @@
 import { HttpsError } from 'firebase-functions/v1/https';
 import { z } from 'zod';
 
-import { ai } from '../../genkit/ai';
+import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
 import { extractAuthUserId } from '../../utils/flow-context';
 import { trackAiCall } from '../../utils/ai-usage-tracker';
+import { enforceFlowRateLimit } from '../../utils/rate-limit';
 
 export const generateNewsletterFlow = ai.defineFlow(
   {
@@ -16,6 +17,8 @@ export const generateNewsletterFlow = ai.defineFlow(
     outputSchema: z.object({ newsletterContent: z.string() }),
   },
   async ({ audience, keyPoints, brandId }) => {
+    await ensureGoogleGenAiApiKeyReady();
+
     const context = typeof ai.currentContext === 'function' ? ai.currentContext() : undefined;
     const uid = extractAuthUserId(context);
 
@@ -25,6 +28,9 @@ export const generateNewsletterFlow = ai.defineFlow(
 
     const prompt = `Write a concise newsletter for audience: ${audience}. Cover key points: ${keyPoints.join(', ')}`;
     const startedAt = Date.now();
+
+    await enforceFlowRateLimit(uid, brandId);
+
     const out = await ai.generate({ prompt });
     const latencyMs = Date.now() - startedAt;
 

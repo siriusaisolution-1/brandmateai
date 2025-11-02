@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStorage } from "@/lib/firebase-admin";
 import { requireBearerAuth } from '@/lib/auth/verify-id-token';
 
+import { getMediaRateLimiter } from "../rate-limit";
+
 function assertString(name: string, val: unknown): asserts val is string {
   if (typeof val !== "string" || !val.trim()) {
     throw new Error(`Invalid "${name}"`);
@@ -15,6 +17,19 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { storagePath } = body || {};
     assertString("storagePath", storagePath);
+
+    const rateKey = `read:${storagePath}`;
+    const rateResult = await getMediaRateLimiter().attempt(rateKey);
+
+    if (!rateResult.ok) {
+      return NextResponse.json(
+        { error: "Rate limit exceeded", retryAfter: rateResult.retryAfterSeconds },
+        {
+          status: 429,
+          headers: { "Retry-After": rateResult.retryAfterSeconds.toString() },
+        }
+      );
+    }
 
     const bucket = getStorage().bucket();
     const file = bucket.file(storagePath);

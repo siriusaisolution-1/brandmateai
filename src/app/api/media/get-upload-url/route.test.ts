@@ -4,6 +4,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createNextRouteHandler } from '../../../../../tests/utils/create-next-route-handler';
 import { TEST_AUTH_TOKEN, withTestAuth } from '../../../../../tests/utils/test-auth';
 
+const rateLimitState = vi.hoisted(() => {
+  const limiter = {
+    attempt: vi.fn(async () => ({
+      ok: true,
+      limit: 60,
+      remaining: 59,
+      retryAfterSeconds: 60,
+      resetAt: new Date(Date.now() + 60_000),
+    })),
+  };
+
+  return {
+    limiter,
+    getMediaRateLimiter: vi.fn(() => limiter),
+  };
+});
+
+vi.mock('../rate-limit', () => ({
+  getMediaRateLimiter: rateLimitState.getMediaRateLimiter,
+}));
+
 const firestoreMockState = vi.hoisted(() => ({
   brandSnapshot: { exists: true, get: vi.fn(() => undefined) },
   getBrandSnapshot: vi.fn(),
@@ -104,6 +125,16 @@ describe('POST /api/media/get-upload-url', () => {
     firestoreMockState.serverTimestamp.mockClear();
     firestoreMockState.increment.mockClear();
     firestoreMockState.getFirestore.mockClear();
+    rateLimitState.getMediaRateLimiter.mockClear();
+    rateLimitState.getMediaRateLimiter.mockReturnValue(rateLimitState.limiter);
+    rateLimitState.limiter.attempt.mockClear();
+    rateLimitState.limiter.attempt.mockImplementation(async () => ({
+      ok: true,
+      limit: 60,
+      remaining: 59,
+      retryAfterSeconds: 60,
+      resetAt: new Date(Date.now() + 60_000),
+    }));
   });
 
   it('requires a bearer token', async () => {
@@ -130,6 +161,8 @@ describe('POST /api/media/get-upload-url', () => {
     expect(response.status).toBe(200);
     expect(requireBearerAuth).toHaveBeenCalledTimes(1);
     expect(getSignedUrl).toHaveBeenCalledTimes(1);
+    expect(rateLimitState.getMediaRateLimiter).toHaveBeenCalled();
+    expect(rateLimitState.limiter.attempt).toHaveBeenCalledWith('user-1:brand-1');
     expect(response.body).toEqual(
       expect.objectContaining({
         uploadUrl: 'https://signed.example.com',
@@ -165,5 +198,27 @@ describe('POST /api/media/get-upload-url', () => {
 
     expect(response.status).toBe(400);
     expect(response.body).toEqual({ error: 'Invalid "brandId"' });
+  });
+
+  it('returns 429 when the rate limit is exceeded', async () => {
+    rateLimitState.limiter.attempt.mockResolvedValueOnce({
+      ok: false,
+      limit: 60,
+      remaining: 0,
+      retryAfterSeconds: 42,
+      resetAt: new Date(Date.now() + 42_000),
+    });
+
+    const handler = createNextRouteHandler({ POST });
+
+    const response = await withTestAuth(
+      request(handler).post('/api/media/get-upload-url')
+    )
+      .set('content-type', 'application/json')
+      .send({ filename: 'brand.png', contentType: 'image/png', brandId: 'brand-1' });
+
+    expect(response.status).toBe(429);
+    expect(response.headers['retry-after']).toBe('42');
+    expect(response.body).toEqual({ error: 'Rate limit exceeded', retryAfter: 42 });
   });
 });
