@@ -1,16 +1,34 @@
 // src/app/(app)/layout.tsx
+import { redirect } from "next/navigation";
+
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
 import { CommandPalette } from "@/components/command-palette";
 import { MasterAiChat } from "@/components/master-ai-chat";
 import QueryProvider from "@/components/query-provider";
 import { Toaster } from "@/components/ui/toaster";
+import { FirebaseAuthError, requireServerAuthSession } from "@/lib/auth/verify-id-token";
 
-export default function AppLayout({
+export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  let userId: string;
+  try {
+    const session = await requireServerAuthSession();
+    const uid = session.claims.uid ?? (typeof session.claims.sub === "string" ? session.claims.sub : null);
+    if (!uid) {
+      redirect("/login");
+    }
+    userId = uid;
+  } catch (error) {
+    if (error instanceof FirebaseAuthError && error.status === 401) {
+      redirect("/login");
+    }
+    throw error;
+  }
+
   return (
     <QueryProvider>
       <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -23,7 +41,7 @@ export default function AppLayout({
         </div>
       </div>
 
-      <CommandPalette />
+      <CommandPalette userId={userId} />
       <MasterAiChat />
       <Toaster />
     </QueryProvider>

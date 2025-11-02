@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'node:crypto';
 import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import { getAuth, getStorage } from '@/lib/firebase-admin';
+import { getStorage } from '@/lib/firebase-admin';
+import { requireBearerAuth } from '@/lib/auth/verify-id-token';
 
 const ALLOWED_CONTENT_PREFIXES = ['image/', 'video/'];
 const ALLOWED_EXACT_CONTENT_TYPES = new Set([
@@ -26,24 +27,6 @@ function isAllowedContentType(contentType: string) {
   return ALLOWED_CONTENT_PREFIXES.some((prefix) => contentType.startsWith(prefix));
 }
 
-async function authenticate(request: NextRequest) {
-  const header = request.headers.get('authorization') || request.headers.get('Authorization');
-  if (!header?.startsWith('Bearer ')) {
-    throw Object.assign(new Error('Missing bearer token'), { status: 401 });
-  }
-
-  const token = header.slice('Bearer '.length).trim();
-  if (!token) {
-    throw Object.assign(new Error('Missing bearer token'), { status: 401 });
-  }
-
-  try {
-    return await getAuth().verifyIdToken(token);
-  } catch (error) {
-    throw Object.assign(new Error('Invalid authentication token'), { status: 401, cause: error });
-  }
-}
-
 async function assertBrandOwnership(brandId: string, userId: string) {
   const db = getFirestore();
   const brandRef = db.collection('brands').doc(brandId);
@@ -61,7 +44,7 @@ async function assertBrandOwnership(brandId: string, userId: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    const authUser = await authenticate(request);
+    const { claims: authUser } = await requireBearerAuth(request);
     const body = await request.json().catch(() => ({}));
     const { brandId, filename, contentType } = (body ?? {}) as Record<string, unknown>;
 
