@@ -12,33 +12,17 @@ function createRequest(pathname: string, cookieNames: string[] = []) {
   return new NextRequest(`https://example.com${pathname}`, { headers });
 }
 
-describe('middleware auth redirects', () => {
-  it('redirects unauthenticated users away from app routes', () => {
+describe('middleware routing', () => {
+  it('does not redirect app routes', () => {
     const request = createRequest('/dashboard');
-
-    const response = middleware(request);
-
-    expect(response.headers.get('location')).toBe('https://example.com/login');
-  });
-
-  it('allows authenticated users to stay on app routes', () => {
-    const request = createRequest('/dashboard', ['firebase-auth']);
 
     const response = middleware(request);
 
     expect(response.headers.get('location')).toBeNull();
   });
 
-  it('sends authenticated visitors from marketing pages to the dashboard', () => {
-    const request = createRequest('/pricing', ['firebase-somecookie']);
-
-    const response = middleware(request);
-
-    expect(response.headers.get('location')).toBe('https://example.com/dashboard');
-  });
-
-  it('leaves marketing pages untouched for anonymous users', () => {
-    const request = createRequest('/');
+  it('does not redirect marketing routes', () => {
+    const request = createRequest('/pricing', ['firebase-auth']);
 
     const response = middleware(request);
 

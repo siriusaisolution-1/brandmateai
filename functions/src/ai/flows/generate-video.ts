@@ -2,12 +2,13 @@ import * as admin from 'firebase-admin';
 import { HttpsError } from 'firebase-functions/v1/https';
 import { z } from 'zod';
 
-import { NOVITA_API_KEY } from '../../config';
-import { ai } from '../../genkit/ai';
+import { getNovitaApiKey } from '../../config';
+import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
 import { extractAuthUserId } from '../../utils/flow-context';
 import { getAssetUrl } from '../../utils/firebase';
 import { upsertNovitaTask } from '../../utils/novita-tasks';
 import { novitaAsyncTaskSchema } from './novita-schemas';
+import { enforceFlowRateLimit } from '../../utils/rate-limit';
 
 const firestore = admin.firestore();
 const NOVITA_BASE = 'https://api.novita.ai';
@@ -43,7 +44,12 @@ export const generateVideoFlow = ai.defineFlow(
     outputSchema: z.object({ taskId: z.string() }),
   },
   async (input) => {
-    if (!NOVITA_API_KEY) {
+    await ensureGoogleGenAiApiKeyReady();
+
+    let novitaApiKey: string;
+    try {
+      novitaApiKey = await getNovitaApiKey();
+    } catch (error) {
       throw new HttpsError('failed-precondition', 'NOVITA_API_KEY is not configured.');
     }
 
@@ -82,6 +88,8 @@ export const generateVideoFlow = ai.defineFlow(
       throw new HttpsError('permission-denied', 'The media asset does not belong to this user.');
     }
 
+    await enforceFlowRateLimit(authUid, input.brandId);
+
     const imageUrl = await getAssetUrl(input.imageAssetId);
     const startedAt = Date.now();
 
@@ -93,7 +101,7 @@ export const generateVideoFlow = ai.defineFlow(
         const res = await fetch(`${NOVITA_BASE}/v3/async/img2video`, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${NOVITA_API_KEY}`,
+            Authorization: `Bearer ${novitaApiKey}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({

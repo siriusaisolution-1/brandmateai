@@ -1,17 +1,14 @@
-import * as admin from 'firebase-admin';
-import type { CollectionReference, Query } from 'firebase-admin/firestore';
-import { HttpsError } from 'firebase-functions/v1/https';
+import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
 import { z } from 'zod';
+export const adminStatsFlow = ai.defineFlow({
+  name: 'adminStatsFlow',
+  inputSchema: z.object({}),
+  outputSchema: z.object({ totalUsers: z.number(), totalBrands: z.number(), bmkSpentLast24h: z.number() })
+}, async (_input) => {
+  await ensureGoogleGenAiApiKeyReady();
 
-import { ai } from '../../genkit/ai';
-import { extractAuthUserId } from '../../utils/flow-context';
-
-const firestore = admin.firestore();
-
-const AdminStatsOutputSchema = z.object({
-  totalUsers: z.number().int().nonnegative(),
-  totalBrands: z.number().int().nonnegative(),
-  bmkSpentLast24h: z.number().nonnegative(),
+  // TODO: hook to Firestore metrics
+  return { totalUsers: 0, totalBrands: 0, bmkSpentLast24h: 0 };
 });
 
 async function getCollectionCount(

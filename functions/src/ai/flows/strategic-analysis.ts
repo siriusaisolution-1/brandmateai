@@ -1,4 +1,4 @@
-import { ai } from '../../genkit/ai';
+import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
 import { z } from 'zod';
 import type { Brand } from '../../types/firestore';
 
@@ -10,6 +10,8 @@ export const analyzeCompetitorsFlow = ai.defineFlow({
   }),
   outputSchema: z.object({ report: z.string() })
 }, async ({ brand, competitorUrls }) => {
+  await ensureGoogleGenAiApiKeyReady();
+
   const prompt = `Analyze competitors for brand ${brand.name}. Competitors: ${competitorUrls.join(', ')}`;
   const out = await ai.generate({ prompt });
   return { report: out.text ?? '' };
@@ -23,6 +25,8 @@ export const generateIdeasFromTrendFlow = ai.defineFlow({
   }),
   outputSchema: z.object({ ideas: z.array(z.string()) })
 }, async ({ brand, campaigns }) => {
+  await ensureGoogleGenAiApiKeyReady();
+
   const prompt = `Generate 5 campaign ideas for brand ${brand.name} based on current trends. Existing: ${campaigns.join(', ')}`;
   const out = await ai.generate({ prompt });
   const text = out.text ?? '';
