@@ -44,3 +44,9 @@ and supporting tooling. The repo uses pnpm workspaces to manage the monorepo
 
 Refer to [ENV.md](ENV.md) and [`docs/`](docs) for deeper environment and
 infrastructure documentation.
+
+## Deployments
+
+- **Vercel** – Trigger redeploys with the "Clear cache" option whenever route
+  groups (directories in `src/app/(...)`) change. This ensures the build picks
+  up the new layout without stale artifacts from previous deployments.

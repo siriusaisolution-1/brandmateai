@@ -11,7 +11,7 @@ importers:
       '@genkit-ai/core':
         specifier: 1.17.1
         version: 1.17.1(@google-cloud/firestore@7.11.3)(firebase-admin@12.2.0)(firebase@12.1.0)(genkit@1.17.1(@google-cloud/firestore@7.11.3)(firebase-admin@12.2.0)(firebase@12.1.0))
-      '@genkit-ai/googleai':
+      '@genkit-ai/google-genai':
         specifier: 1.17.1
         version: 1.17.1(genkit@1.17.1(@google-cloud/firestore@7.11.3)(firebase-admin@12.2.0)(firebase@12.1.0))
       '@radix-ui/react-avatar':
@@ -213,7 +213,7 @@ importers:
       '@genkit-ai/core':
         specifier: 1.17.1
         version: 1.17.1(@google-cloud/firestore@7.11.3)(firebase-admin@12.2.0)(firebase@12.1.0)(genkit@1.17.1(@google-cloud/firestore@7.11.3)(firebase-admin@12.2.0)(firebase@12.1.0))
-      '@genkit-ai/googleai':
+      '@genkit-ai/google-genai':
         specifier: 1.17.1
         version: 1.17.1(genkit@1.17.1(@google-cloud/firestore@7.11.3)(firebase-admin@12.2.0)(firebase@12.1.0))
       '@google-cloud/secret-manager':
@@ -930,8 +930,8 @@ packages:
     peerDependencies:
       genkit: ^1.18.0
 
-  '@genkit-ai/googleai@1.17.1':
-    resolution: {integrity: sha512-OQjPw5+z+OvknfWVDk8Mj7W7/zZJLPYyTPHjN9hiWnaVqFpcXF+QEY7fbfIW0kUS+4ealrAPlzM2/6XUSWw90w==}
+  '@genkit-ai/google-genai@1.17.1':
+    resolution: {integrity: sha512-ntDaRqnpuz5R4bH4Al1kMMzyS6X8eWwp7wYznggxDWJM3a8X/ml1kFxLuR3vaeRAuvwQhJPv3SPOzEp85jJsdg==}
     peerDependencies:
       genkit: ^1.17.1
 
@@ -1006,10 +1006,6 @@ packages:
   '@google-cloud/storage@7.17.0':
     resolution: {integrity: sha512-5m9GoZqKh52a1UqkxDBu/+WVFDALNtHg5up5gNmNbXQWBcV813tzJKsyDtKjOPrlR1em1TxtD7NSPCrObH7koQ==}
     engines: {node: '>=14'}
-
-  '@google/generative-ai@0.24.1':
-    resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
-    engines: {node: '>=18.0.0'}
 
   '@grpc/grpc-js@1.13.4':
     resolution: {integrity: sha512-GsFaMXCkMqkKIvwCQjCrwH+GHbPKBjhwo/8ZuUkWHqbI73Kky9I+pQltrlT0+MWpedCoosda53lgjYfyEPgxBg==}
@@ -7575,12 +7571,10 @@ snapshots:
       - supports-color
     optional: true
 
-  '@genkit-ai/googleai@1.17.1(genkit@1.17.1(@google-cloud/firestore@7.11.3)(firebase-admin@12.2.0)(firebase@12.1.0))':
+  '@genkit-ai/google-genai@1.17.1(genkit@1.17.1(@google-cloud/firestore@7.11.3)(firebase-admin@12.2.0)(firebase@12.1.0))':
     dependencies:
-      '@google/generative-ai': 0.24.1
       genkit: 1.17.1(@google-cloud/firestore@7.11.3)(firebase-admin@12.2.0)(firebase@12.1.0)
       google-auth-library: 9.15.1
-      node-fetch: 3.3.2
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -7735,8 +7729,6 @@ snapshots:
       - encoding
       - supports-color
     optional: true
-
-  '@google/generative-ai@0.24.1': {}
 
   '@grpc/grpc-js@1.13.4':
     dependencies:

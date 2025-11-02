@@ -9,14 +9,6 @@ const nextConfig: NextConfig = {
       allowedOrigins: ["*.googleusercontent.com", "*.cloudworkstations.dev"],
     },
   },
-  outputFileTracingExcludes: {
-    "*": [
-      "**/@google-cloud/*/protos/**",
-      "**/@google-cloud/*/**/test/**",
-      "**/grpc-tools/**",
-      "**/node-pre-gyp/**",
-    ],
-  },
   eslint: {
     ignoreDuringBuilds: true,
   },
