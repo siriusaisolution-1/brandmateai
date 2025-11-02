@@ -1,9 +1,5 @@
 {
-  "buildCommand": "pnpm build",
   "installCommand": "pnpm -r i --frozen-lockfile",
-  "outputDirectory": ".next",
-  "framework": "nextjs",
-  "functions": {
-    "maxDuration": 10
-  }
+  "buildCommand": "pnpm run clean && pnpm build",
+  "outputDirectory": ".next"
 }

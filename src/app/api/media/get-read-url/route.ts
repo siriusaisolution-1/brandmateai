@@ -1,4 +1,7 @@
 // src/app/api/media/get-read-url/route.ts
+export const runtime = 'nodejs';
+export const maxDuration = 10;
+
 import { NextRequest, NextResponse } from "next/server";
 import { getStorage } from "@/lib/firebase-admin";
 import { requireBearerAuth } from '@/lib/auth/verify-id-token';
@@ -10,6 +13,7 @@ function assertString(name: string, val: unknown): asserts val is string {
     throw new Error(`Invalid "${name}"`);
   }
 }
+
 
 export async function POST(req: NextRequest) {
   try {
