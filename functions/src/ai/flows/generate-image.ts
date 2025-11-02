@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { getNovitaApiKey } from '../../config';
 import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
 import { extractAuthUserId } from '../../utils/flow-context';
+import { enforceFlowRateLimit } from '../../utils/rate-limit';
 import { upsertNovitaTask } from '../../utils/novita-tasks';
 import { novitaAsyncTaskSchema } from './novita-schemas';
 
@@ -71,6 +72,8 @@ export const generateImageFlow = ai.defineFlow(
     if (ownerId && ownerId !== authUid) {
       throw new HttpsError('permission-denied', 'You do not have access to this brand.');
     }
+
+    await enforceFlowRateLimit(authUid, input.brandId);
 
     const startedAt = Date.now();
 

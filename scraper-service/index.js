@@ -4,6 +4,8 @@ const admin = require('firebase-admin');
 const dns = require('dns').promises;
 const net = require('net');
 
+const { createRateLimiter } = require('../utils/rateLimit');
+
 const { version } = require('./package.json');
 
 const serviceStartedAt = Date.now();
@@ -12,6 +14,26 @@ const serviceStartedAt = Date.now();
 admin.initializeApp();
 const db = admin.firestore();
 const cacheCollection = db.collection('scrapedCache');
+
+const FieldValue = admin.firestore.FieldValue;
+
+const apiKeyLimit = Number(process.env.SCRAPER_RATE_LIMIT_PER_MINUTE ?? '60');
+const apiKeyWindowSeconds = Number(process.env.SCRAPER_RATE_LIMIT_WINDOW_SECONDS ?? '60');
+
+const apiRateLimiter = createRateLimiter({
+  firestore: db,
+  FieldValue,
+  namespace: 'scraper:api',
+  limit: apiKeyLimit,
+  windowSeconds: apiKeyWindowSeconds,
+});
+
+const allowedApiKeys = new Set(
+  String(process.env.SCRAPER_SERVICE_API_KEYS || '')
+    .split(',')
+    .map(key => key.trim())
+    .filter(Boolean),
+);
 
 const app = express();
 app.use(express.json());
@@ -41,23 +63,40 @@ app.get('/health', (req, res) => {
 
 app.get('/healthz', (req, res) => res.status(200).send('ok'));
 
-const verifyToken = async (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).send('Unauthorized: No token provided');
+const requireApiKey = async (req, res, next) => {
+  if (allowedApiKeys.size === 0) {
+    console.error('Scraper service API keys not configured.');
+    return res.status(503).json({ error: 'Service not configured' });
   }
-  const idToken = authHeader.split('Bearer ')[1];
+
+  const apiKey = req.headers['x-api-key'] || req.headers['X-API-Key'] || req.query.apiKey;
+
+  if (!apiKey || typeof apiKey !== 'string') {
+    return res.status(401).json({ error: 'Missing API key' });
+  }
+
+  const normalizedKey = apiKey.trim();
+
+  if (!allowedApiKeys.has(normalizedKey)) {
+    return res.status(403).json({ error: 'Invalid API key' });
+  }
+
   try {
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    req.user = decodedToken;
-    next();
+    const rate = await apiRateLimiter.attempt(`key:${normalizedKey}`);
+    if (!rate.ok) {
+      res.set('Retry-After', String(rate.retryAfterSeconds));
+      return res.status(429).json({ error: 'Rate limit exceeded', retryAfter: rate.retryAfterSeconds });
+    }
   } catch (error) {
-    console.error('Token verification failed:', error);
-    res.status(403).send('Unauthorized: Invalid token');
+    console.error('Rate limiter failure', error);
+    return res.status(500).json({ error: 'Unable to verify rate limit' });
   }
+
+  req.apiKey = normalizedKey;
+  next();
 };
 
-app.post('/scrape', verifyToken, async (req, res) => {
+app.post('/scrape', requireApiKey, async (req, res) => {
   const { url } = req.body;
 
   if (!url) {

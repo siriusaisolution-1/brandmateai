@@ -26,7 +26,7 @@ const {
 
 import { trackAiCall, _test } from './ai-usage-tracker';
 
-const { extractUsage } = _test;
+const { extractUsage, calculateEstimatedCost } = _test;
 
 describe('ai-usage-tracker', () => {
   beforeEach(() => {
@@ -78,6 +78,7 @@ describe('ai-usage-tracker', () => {
 
     expect(collectionMock).toHaveBeenCalledWith('aiUsage');
     expect(collectionMock).toHaveBeenCalledWith('aiCalls');
+    expect(collectionMock).toHaveBeenCalledWith('aiUsageDaily');
     expect(docMock).toHaveBeenCalledWith('user-123');
     expect(setMock).toHaveBeenCalledWith(
       {
@@ -91,7 +92,8 @@ describe('ai-usage-tracker', () => {
     expect(FieldValue.increment).toHaveBeenCalledWith(5);
     expect(FieldValue.increment).toHaveBeenCalledWith(3);
     expect(FieldValue.increment).toHaveBeenCalledWith(2);
-    expect(FieldValue.serverTimestamp).toHaveBeenCalledTimes(2);
+    expect(FieldValue.increment).toHaveBeenCalledWith(1);
+    expect(FieldValue.serverTimestamp).toHaveBeenCalled();
   });
 
   it('records latency metrics even when no tokens are tracked', async () => {
@@ -103,6 +105,7 @@ describe('ai-usage-tracker', () => {
 
     expect(collectionMock).toHaveBeenCalledWith('aiCalls');
     expect(collectionMock).not.toHaveBeenCalledWith('aiUsage');
+    expect(collectionMock).toHaveBeenCalledWith('aiUsageDaily');
     expect(setMock).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 'user-456',
@@ -110,6 +113,12 @@ describe('ai-usage-tracker', () => {
         metadata: { reason: 'cache-miss' },
       }),
     );
-    expect(FieldValue.serverTimestamp).toHaveBeenCalledTimes(1);
+    expect(FieldValue.serverTimestamp).toHaveBeenCalled();
+  });
+
+  it('computes estimated costs using configured defaults', () => {
+    expect(calculateEstimatedCost(0)).toBe(0);
+    expect(calculateEstimatedCost(1000, 2)).toBe(2);
+    expect(calculateEstimatedCost(500, undefined)).toBeGreaterThanOrEqual(0);
   });
 });

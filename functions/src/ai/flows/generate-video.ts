@@ -8,6 +8,7 @@ import { extractAuthUserId } from '../../utils/flow-context';
 import { getAssetUrl } from '../../utils/firebase';
 import { upsertNovitaTask } from '../../utils/novita-tasks';
 import { novitaAsyncTaskSchema } from './novita-schemas';
+import { enforceFlowRateLimit } from '../../utils/rate-limit';
 
 const firestore = admin.firestore();
 const NOVITA_BASE = 'https://api.novita.ai';
@@ -86,6 +87,8 @@ export const generateVideoFlow = ai.defineFlow(
     if (assetData?.userId && assetData.userId !== authUid) {
       throw new HttpsError('permission-denied', 'The media asset does not belong to this user.');
     }
+
+    await enforceFlowRateLimit(authUid, input.brandId);
 
     const imageUrl = await getAssetUrl(input.imageAssetId);
     const startedAt = Date.now();

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
 import { extractAuthUserId } from '../../utils/flow-context';
 import { upsertNovitaTask } from '../../utils/novita-tasks';
+import { enforceFlowRateLimit } from '../../utils/rate-limit';
 
 const firestore = admin.firestore();
 const { FieldValue } = admin.firestore;
@@ -84,6 +85,8 @@ export const manageBrandFlow = ai.defineFlow(
       payload.status = 'active';
     }
 
+    await enforceFlowRateLimit(uid, input.brandId);
+
     await docRef.set(payload, { merge: true });
 
     return { brandId: docRef.id };
@@ -132,6 +135,8 @@ export const uploadMediaAssetFlow = ai.defineFlow(
     if (brandOwner && brandOwner !== uid) {
       throw new HttpsError('permission-denied', 'You do not have access to this brand.');
     }
+
+    await enforceFlowRateLimit(uid, input.brandId);
 
     const bucket = admin.storage().bucket();
     const file = bucket.file(input.storagePath);
