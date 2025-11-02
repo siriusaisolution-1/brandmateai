@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { ai } from '../../genkit/ai';
 import { extractAuthUserId } from '../../utils/flow-context';
 import { trackAiCall } from '../../utils/ai-usage-tracker';
+import { enforceFlowRateLimit } from '../../utils/rate-limit';
 
 export const generateNewsletterFlow = ai.defineFlow(
   {
@@ -25,6 +26,9 @@ export const generateNewsletterFlow = ai.defineFlow(
 
     const prompt = `Write a concise newsletter for audience: ${audience}. Cover key points: ${keyPoints.join(', ')}`;
     const startedAt = Date.now();
+
+    await enforceFlowRateLimit(uid, brandId);
+
     const out = await ai.generate({ prompt });
     const latencyMs = Date.now() - startedAt;
 
