@@ -10,7 +10,7 @@ env:
   NODE_VERSION: '20.x'
 
 jobs:
-  checks:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,28 +30,65 @@ jobs:
       - name: Install dependencies
         run: pnpm -r install --frozen-lockfile
 
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+      - name: Lint application
+        run: pnpm lint --max-warnings=0
 
-      - name: Ensure xvfb
-        run: sudo apt-get update && sudo apt-get install -y xvfb
+      - name: Lint Cloud Functions
+        run: pnpm --filter functions lint
+
+  typecheck:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.2.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm -r install --frozen-lockfile
+
+      - name: Typecheck application
+        run: pnpm typecheck
+
+      - name: Typecheck Cloud Functions
+        run: pnpm --filter functions typecheck
+
+  tests:
+    runs-on: ubuntu-latest
+    needs: typecheck
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.2.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm -r install --frozen-lockfile
 
       - name: Install Firebase CLI & emulators
         run: pnpm dlx firebase-tools@latest setup:emulators:firestore
 
-      - name: Run fast quality checks
-        if: ${{ github.event_name == 'pull_request' }}
-        run: pnpm run check:fast
-
-      - name: Run full quality checks
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-        env:
-          RUN_E2E: '1'
-          PLAYWRIGHT_BASE_URL: 'http://127.0.0.1:4300'
-          PORT: '4300'
-          NEXT_TELEMETRY_DISABLED: '1'
-          NODE_ENV: production
-        run: pnpm run check:all
+      - name: Run unit and integration tests
+        run: pnpm test --coverage
 
       - name: Upload coverage report
         if: always()
@@ -61,13 +98,99 @@ jobs:
           path: coverage
           if-no-files-found: ignore
 
+  e2e:
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - name: Skip E2E tests on non-main branches
+        if: ${{ github.event_name != 'push' || github.ref != 'refs/heads/main' }}
+        run: echo "E2E tests run only on main pushes."
+
+      - name: Checkout
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.2.1
+
+      - name: Setup Node.js
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: pnpm -r install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: pnpm exec playwright install --with-deps
+
+      - name: Ensure xvfb
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: sudo apt-get update && sudo apt-get install -y xvfb
+
+      - name: Install Firebase CLI & emulators
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        run: pnpm dlx firebase-tools@latest setup:emulators:firestore
+
+      - name: Build Next.js application
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: pnpm build
+
+      - name: Run Playwright tests
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          RUN_E2E: '1'
+          PLAYWRIGHT_BASE_URL: 'http://127.0.0.1:4300'
+          PORT: '4300'
+          NEXT_TELEMETRY_DISABLED: '1'
+          NODE_ENV: production
+        run: pnpm exec playwright test --reporter=line
+
       - name: Upload Playwright report
-        if: always()
+        if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: playwright-report
           if-no-files-found: ignore
+
+  build:
+    runs-on: ubuntu-latest
+    needs:
+      - tests
+      - e2e
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.2.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm -r install --frozen-lockfile
+
+      - name: Build Next.js application
+        run: pnpm build
+
+      - name: Build Cloud Functions
+        run: pnpm --filter functions build
 
       - name: Upload Next.js build artifacts
         uses: actions/upload-artifact@v4
@@ -81,12 +204,36 @@ jobs:
           name: functions-lib
           path: functions/lib
 
+  update-spec-status:
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.2.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm -r install --frozen-lockfile
+
       - name: Update SPEC_STATUS.md
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: pnpm node scripts/update_spec_status.mjs
 
       - name: Commit SPEC_STATUS.md update
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
           if git diff --quiet --exit-code SPEC_STATUS.md; then
             echo "No SPEC_STATUS.md changes to commit."
