@@ -1,7 +1,7 @@
 import { HttpsError } from 'firebase-functions/v1/https';
 import { z } from 'zod';
 
-import { ai } from '../../genkit/ai';
+import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
 import { extractAuthUserId } from '../../utils/flow-context';
 import { trackAiCall } from '../../utils/ai-usage-tracker';
 
@@ -16,6 +16,8 @@ export const generateNewsletterFlow = ai.defineFlow(
     outputSchema: z.object({ newsletterContent: z.string() }),
   },
   async ({ audience, keyPoints, brandId }) => {
+    await ensureGoogleGenAiApiKeyReady();
+
     const context = typeof ai.currentContext === 'function' ? ai.currentContext() : undefined;
     const uid = extractAuthUserId(context);
 

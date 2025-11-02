@@ -3,7 +3,7 @@ import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import { Encryption } from './utils/encryption';
-import { ENCRYPTION_KEY, HAS_VALID_ENCRYPTION_KEY } from './config';
+import { getEncryptionKey, hasValidEncryptionKey } from './config';
 import { instrumentBeforeSignIn, structuredLogger } from './utils/observability';
 
 type BeforeSignInContext = functions.auth.UserRecordMetadata & {
@@ -21,15 +21,26 @@ if (admin.apps.length === 0) {
 }
 const db = admin.firestore();
 
-if (!HAS_VALID_ENCRYPTION_KEY) {
-  structuredLogger.warn('Invalid or missing encryption key', {
-    traceId: null,
-    userId: null,
-    brandId: null,
-    flow: 'auth.storeUserCredential',
-    latencyMs: null,
-  });
-}
+let encryptionKeyPromise: Promise<string | undefined> | null = null;
+
+const getCachedEncryptionKey = (): Promise<string | undefined> => {
+  if (!encryptionKeyPromise) {
+    encryptionKeyPromise = getEncryptionKey();
+  }
+  return encryptionKeyPromise;
+};
+
+void hasValidEncryptionKey().then((isValid) => {
+  if (!isValid) {
+    structuredLogger.warn('Invalid or missing encryption key', {
+      traceId: null,
+      userId: null,
+      brandId: null,
+      flow: 'auth.storeUserCredential',
+      latencyMs: null,
+    });
+  }
+});
 
 /**
  * Trigger: pre svakog sign-ina.
@@ -40,7 +51,8 @@ const storeUserCredentialHandler = async (
   user: functions.auth.UserRecord,
   context: BeforeSignInContext,
 ) => {
-  if (!HAS_VALID_ENCRYPTION_KEY || !ENCRYPTION_KEY) {
+  const encryptionKey = await getCachedEncryptionKey();
+  if (!encryptionKey || encryptionKey.length !== 32) {
     structuredLogger.warn('Skipping credential storage due to invalid encryption key', {
       traceId: context.eventId ?? null,
       userId: user.uid,
@@ -64,7 +76,7 @@ const storeUserCredentialHandler = async (
     return;
   }
 
-  const encryptedAccessToken = Encryption.encrypt(accessToken, ENCRYPTION_KEY);
+  const encryptedAccessToken = Encryption.encrypt(accessToken, encryptionKey);
 
   const integrationData = {
     provider: providerId,

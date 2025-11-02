@@ -1,11 +1,25 @@
 import * as admin from 'firebase-admin';
 import { NovitaSDK } from 'novita-sdk';
 
-import { NOVITA_API_KEY } from '../config';
+import { getNovitaApiKey } from '../config';
 import { novitaAsyncTaskSchema, novitaProgressSchema, type NovitaAsyncTask } from '../ai/flows/novita-schemas';
 import { upsertNovitaTask } from './novita-tasks';
 
-const novitaSdk = new NovitaSDK(NOVITA_API_KEY);
+let novitaSdkPromise: Promise<NovitaSDK | null> | null = null;
+
+const getNovitaSdk = async (): Promise<NovitaSDK | null> => {
+  if (!novitaSdkPromise) {
+    novitaSdkPromise = (async () => {
+      try {
+        const apiKey = await getNovitaApiKey();
+        return new NovitaSDK(apiKey);
+      } catch (error) {
+        return null;
+      }
+    })();
+  }
+  return novitaSdkPromise;
+};
 const NOVITA_BASE = 'https://api.novita.ai';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -33,6 +47,7 @@ function mapTaskStatus(status: string | undefined): NovitaStatus {
 }
 
 async function fetchStatusViaSdk(taskId: string): Promise<NovitaAsyncTask | null> {
+  const novitaSdk = await getNovitaSdk();
   const progressFn = (novitaSdk as unknown as {
     progress?: (params: { task_id: string }) => Promise<unknown>;
   }).progress;
@@ -53,13 +68,16 @@ async function fetchStatusViaSdk(taskId: string): Promise<NovitaAsyncTask | null
 }
 
 async function fetchStatusViaRest(taskId: string): Promise<NovitaAsyncTask | null> {
-  if (!NOVITA_API_KEY) {
+  let apiKey: string;
+  try {
+    apiKey = await getNovitaApiKey();
+  } catch (error) {
     return null;
   }
 
   const res = await fetch(`${NOVITA_BASE}/v3/async/task-result?task_id=${encodeURIComponent(taskId)}`, {
     headers: {
-      Authorization: `Bearer ${NOVITA_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     },
   });
 
