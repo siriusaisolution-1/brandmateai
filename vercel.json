@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm build",
+  "buildCommand": "pnpm run clean && pnpm build",
   "installCommand": "pnpm -r i --frozen-lockfile",
   "outputDirectory": ".next",
   "framework": "nextjs",
