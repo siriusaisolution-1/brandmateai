@@ -19,6 +19,8 @@ const baseEnv: Record<string, string> = {
   FIREBASE_SERVICE_ACCOUNT_BASE64: Buffer.from(
     JSON.stringify(defaultServiceAccount),
   ).toString("base64"),
+  NOVITA_API_KEY: "test-novita",
+  GOOGLE_GENAI_API_KEY: "test-google-genai",
   SENTRY_DSN: "https://examplePublicKey@o0.ingest.sentry.io/0",
   NEXT_PUBLIC_SENTRY_DSN: "https://examplePublicKey@o0.ingest.sentry.io/0",
   SENTRY_ENVIRONMENT: "test",
@@ -48,6 +50,10 @@ function createFirebaseAdminMock() {
   const setMock = vi.fn();
   const docMock = vi.fn();
   const collectionMock = vi.fn();
+  const addMock = vi.fn();
+  const whereMock = vi.fn();
+  const countMock = vi.fn();
+  const collectionGetMock = vi.fn();
   const firestoreFn = vi.fn();
   const bucketMock = vi.fn();
   const fileMock = vi.fn();
@@ -71,7 +77,13 @@ function createFirebaseAdminMock() {
   };
 
   docMock.mockImplementation(() => ({ get: getMock, set: setMock }));
-  collectionMock.mockImplementation(() => ({ doc: docMock }));
+  collectionMock.mockImplementation(() => ({
+    doc: docMock,
+    add: addMock,
+    where: whereMock,
+    count: countMock,
+    get: collectionGetMock,
+  }));
   bucketMock.mockImplementation(() => ({ file: fileMock }));
   fileMock.mockImplementation(() => ({ getSignedUrl: getSignedUrlMock }));
 
@@ -107,7 +119,17 @@ function createFirebaseAdminMock() {
     docMock.mockReset();
     docMock.mockImplementation(() => ({ get: getMock, set: setMock }));
     collectionMock.mockReset();
-    collectionMock.mockImplementation(() => ({ doc: docMock }));
+    collectionMock.mockImplementation(() => ({
+      doc: docMock,
+      add: addMock,
+      where: whereMock,
+      count: countMock,
+      get: collectionGetMock,
+    }));
+    addMock.mockReset();
+    whereMock.mockReset();
+    countMock.mockReset();
+    collectionGetMock.mockReset();
     bucketMock.mockReset();
     bucketMock.mockImplementation(() => ({ file: fileMock }));
     fileMock.mockReset();
@@ -142,6 +164,9 @@ function createFirebaseAdminMock() {
       set: setMock,
       doc: docMock,
       collection: collectionMock,
+      add: addMock,
+      where: whereMock,
+      count: countMock,
       firestore: firestoreFn,
       FieldValue,
       bucket: bucketMock,
