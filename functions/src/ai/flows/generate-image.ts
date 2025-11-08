@@ -49,6 +49,7 @@ export const generateImageFlow = ai.defineFlow(
     try {
       novitaApiKey = await getNovitaApiKey();
     } catch (error) {
+      void error;
       throw new HttpsError('failed-precondition', 'NOVITA_API_KEY is not configured.');
     }
 

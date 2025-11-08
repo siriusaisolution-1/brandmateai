@@ -14,6 +14,7 @@ const getNovitaSdk = async (): Promise<NovitaSDK | null> => {
         const apiKey = await getNovitaApiKey();
         return new NovitaSDK(apiKey);
       } catch (error) {
+        void error;
         return null;
       }
     })();
@@ -72,6 +73,7 @@ async function fetchStatusViaRest(taskId: string): Promise<NovitaAsyncTask | nul
   try {
     apiKey = await getNovitaApiKey();
   } catch (error) {
+    void error;
     return null;
   }
 
