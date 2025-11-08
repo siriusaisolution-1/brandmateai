@@ -13,6 +13,7 @@ const getNovitaSdk = async (): Promise<NovitaSDK | null> => {
         const apiKey = await getNovitaApiKey();
         return new NovitaSDK(apiKey);
       } catch (error) {
+        void error;
         return null;
       }
     })();
