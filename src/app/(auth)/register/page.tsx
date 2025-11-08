@@ -18,6 +18,7 @@ import { httpsCallable } from 'firebase/functions'
 import { Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { SocialAuthButtons } from '@/components/auth/social-auth-buttons'
 
 // This now points to our refactored backend function
 const completeRegistration = httpsCallable(functions, 'completeRegistration');
@@ -107,7 +108,18 @@ export default function RegisterPage() {
             All users start on a free plan. You can upgrade anytime.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="grid gap-6">
+          <SocialAuthButtons disabled={isLoading} />
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center" aria-hidden>
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-surface px-2 text-xs uppercase tracking-wide text-muted-foreground">
+                Or create your account
+              </span>
+            </div>
+          </div>
           <form onSubmit={handleRegister} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="fullName">Full Name</Label>

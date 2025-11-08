@@ -7,7 +7,14 @@ import {
   FirestoreProvider,
 } from "reactfire";
 import { getApps, initializeApp, type FirebaseApp } from "firebase/app";
-import { getAuth, type Auth } from "firebase/auth";
+import {
+  FacebookAuthProvider,
+  GoogleAuthProvider,
+  getAuth,
+  signInWithPopup,
+  signOut,
+  type Auth,
+} from "firebase/auth";
 import {
   getFirestore,
   initializeFirestore,
@@ -30,6 +37,8 @@ let authInstance: Auth | null = null;
 let firestoreInstance: Firestore | null = null;
 let storageInstance: FirebaseStorage | null = null;
 let functionsInstance: Functions | null = null;
+let googleProvider: GoogleAuthProvider | null = null;
+let facebookProvider: FacebookAuthProvider | null = null;
 
 const shouldForceLongPolling =
   typeof window !== "undefined" && process.env.NEXT_PUBLIC_USE_LONG_POLLING === "1";
@@ -69,6 +78,26 @@ export function getFirebaseAuth(): Auth {
   return authInstance;
 }
 
+function getGoogleAuthProvider(): GoogleAuthProvider {
+  if (googleProvider) {
+    return googleProvider;
+  }
+
+  googleProvider = new GoogleAuthProvider();
+  googleProvider.setCustomParameters({ prompt: "select_account" });
+  return googleProvider;
+}
+
+function getFacebookAuthProvider(): FacebookAuthProvider {
+  if (facebookProvider) {
+    return facebookProvider;
+  }
+
+  facebookProvider = new FacebookAuthProvider();
+  facebookProvider.addScope("email");
+  return facebookProvider;
+}
+
 export function getFirebaseFirestore(): Firestore {
   return ensureFirestore(getFirebaseApp());
 }
@@ -89,6 +118,18 @@ export function getFirebaseFunctions(): Functions {
 
   functionsInstance = getFunctions(getFirebaseApp());
   return functionsInstance;
+}
+
+export function signInWithGoogle() {
+  return signInWithPopup(getFirebaseAuth(), getGoogleAuthProvider());
+}
+
+export function signInWithFacebook() {
+  return signInWithPopup(getFirebaseAuth(), getFacebookAuthProvider());
+}
+
+export function signOutApp() {
+  return signOut(getFirebaseAuth());
 }
 
 export const app = getFirebaseApp();
