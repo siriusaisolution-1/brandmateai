@@ -2,6 +2,8 @@ import { defineConfig } from '@playwright/test';
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:4300';
 const seededBrandId = process.env.BRANDMATE_E2E_BRAND_ID ?? 'brand-e2e';
+const e2eUserToken = process.env.BRANDMATE_E2E_SESSION_TOKEN ?? 'stub-session-token';
+const e2eAdminToken = process.env.BRANDMATE_E2E_ADMIN_TOKEN ?? 'stub-admin-session-token';
 
 const args = process.argv.slice(2);
 const includeStagingViaCli = args.some((arg, index) => {
@@ -28,6 +30,8 @@ process.env.BRANDMATE_E2E_MEDIA_ID ??= `${seededBrandId}-seeded-media`;
 process.env.BRANDMATE_E2E_MEDIA_FILENAME ??= 'seeded-media.png';
 process.env.BRANDMATE_E2E_MEDIA_URL ??=
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAE0lEQVR42mP8/5+hHgAHggJ/P8hX4AAAAABJRU5ErkJggg==';
+process.env.BRANDMATE_E2E_SESSION_TOKEN = e2eUserToken;
+process.env.BRANDMATE_E2E_ADMIN_TOKEN = e2eAdminToken;
 
 export default defineConfig({
   globalSetup: './e2e/global.setup.ts',
@@ -53,6 +57,9 @@ export default defineConfig({
       NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: '1234567890',
       NEXT_PUBLIC_FIREBASE_APP_ID: '1:1234567890:web:abcdef',
       NEXT_PUBLIC_FEATURE_WATCHTOWERS: '0',
+      BRANDMATE_E2E_SESSION_TOKEN: e2eUserToken,
+      BRANDMATE_E2E_ADMIN_TOKEN: e2eAdminToken,
+      FIREBASE_AUTH_COOKIE_NAMES: '__session,firebase-auth',
     },
   },
 });

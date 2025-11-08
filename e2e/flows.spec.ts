@@ -4,6 +4,7 @@ import { test, expect } from '@playwright/test';
 
 const TEST_BRAND_ID = process.env.BRANDMATE_E2E_BRAND_ID ?? null;
 const FALLBACK_BRAND_ID = process.env.BRANDMATE_E2E_BRAND_ID ?? 'brand-e2e';
+const SESSION_TOKEN = process.env.BRANDMATE_E2E_SESSION_TOKEN ?? 'stub-session-token';
 
 const SEEDED_MEDIA = {
   id:
@@ -24,12 +25,19 @@ test.describe('End-to-end customer journeys', () => {
         domain: '127.0.0.1',
         path: '/',
       },
+      {
+        name: '__session',
+        value: SESSION_TOKEN,
+        domain: '127.0.0.1',
+        path: '/',
+      },
     ]);
 
     await page.addInitScript(
       (
         brandId: string,
-        seededMedia: { id: string; fileName: string; url: string } | null
+        seededMedia: { id: string; fileName: string; url: string } | null,
+        sessionToken: string
       ) => {
         const initialMedia =
           seededMedia?.url && seededMedia.id
@@ -66,7 +74,7 @@ test.describe('End-to-end customer journeys', () => {
           currentUser: {
             uid: 'e2e-user',
             email: 'e2e@example.com',
-            getIdToken: async () => 'stub-token',
+            getIdToken: async () => sessionToken,
           },
           performBrandAudit: async ({ url }) => ({
             report: `Audit summary for ${url}`,
@@ -132,7 +140,8 @@ test.describe('End-to-end customer journeys', () => {
         };
       },
       TEST_BRAND_ID ?? FALLBACK_BRAND_ID,
-      SEEDED_MEDIA
+      SEEDED_MEDIA,
+      SESSION_TOKEN
     );
     console.log('E2E: registered init script brand id', TEST_BRAND_ID ?? FALLBACK_BRAND_ID);
   });
