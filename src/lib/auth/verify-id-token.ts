@@ -6,6 +6,8 @@ import { getAuth } from '@/lib/firebase-admin';
 
 const BEARER_PREFIX = 'Bearer ';
 const DEFAULT_COOKIE_NAMES = ['__session'];
+const E2E_SESSION_TOKEN = process.env.BRANDMATE_E2E_SESSION_TOKEN ?? null;
+const E2E_ADMIN_TOKEN = process.env.BRANDMATE_E2E_ADMIN_TOKEN ?? null;
 
 export class FirebaseAuthError extends Error {
   status: number;
@@ -39,6 +41,45 @@ function configuredCookieNames(): string[] {
 
 type HeaderSource = { get(name: string): string | null };
 
+function createStubClaims(admin: boolean): DecodedIdToken {
+  const now = Math.floor(Date.now() / 1000);
+  const uid = admin ? 'e2e-admin' : 'e2e-user';
+
+  return {
+    aud: 'brandmate-e2e',
+    iss: 'https://securetoken.google.com/brandmate-e2e',
+    auth_time: now,
+    exp: now + 3_600,
+    iat: now,
+    uid,
+    user_id: uid,
+    sub: uid,
+    email: `${uid}@example.com`,
+    email_verified: true,
+    firebase: {
+      identities: {},
+      sign_in_provider: 'custom',
+    },
+    admin,
+  } as DecodedIdToken & { admin: boolean };
+}
+
+function resolveE2EStubClaims(token: string | null): DecodedIdToken | null {
+  if (!token) {
+    return null;
+  }
+
+  if (E2E_ADMIN_TOKEN && token === E2E_ADMIN_TOKEN) {
+    return createStubClaims(true);
+  }
+
+  if (E2E_SESSION_TOKEN && token === E2E_SESSION_TOKEN) {
+    return createStubClaims(false);
+  }
+
+  return null;
+}
+
 export function extractBearerToken(source: HeaderSource): string | null {
   const header = source.get('authorization') ?? source.get('Authorization');
   if (!header?.startsWith(BEARER_PREFIX)) {
@@ -52,6 +93,11 @@ export async function verifyIdToken(token: string): Promise<DecodedIdToken> {
   const normalised = normaliseToken(token);
   if (!normalised) {
     throw new FirebaseAuthError('Missing bearer token', 401);
+  }
+
+  const stubClaims = resolveE2EStubClaims(normalised);
+  if (stubClaims) {
+    return stubClaims;
   }
 
   try {
@@ -74,6 +120,11 @@ export async function requireBearerAuth(request: NextRequest | Request): Promise
 async function tryVerifyToken(token: string | null): Promise<VerifiedFirebaseSession | null> {
   if (!token) {
     return null;
+  }
+
+  const stubClaims = resolveE2EStubClaims(token);
+  if (stubClaims) {
+    return { token, claims: stubClaims };
   }
 
   const claims = await verifyIdToken(token);
