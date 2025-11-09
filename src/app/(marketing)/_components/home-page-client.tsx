@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Bot, Calendar, BarChart } from "lucide-react";
 
 import { MarketingHeader } from "@/components/marketing-header";
-import { MarketingFooter } from "@/components/marketing-footer";
 import { SocialProofBar } from "@/components/social-proof-bar";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -35,6 +34,9 @@ export function HomePageClient() {
                 <Link href="/pricing">See pricing</Link>
               </Button>
             </div>
+            <div className="text-sm text-muted-foreground">
+              Get started free. No credit card required.
+            </div>
           </div>
         </section>
 
@@ -53,21 +55,27 @@ export function HomePageClient() {
               <CardHeader>
                 <Bot className="w-8 h-8 text-primary mb-2" />
                 <CardTitle>AI Content Engine</CardTitle>
-                <CardDescription>Generate SEO-optimized blogs, stunning visuals, and engaging social posts in seconds.</CardDescription>
+                <CardDescription>
+                  Generate SEO-optimized blogs, stunning visuals, and engaging social posts in seconds.
+                </CardDescription>
               </CardHeader>
             </Card>
             <Card className="bg-muted/20 border-none">
               <CardHeader>
                 <Calendar className="w-8 h-8 text-primary mb-2" />
                 <CardTitle>Intelligent Automation</CardTitle>
-                <CardDescription>Plan your content with a drag-and-drop calendar and let the AI auto-post for you.</CardDescription>
+                <CardDescription>
+                  Plan your content with a drag-and-drop calendar and let the AI auto-post for you.
+                </CardDescription>
               </CardHeader>
             </Card>
             <Card className="bg-muted/20 border-none">
               <CardHeader>
                 <BarChart className="w-8 h-8 text-primary mb-2" />
                 <CardTitle>Strategic Insights</CardTitle>
-                <CardDescription>Monitor competitors, track trends, and get AI-powered insights to improve your performance.</CardDescription>
+                <CardDescription>
+                  Monitor competitors, track trends, and get AI-powered insights to improve your performance.
+                </CardDescription>
               </CardHeader>
             </Card>
           </div>
@@ -86,8 +94,6 @@ export function HomePageClient() {
           </div>
         </section>
       </main>
-
-      <MarketingFooter />
     </>
   );
 }
