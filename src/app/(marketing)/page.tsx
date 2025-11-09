@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import "./_noop-client";
 import { redirect } from "next/navigation";
 
@@ -57,6 +58,12 @@ function FinalCTA() {
     </section>
   );
 }
+
+export const metadata: Metadata = {
+  title: "BrandMate AI | AI marketing co-pilot",
+  description:
+    "Log in for free to BrandMate AI, create and schedule campaigns with AI, and pay only when you need more credits.",
+};
 
 export default async function HomePage() {
   try {

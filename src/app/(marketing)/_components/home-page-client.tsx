@@ -24,17 +24,19 @@ export function HomePageClient() {
               Your AI Marketing <br /> Co-pilot
             </h1>
             <p className="max-w-xl mx-auto text-lg text-muted-foreground">
-              BrandMate AI helps you create, schedule, and analyze your marketing campaigns with the power of generative AI.
+              Create, schedule & analyze with AI — start free, pay only when you need more credits.
             </p>
             <div className="flex justify-center gap-4">
               <Button asChild size="lg">
-                <Link href="/register">Get Started for Free</Link>
+                <Link href="/login">Log in for free</Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link href="#features">Explore Features</Link>
+                <Link href="/pricing">See pricing</Link>
               </Button>
             </div>
-            <div className="text-sm text-muted-foreground">Get started free. No credit card required.</div>
+            <div className="text-sm text-muted-foreground">
+              Get started free. No credit card required.
+            </div>
           </div>
         </section>
 
@@ -53,26 +55,44 @@ export function HomePageClient() {
               <CardHeader>
                 <Bot className="w-8 h-8 text-primary mb-2" />
                 <CardTitle>AI Content Engine</CardTitle>
-                <CardDescription>Generate SEO-optimized blogs, stunning visuals, and engaging social posts in seconds.</CardDescription>
+                <CardDescription>
+                  Generate SEO-optimized blogs, stunning visuals, and engaging social posts in seconds.
+                </CardDescription>
               </CardHeader>
             </Card>
             <Card className="bg-muted/20 border-none">
               <CardHeader>
                 <Calendar className="w-8 h-8 text-primary mb-2" />
                 <CardTitle>Intelligent Automation</CardTitle>
-                <CardDescription>Plan your content with a drag-and-drop calendar and let the AI auto-post for you.</CardDescription>
+                <CardDescription>
+                  Plan your content with a drag-and-drop calendar and let the AI auto-post for you.
+                </CardDescription>
               </CardHeader>
             </Card>
             <Card className="bg-muted/20 border-none">
               <CardHeader>
                 <BarChart className="w-8 h-8 text-primary mb-2" />
                 <CardTitle>Strategic Insights</CardTitle>
-                <CardDescription>Monitor competitors, track trends, and get AI-powered insights to improve your performance.</CardDescription>
+                <CardDescription>
+                  Monitor competitors, track trends, and get AI-powered insights to improve your performance.
+                </CardDescription>
               </CardHeader>
             </Card>
           </div>
         </section>
 
+        {/* Final CTA Section */}
+        <section className="container text-center py-16 md:py-24">
+          <h2 className="text-3xl md:text-4xl font-bold">Ready to Supercharge Your Marketing?</h2>
+          <p className="mt-4 max-w-lg mx-auto text-muted-foreground">
+            Log in for free, explore every tool, and scale up only when you need more credits.
+          </p>
+          <div className="mt-8">
+            <Button asChild size="lg">
+              <Link href="/login">Log in for free</Link>
+            </Button>
+          </div>
+        </section>
       </main>
     </>
   );

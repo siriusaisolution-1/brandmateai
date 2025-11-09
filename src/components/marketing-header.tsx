@@ -15,7 +15,7 @@ export function MarketingHeader() {
           </Link>
           <nav className="flex items-center gap-6 text-sm">
             <Link
-              href="#features"
+              href="/features"
               className="text-muted-foreground transition-colors hover:text-foreground/80"
             >
               Features
@@ -35,7 +35,7 @@ export function MarketingHeader() {
               <Link href="/login">Log In</Link>
             </Button>
             <Button asChild>
-              <Link href="/register">Start Free Trial</Link>
+              <Link href="/login">Log in for free</Link>
             </Button>
           </nav>
         </div>
