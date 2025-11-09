@@ -25,17 +25,16 @@ export function HomePageClient() {
               Your AI Marketing <br /> Co-pilot
             </h1>
             <p className="max-w-xl mx-auto text-lg text-muted-foreground">
-              BrandMate AI helps you create, schedule, and analyze your marketing campaigns with the power of generative AI.
+              Create, schedule & analyze with AI — start free, pay only when you need more credits.
             </p>
             <div className="flex justify-center gap-4">
               <Button asChild size="lg">
-                <Link href="/register">Get Started for Free</Link>
+                <Link href="/login">Log in for free</Link>
               </Button>
               <Button asChild size="lg" variant="outline">
-                <Link href="#features">Explore Features</Link>
+                <Link href="/pricing">See pricing</Link>
               </Button>
             </div>
-            <div className="text-sm text-muted-foreground">14-day free trial. No credit card required.</div>
           </div>
         </section>
 
@@ -78,11 +77,11 @@ export function HomePageClient() {
         <section className="container text-center py-16 md:py-24">
           <h2 className="text-3xl md:text-4xl font-bold">Ready to Supercharge Your Marketing?</h2>
           <p className="mt-4 max-w-lg mx-auto text-muted-foreground">
-            Start your free trial today and see how BrandMate AI can transform your workflow.
+            Log in for free, explore every tool, and scale up only when you need more credits.
           </p>
           <div className="mt-8">
             <Button asChild size="lg">
-              <Link href="/register">Sign Up Now</Link>
+              <Link href="/login">Log in for free</Link>
             </Button>
           </div>
         </section>
