@@ -2,9 +2,11 @@ import PricingPage from "@/components/pricing/pricing-page";
 
 export const metadata = {
   title: "Pricing — BrandMate AI",
-  description: "Transparent, pay-as-you-go credits. Start free, top up when you need more.",
+  description:
+    "Credits-based pricing for AI text, image, and video. Start free, pay only when you need more BMK.",
+  alternates: { canonical: "/pricing" },
 };
 
 export default function MarketingPricingRoute() {
-  return <PricingPage />;
+  return <PricingPage />; // marketing varijanta se rešava kroz layout/header
 }
