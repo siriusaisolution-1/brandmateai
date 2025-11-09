@@ -1,8 +1,8 @@
-import './_noop-client';
+'use client';
 
-// src/app/(app)/pricing/page.tsx
 import Link from "next/link";
 import { Check, Crown, Rocket, Building2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import {
   Card,
