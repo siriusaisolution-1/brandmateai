@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Bot, Calendar, BarChart } from "lucide-react";
 
 import { MarketingHeader } from "@/components/marketing-header";
-import { SocialProofBar } from "@/components/social-proof-bar";
+import { ProofSection } from "@/components/proof-section";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
@@ -40,7 +40,7 @@ export function HomePageClient() {
           </div>
         </section>
 
-        <SocialProofBar />
+        <ProofSection />
 
         {/* Feature Showcase Section */}
         <section id="features" className="container py-16 md:py-24 space-y-16">
