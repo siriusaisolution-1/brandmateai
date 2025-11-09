@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Bot, Calendar, BarChart } from "lucide-react";
 
 import { MarketingHeader } from "@/components/marketing-header";
-import { MarketingFooter } from "@/components/marketing-footer";
 import { SocialProofBar } from "@/components/social-proof-bar";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -35,7 +34,7 @@ export function HomePageClient() {
                 <Link href="#features">Explore Features</Link>
               </Button>
             </div>
-            <div className="text-sm text-muted-foreground">14-day free trial. No credit card required.</div>
+            <div className="text-sm text-muted-foreground">Get started free. No credit card required.</div>
           </div>
         </section>
 
@@ -74,21 +73,7 @@ export function HomePageClient() {
           </div>
         </section>
 
-        {/* Final CTA Section */}
-        <section className="container text-center py-16 md:py-24">
-          <h2 className="text-3xl md:text-4xl font-bold">Ready to Supercharge Your Marketing?</h2>
-          <p className="mt-4 max-w-lg mx-auto text-muted-foreground">
-            Start your free trial today and see how BrandMate AI can transform your workflow.
-          </p>
-          <div className="mt-8">
-            <Button asChild size="lg">
-              <Link href="/register">Sign Up Now</Link>
-            </Button>
-          </div>
-        </section>
       </main>
-
-      <MarketingFooter />
     </>
   );
 }
