@@ -79,12 +79,7 @@ const PLANS: Plan[] = [
     tagline: "Security, SLA and bespoke integrations.",
     bestFor: "Enterprises and large organizations",
     outputs: ["Tailored BMK allowances", "Dedicated AI pipelines", "Private content deployments"],
-    features: [
-      "Custom BMK quotas",
-      "Dedicated Customer Success",
-      "Advanced security & SSO",
-      "Priority SLA, private models",
-    ],
+    features: ["Custom BMK quotas", "Dedicated Customer Success", "Advanced security & SSO", "Priority SLA, private models"],
     ctaLabel: "Contact Sales",
     ctaHref: ENTERPRISE_CONTACT_URL,
   },
@@ -129,13 +124,13 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
           {PLANS.map((plan) => (
             <Card
               key={plan.id}
-              className={`relative flex flex-col overflow-hidden ${
-                plan.highlight ? "border-primary ring-2 ring-primary/40" : ""
+              className={`relative flex flex-col ${
+                plan.highlight ? "border-primary ring-2 ring-primary/40 overflow-visible" : "overflow-hidden"
               }`}
             >
               {plan.highlight && (
                 <span
-                  className="absolute -top-3 right-3 rounded-full bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground shadow"
+                  className="absolute -top-2 right-3 z-10 rounded-full bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground shadow"
                   data-testid="plan-pro-badge"
                 >
                   Most popular
@@ -189,11 +184,7 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
               </CardContent>
 
               <CardFooter>
-                <Button
-                  asChild
-                  className="w-full"
-                  variant={plan.id === "enterprise" ? "secondary" : "default"}
-                >
+                <Button asChild className="w-full" variant={plan.id === "enterprise" ? "secondary" : "default"}>
                   <Link href={plan.ctaHref}>{plan.ctaLabel}</Link>
                 </Button>
               </CardFooter>

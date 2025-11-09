@@ -8,5 +8,5 @@ export const metadata = {
 };
 
 export default function MarketingPricingRoute() {
-  return <PricingPage />; // marketing varijanta se rešava kroz layout/header
+  return <PricingPage />;
 }
