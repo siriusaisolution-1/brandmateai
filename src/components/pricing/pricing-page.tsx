@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { Check, Crown, Rocket, Building2 } from "lucide-react";
-
-import { MarketingHeader } from "@/components/marketing-header";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -85,10 +83,6 @@ const PLANS: Plan[] = [
   },
 ];
 
-interface PricingPageProps {
-  variant?: "marketing" | "app";
-}
-
 function PlanIcon({ id }: { id: PlanId }) {
   switch (id) {
     case "solo":
@@ -102,11 +96,9 @@ function PlanIcon({ id }: { id: PlanId }) {
   }
 }
 
-export default function PricingPage({ variant = "marketing" }: PricingPageProps) {
+export default function PricingPage() {
   return (
     <div className="bg-background">
-      {variant === "marketing" && <MarketingHeader current="pricing" />}
-
       <main className="container mx-auto px-4 py-12">
         {/* Hero */}
         <div className="mx-auto mb-12 max-w-3xl text-center">
@@ -184,7 +176,11 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
               </CardContent>
 
               <CardFooter>
-                <Button asChild className="w-full" variant={plan.id === "enterprise" ? "secondary" : "default"}>
+                <Button
+                  asChild
+                  className="w-full"
+                  variant={plan.id === "enterprise" ? "secondary" : "default"}
+                >
                   <Link href={plan.ctaHref}>{plan.ctaLabel}</Link>
                 </Button>
               </CardFooter>
@@ -230,8 +226,7 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
             <div>
               <p className="font-medium text-foreground">How do BMK credits work?</p>
               <p className="mt-1">
-                BMK are credits used for AI generation (text, images, video). Each operation consumes a predefined number of
-                credits.
+                BMK are credits used for AI generation (text, images, video). Each operation consumes a predefined number of credits.
               </p>
             </div>
             <div>
