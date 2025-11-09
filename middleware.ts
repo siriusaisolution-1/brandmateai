@@ -1,14 +1,32 @@
-import { NextResponse } from 'next/server'
-import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export function middleware(_request: NextRequest) {
-  return NextResponse.next()
+export const PUBLIC_PATHS = [
+  /^\/$/,
+  /^\/features(\/|$)/,
+  /^\/login(\/|$)/,
+  /^\/register(\/|$)/,
+  /^\/pricing(\/|$)/,
+  /^\/health$/,
+  /^\/api\/diag$/,
+] as const;
+
+export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  const isPublicPath = PUBLIC_PATHS.some((regex) => regex.test(pathname));
+
+  if (!isPublicPath) {
+    // Protected route handling would go here once auth gating is enabled.
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
   matcher: [
     '/',
     '/pricing',
+    '/app/pricing',
     '/dashboard/:path*',
     '/brands/:path*',
     '/media-library/:path*',
@@ -19,4 +37,4 @@ export const config = {
     '/reports/:path*',
     '/admin/:path*',
   ],
-}
+};
