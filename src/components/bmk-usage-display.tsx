@@ -48,7 +48,7 @@ function UsageContent({ userId }: { userId: string }) {
       <div className="h-1.5 w-full rounded-full bg-gray-600">
         <div className="h-1.5 rounded-full bg-primary" style={{ width: `${pct}%` }} />
       </div>
-      <Link href="/pricing" className="mt-2 block text-center text-xs text-indigo-400 hover:underline">
+      <Link href="/app/pricing" className="mt-2 block text-center text-xs text-indigo-400 hover:underline">
         Upgrade Plan or Top-up
       </Link>
     </div>

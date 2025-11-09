@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { NextRequest } from 'next/server';
 
-import { config, middleware } from './middleware';
+import { config, middleware, PUBLIC_PATHS } from './middleware';
 
 function createRequest(pathname: string, cookieNames: string[] = []) {
   const headers = new Headers();
@@ -28,13 +28,34 @@ describe('middleware routing', () => {
 
     expect(response.headers.get('location')).toBeNull();
   });
+
+  it('does not redirect app pricing route', () => {
+    const request = createRequest('/app/pricing', ['firebase-auth']);
+
+    const response = middleware(request);
+
+    expect(response.headers.get('location')).toBeNull();
+  });
 });
 
-describe('middleware matcher', () => {
+describe('middleware configuration', () => {
+  it('defines public paths including marketing pricing', () => {
+    expect(PUBLIC_PATHS).toEqual([
+      /^\/$/,
+      /^\/features(\/|$)/,
+      /^\/login(\/|$)/,
+      /^\/register(\/|$)/,
+      /^\/pricing(\/|$)/,
+      /^\/health$/,
+      /^\/api\/diag$/,
+    ]);
+  });
+
   it('covers marketing and app routes', () => {
     expect(config.matcher).toEqual([
       '/',
       '/pricing',
+      '/app/pricing',
       '/dashboard/:path*',
       '/brands/:path*',
       '/media-library/:path*',
