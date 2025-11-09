@@ -2,8 +2,6 @@
 
 import Link from "next/link";
 import { Check, Crown, Rocket, Building2 } from "lucide-react";
-
-import { MarketingHeader } from "@/components/marketing-header";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -41,16 +39,8 @@ const PLANS: Plan[] = [
     bmk: 1000,
     tagline: "Everything you need to get started.",
     bestFor: "Solo creators and small projects",
-    outputs: [
-      "≈ 15–20 videos / mo",
-      "100+ photos & edits",
-      "~25 SEO blog posts",
-    ],
-    features: [
-      "Access to all AI tools",
-      "1 brand LoRA training",
-      "Basic analytics and reporting",
-    ],
+    outputs: ["≈ 15–20 videos / mo", "100+ photos & edits", "~25 SEO blog posts"],
+    features: ["Access to all AI tools", "1 brand LoRA training", "Basic analytics and reporting"],
     ctaLabel: "Get Started",
     ctaHref: "/register?plan=solo",
   },
@@ -61,16 +51,8 @@ const PLANS: Plan[] = [
     bmk: 3000,
     tagline: "The best balance of power and value.",
     bestFor: "Growing teams and SMB",
-    outputs: [
-      "≈ 45–60 videos / mo",
-      "300+ photos & edits",
-      "~75 SEO blog posts",
-    ],
-    features: [
-      "Includes 2 brand LoRA trainings",
-      "Team workspaces & approvals",
-      "Priority rendering",
-    ],
+    outputs: ["≈ 45–60 videos / mo", "300+ photos & edits", "~75 SEO blog posts"],
+    features: ["Includes 2 brand LoRA trainings", "Team workspaces & approvals", "Priority rendering"],
     ctaLabel: "Choose Pro",
     ctaHref: "/register?plan=pro",
     highlight: true,
@@ -82,16 +64,8 @@ const PLANS: Plan[] = [
     bmk: 9000,
     tagline: "Scale without limits.",
     bestFor: "Agencies and larger teams",
-    outputs: [
-      "≈ 150–200 videos / mo",
-      "900+ photos & edits",
-      "Unlimited text content",
-    ],
-    features: [
-      "Includes 10 brand LoRA trainings",
-      "Multi-brand asset management",
-      "Advanced analytics & API access",
-    ],
+    outputs: ["≈ 150–200 videos / mo", "900+ photos & edits", "Unlimited text content"],
+    features: ["Includes 10 brand LoRA trainings", "Multi-brand asset management", "Advanced analytics & API access"],
     ctaLabel: "Go Agency",
     ctaHref: "/register?plan=agency",
   },
@@ -102,25 +76,12 @@ const PLANS: Plan[] = [
     bmk: "Custom",
     tagline: "Security, SLA and bespoke integrations.",
     bestFor: "Enterprises and large organizations",
-    outputs: [
-      "Tailored BMK allowances",
-      "Dedicated AI pipelines",
-      "Private content deployments",
-    ],
-    features: [
-      "Custom BMK quotas",
-      "Dedicated Customer Success",
-      "Advanced security & SSO",
-      "Priority SLA, private models",
-    ],
+    outputs: ["Tailored BMK allowances", "Dedicated AI pipelines", "Private content deployments"],
+    features: ["Custom BMK quotas", "Dedicated Customer Success", "Advanced security & SSO", "Priority SLA, private models"],
     ctaLabel: "Contact Sales",
     ctaHref: ENTERPRISE_CONTACT_URL,
   },
 ];
-
-interface PricingPageProps {
-  variant?: "marketing" | "app";
-}
 
 function PlanIcon({ id }: { id: PlanId }) {
   switch (id) {
@@ -135,11 +96,9 @@ function PlanIcon({ id }: { id: PlanId }) {
   }
 }
 
-export default function PricingPage({ variant = "marketing" }: PricingPageProps) {
+export default function PricingPage() {
   return (
     <div className="bg-background">
-      {variant === "marketing" && <MarketingHeader current="pricing" />}
-
       <main className="container mx-auto px-4 py-12">
         {/* Hero */}
         <div className="mx-auto mb-12 max-w-3xl text-center">
@@ -153,17 +112,12 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
         </div>
 
         {/* Plans */}
-        <div
-          className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-4"
-          data-testid="plans-grid"
-        >
+        <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-4" data-testid="plans-grid">
           {PLANS.map((plan) => (
             <Card
               key={plan.id}
               className={`relative flex flex-col ${
-                plan.highlight
-                  ? "border-primary ring-2 ring-primary/40 overflow-visible"
-                  : "overflow-hidden"
+                plan.highlight ? "border-primary ring-2 ring-primary/40 overflow-visible" : "overflow-hidden"
               }`}
             >
               {plan.highlight && (
@@ -188,15 +142,11 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
                   <div className="text-4xl font-bold leading-none">
                     {plan.priceUsd !== null ? `$${plan.priceUsd}` : "Custom"}
                     {plan.priceUsd !== null && (
-                      <span className="ml-1 text-sm font-normal text-muted-foreground">
-                        /month
-                      </span>
+                      <span className="ml-1 text-sm font-normal text-muted-foreground">/month</span>
                     )}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {typeof plan.bmk === "number"
-                      ? `${plan.bmk.toLocaleString()} BMK`
-                      : "Custom BMK"}
+                    {typeof plan.bmk === "number" ? `${plan.bmk.toLocaleString()} BMK` : "Custom BMK"}
                   </div>
                   <div className="text-xs text-muted-foreground">Best for: {plan.bestFor}</div>
                 </div>
@@ -226,7 +176,11 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
               </CardContent>
 
               <CardFooter>
-                <Button asChild className="w-full" variant={plan.id === "enterprise" ? "secondary" : "default"}>
+                <Button
+                  asChild
+                  className="w-full"
+                  variant={plan.id === "enterprise" ? "secondary" : "default"}
+                >
                   <Link href={plan.ctaHref}>{plan.ctaLabel}</Link>
                 </Button>
               </CardFooter>
@@ -235,11 +189,7 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
         </div>
 
         {/* Included belt */}
-        <section
-          id="included"
-          data-testid="included-belt"
-          className="mt-16 rounded-xl border border-border/60 bg-muted/30 p-6"
-        >
+        <section id="included" data-testid="included-belt" className="mt-16 rounded-xl border border-border/60 bg-muted/30 p-6">
           <h2 className="text-xl font-semibold">Included in all plans</h2>
           <ul className="mt-6 grid grid-cols-1 gap-4 text-sm text-muted-foreground sm:grid-cols-2 lg:grid-cols-3">
             <li className="flex items-start gap-2">
@@ -276,15 +226,12 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
             <div>
               <p className="font-medium text-foreground">How do BMK credits work?</p>
               <p className="mt-1">
-                BMK are credits used for AI generation (text, images, video). Each operation consumes a predefined number of
-                credits.
+                BMK are credits used for AI generation (text, images, video). Each operation consumes a predefined number of credits.
               </p>
             </div>
             <div>
               <p className="font-medium text-foreground">Can I switch plans later?</p>
-              <p className="mt-1">
-                Yes — you can upgrade/downgrade anytime. Remaining credits carry over.
-              </p>
+              <p className="mt-1">Yes — you can upgrade/downgrade anytime. Remaining credits carry over.</p>
             </div>
             <div>
               <p className="font-medium text-foreground">Do you offer enterprise terms?</p>
