@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { Check, Crown, Rocket, Building2 } from "lucide-react";
+
+import { MarketingHeader } from "@/components/marketing-header";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -30,6 +32,10 @@ interface Plan {
 
 const ENTERPRISE_CONTACT_URL =
   process.env.NEXT_PUBLIC_ENTERPRISE_CONTACT_URL ?? "mailto:sales@brandmate.ai";
+
+interface PricingPageProps {
+  variant?: "marketing" | "app";
+}
 
 const PLANS: Plan[] = [
   {
@@ -96,9 +102,11 @@ function PlanIcon({ id }: { id: PlanId }) {
   }
 }
 
-export default function PricingPage() {
+export default function PricingPage({ variant = "marketing" }: PricingPageProps) {
   return (
     <div className="bg-background">
+      {variant === "marketing" && <MarketingHeader current="pricing" />}
+
       <main className="container mx-auto px-4 py-12">
         {/* Hero */}
         <div className="mx-auto mb-12 max-w-3xl text-center">
