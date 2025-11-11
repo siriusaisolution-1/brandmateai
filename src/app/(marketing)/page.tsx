@@ -14,7 +14,8 @@ function FinalCTA() {
   const faqs = [
     {
       question: "Do I need a card?",
-      answer: "Nope. Jump in without adding payment details and explore what BrandMate AI can do for you.",
+      answer:
+        "Nope. Jump in without adding payment details and explore what BrandMate AI can do for you.",
     },
     {
       question: "What do I get for free?",
@@ -23,7 +24,8 @@ function FinalCTA() {
     },
     {
       question: "Can I cancel anytime?",
-      answer: "Absolutely. You stay in control and can upgrade, downgrade, or cancel whenever it suits your team.",
+      answer:
+        "Absolutely. You stay in control and can upgrade, downgrade, or cancel whenever it suits your team.",
     },
   ];
 
@@ -34,7 +36,8 @@ function FinalCTA() {
           Launch in minutes. Pay only when you outgrow free credits.
         </h2>
         <p className="text-muted-foreground">
-          Build your workspace, invite collaborators, and start delivering campaigns with AI assistance right away.
+          Build your workspace, invite collaborators, and start delivering campaigns with AI
+          assistance right away.
         </p>
         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Button asChild size="lg">

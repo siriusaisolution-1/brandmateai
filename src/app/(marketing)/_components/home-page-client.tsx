@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import Link from "next/link";
 import { Bot, Calendar, BarChart } from "lucide-react";
@@ -48,9 +48,12 @@ export function HomePageClient() {
         {/* Feature Showcase Section */}
         <section id="features" className="container py-16 md:py-24 space-y-16">
           <div className="text-center">
-            <h2 className="text-3xl md:text-4xl font-bold">An Entire Marketing Team in One Platform</h2>
+            <h2 className="text-3xl md:text-4xl font-bold">
+              An Entire Marketing Team in One Platform
+            </h2>
             <p className="mt-4 max-w-2xl mx-auto text-muted-foreground">
-              Stop switching between tabs. BrandMate AI brings strategy, content creation, and analytics into a single, intelligent workflow.
+              Stop switching between tabs. BrandMate AI brings strategy, content creation, and
+              analytics into a single, intelligent workflow.
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
@@ -59,7 +62,8 @@ export function HomePageClient() {
                 <Bot className="w-8 h-8 text-primary mb-2" />
                 <CardTitle>AI Content Engine</CardTitle>
                 <CardDescription>
-                  Generate SEO-optimized blogs, stunning visuals, and engaging social posts in seconds.
+                  Generate SEO-optimized blogs, stunning visuals, and engaging social posts in
+                  seconds.
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -77,7 +81,8 @@ export function HomePageClient() {
                 <BarChart className="w-8 h-8 text-primary mb-2" />
                 <CardTitle>Strategic Insights</CardTitle>
                 <CardDescription>
-                  Monitor competitors, track trends, and get AI-powered insights to improve your performance.
+                  Monitor competitors, track trends, and get AI-powered insights to improve your
+                  performance.
                 </CardDescription>
               </CardHeader>
             </Card>

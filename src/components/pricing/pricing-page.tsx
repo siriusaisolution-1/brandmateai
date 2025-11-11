@@ -1,4 +1,7 @@
-'use client';
+// SINGLE SOURCE OF TRUTH: PRICING PAGE
+// Ne uvoditi nove PLANS ili pricing stranice izvan ove komponente.
+// Marketing ruta i App ruta uvoze ovu komponentu sa variant="marketing" | "app".
+"use client";
 
 import Link from "next/link";
 import { Check, Crown, Rocket, Building2 } from "lucide-react";
@@ -58,7 +61,11 @@ const PLANS: Plan[] = [
     tagline: "The best balance of power and value.",
     bestFor: "Growing teams and SMB",
     outputs: ["≈ 45–60 videos / mo", "300+ photos & edits", "~75 SEO blog posts"],
-    features: ["Includes 2 brand LoRA trainings", "Team workspaces & approvals", "Priority rendering"],
+    features: [
+      "Includes 2 brand LoRA trainings",
+      "Team workspaces & approvals",
+      "Priority rendering",
+    ],
     ctaLabel: "Choose Pro",
     ctaHref: "/register?plan=pro",
     highlight: true,
@@ -71,7 +78,11 @@ const PLANS: Plan[] = [
     tagline: "Scale without limits.",
     bestFor: "Agencies and larger teams",
     outputs: ["≈ 150–200 videos / mo", "900+ photos & edits", "Unlimited text content"],
-    features: ["Includes 10 brand LoRA trainings", "Multi-brand asset management", "Advanced analytics & API access"],
+    features: [
+      "Includes 10 brand LoRA trainings",
+      "Multi-brand asset management",
+      "Advanced analytics & API access",
+    ],
     ctaLabel: "Go Agency",
     ctaHref: "/register?plan=agency",
   },
@@ -83,7 +94,12 @@ const PLANS: Plan[] = [
     tagline: "Security, SLA and bespoke integrations.",
     bestFor: "Enterprises and large organizations",
     outputs: ["Tailored BMK allowances", "Dedicated AI pipelines", "Private content deployments"],
-    features: ["Custom BMK quotas", "Dedicated Customer Success", "Advanced security & SSO", "Priority SLA, private models"],
+    features: [
+      "Custom BMK quotas",
+      "Dedicated Customer Success",
+      "Advanced security & SSO",
+      "Priority SLA, private models",
+    ],
     ctaLabel: "Contact Sales",
     ctaHref: ENTERPRISE_CONTACT_URL,
   },
@@ -114,18 +130,24 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
             Choose your plan — scale your content
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
-            Credits-based pricing for AI text, image and video. Use BMK on any generator and scale when you need more.
+            Credits-based pricing for AI text, image and video. Use BMK on any generator and scale
+            when you need more.
           </p>
           <p className="mt-2 text-sm text-muted-foreground">1 BMK ≈ $0.10 (indicative)</p>
         </div>
 
         {/* Plans */}
-        <div className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-4" data-testid="plans-grid">
+        <div
+          className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-4"
+          data-testid="plans-grid"
+        >
           {PLANS.map((plan) => (
             <Card
               key={plan.id}
               className={`relative flex flex-col ${
-                plan.highlight ? "border-primary ring-2 ring-primary/40 overflow-visible" : "overflow-hidden"
+                plan.highlight
+                  ? "border-primary ring-2 ring-primary/40 overflow-visible"
+                  : "overflow-hidden"
               }`}
             >
               {plan.highlight && (
@@ -154,7 +176,9 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
                     )}
                   </div>
                   <div className="text-sm text-muted-foreground">
-                    {typeof plan.bmk === "number" ? `${plan.bmk.toLocaleString()} BMK` : "Custom BMK"}
+                    {typeof plan.bmk === "number"
+                      ? `${plan.bmk.toLocaleString()} BMK`
+                      : "Custom BMK"}
                   </div>
                   <div className="text-xs text-muted-foreground">Best for: {plan.bestFor}</div>
                 </div>
@@ -197,7 +221,11 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
         </div>
 
         {/* Included belt */}
-        <section id="included" data-testid="included-belt" className="mt-16 rounded-xl border border-border/60 bg-muted/30 p-6">
+        <section
+          id="included"
+          data-testid="included-belt"
+          className="mt-16 rounded-xl border border-border/60 bg-muted/30 p-6"
+        >
           <h2 className="text-xl font-semibold">Included in all plans</h2>
           <ul className="mt-6 grid grid-cols-1 gap-4 text-sm text-muted-foreground sm:grid-cols-2 lg:grid-cols-3">
             <li className="flex items-start gap-2">
@@ -234,12 +262,15 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
             <div>
               <p className="font-medium text-foreground">How do BMK credits work?</p>
               <p className="mt-1">
-                BMK are credits used for AI generation (text, images, video). Each operation consumes a predefined number of credits.
+                BMK are credits used for AI generation (text, images, video). Each operation
+                consumes a predefined number of credits.
               </p>
             </div>
             <div>
               <p className="font-medium text-foreground">Can I switch plans later?</p>
-              <p className="mt-1">Yes — you can upgrade/downgrade anytime. Remaining credits carry over.</p>
+              <p className="mt-1">
+                Yes — you can upgrade/downgrade anytime. Remaining credits carry over.
+              </p>
             </div>
             <div>
               <p className="font-medium text-foreground">Do you offer enterprise terms?</p>
@@ -255,7 +286,8 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
         </section>
 
         <p className="mx-auto mt-12 max-w-3xl text-center text-xs text-muted-foreground">
-          Prices are indicative and subject to change. Taxes/VAT are not included and depend on your jurisdiction.
+          Prices are indicative and subject to change. Taxes/VAT are not included and depend on your
+          jurisdiction.
         </p>
       </main>
     </div>

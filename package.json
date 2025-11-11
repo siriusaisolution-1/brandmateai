@@ -20,6 +20,7 @@
     "audit:local": "bash scripts/bm_audit.sh",
     "env:probe": "node scripts/env_probe.mjs",
     "check:deps": "bash scripts/check_dependencies.sh || true",
+    "check:pricing": "node scripts/check-pricing-single-source.mjs",
     "check:all": "bash scripts/check_code_quality.sh",
     "check:fast": "pnpm lint --max-warnings=0 && pnpm typecheck && pnpm test --coverage && pnpm build",
     "check:quality": "pnpm run check:all",
