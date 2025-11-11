@@ -3,11 +3,7 @@
 
 import ManifestNop from "@/components/manifest-nop";
 
-export default function MarketingLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* We can add a dedicated marketing header and footer here later */}
