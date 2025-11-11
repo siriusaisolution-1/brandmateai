@@ -7,7 +7,7 @@ export function MarketingFooter() {
         <div>
           <h3 className="font-bold mb-2">Product</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><Link href="#features">Features</Link></li>
+            <li><Link href="/features">Features</Link></li>
             <li><Link href="/pricing">Pricing</Link></li>
             <li>
               <Link href="/demo" prefetch={false}>
