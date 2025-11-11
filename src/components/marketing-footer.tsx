@@ -7,7 +7,11 @@ export function MarketingFooter() {
         <div>
           <h3 className="font-bold mb-2">Product</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><Link href="/features">Features</Link></li>
+            <li>
+              <Link href="/features" prefetch={false}>
+                Features
+              </Link>
+            </li>
             <li><Link href="/pricing">Pricing</Link></li>
             <li>
               <Link href="/demo" prefetch={false}>
@@ -16,6 +20,7 @@ export function MarketingFooter() {
             </li>
           </ul>
         </div>
+
         <div>
           <h3 className="font-bold mb-2">Integrations</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
@@ -25,6 +30,7 @@ export function MarketingFooter() {
             <li>SendGrid</li>
           </ul>
         </div>
+
         <div>
           <h3 className="font-bold mb-2">Company</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
@@ -45,6 +51,7 @@ export function MarketingFooter() {
             </li>
           </ul>
         </div>
+
         <div>
           <h3 className="font-bold mb-2">Legal</h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
@@ -61,6 +68,7 @@ export function MarketingFooter() {
           </ul>
         </div>
       </div>
+
       <div className="container mt-8 text-center text-sm text-muted-foreground">
         <p>© {new Date().getFullYear()} BrandMate AI. All rights reserved.</p>
       </div>
