@@ -26,11 +26,14 @@ export function HomePageClient() {
             <p className="max-w-xl mx-auto text-lg text-muted-foreground">
               Create, schedule & analyze with AI — start free, pay only when you need more credits.
             </p>
-            <div className="flex justify-center gap-4">
+            <div className="flex flex-wrap justify-center gap-4">
               <Button asChild size="lg">
                 <Link href="/login">Log in for free</Link>
               </Button>
               <Button asChild size="lg" variant="outline">
+                <Link href="/features">Explore Features</Link>
+              </Button>
+              <Button asChild size="lg" variant="ghost">
                 <Link href="/pricing">See pricing</Link>
               </Button>
             </div>
