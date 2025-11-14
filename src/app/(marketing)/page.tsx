@@ -15,17 +15,17 @@ function FinalCTA() {
     {
       question: "Do I need a card?",
       answer:
-        "Nope. Jump in without adding payment details and explore what BrandMate AI can do for you.",
+        "No. You can explore BrandMate AI and use your free BMK credits before adding any payment details.",
     },
     {
       question: "What do I get for free?",
       answer:
-        "Kick off with generous credits for generating campaigns, visuals, and insights—enough to launch real projects.",
+        "Access to all core tools, plus enough BMK credits to launch your first real campaigns.",
     },
     {
       question: "Can I cancel anytime?",
       answer:
-        "Absolutely. You stay in control and can upgrade, downgrade, or cancel whenever it suits your team.",
+        "Yes. You stay in control — upgrade, downgrade or cancel whenever it suits your team.",
     },
   ];
 
@@ -36,8 +36,8 @@ function FinalCTA() {
           Launch in minutes. Pay only when you outgrow free credits.
         </h2>
         <p className="text-muted-foreground">
-          Build your workspace, invite collaborators, and start delivering campaigns with AI
-          assistance right away.
+          Create your workspace, invite collaborators and start shipping campaigns with AI assistance from day one. Upgrade
+          your plan only when you need more BMK credits.
         </p>
         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Button asChild size="lg">
