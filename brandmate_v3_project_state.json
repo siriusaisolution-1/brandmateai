@@ -1,0 +1,209 @@
+{
+  "project": {
+    "name": "BrandMate v3",
+    "codeName": "brandmate_ai_studio",
+    "owner": "Sirius AI Solution",
+    "version": "3.0.0",
+    "status": "planning",
+    "primaryDoc": "brandmate_v3_Product&ArchitectureBlueprint.md",
+    "description": "AI-driven content studio for video, visuals and copy, orchestrated by a master AI agent, focused on solo founders, small agencies and creators."
+  },
+  "stack": {
+    "frontend": {
+      "framework": "Next.js",
+      "version": "15.x",
+      "language": "TypeScript",
+      "ui": ["React 18", "TailwindCSS", "shadcn/ui"],
+      "state": ["React Query"],
+      "routing": "App Router (/app/* for application, public routes for marketing site)"
+    },
+    "backend": {
+      "platform": "Firebase",
+      "services": [
+        "Auth",
+        "Firestore",
+        "Storage",
+        "Functions Gen2"
+      ]
+    },
+    "ai": {
+      "orchestratorModel": "OpenAI GPT-high-mini (master agent)",
+      "specializedModels": [
+        "GPT-high-mini for CopyAgent",
+        "GPT-high-mini for VisualAgent",
+        "GPT-high-mini for VideoAgent"
+      ],
+      "mediaProviders": [
+        "Novita (image + video)",
+        "Optional: external style providers (TBD)"
+      ]
+    }
+  },
+  "concepts": {
+    "masterAI": "Chat-based orchestrator that talks to the user, collects missing information, creates a structured ContentBrief and delegates work to specialized agents.",
+    "brandMemory": "Centralized store of brand data (tone, colors, fonts, mission, values, personas, preferences) that every agent uses when generating content.",
+    "contentRequest": "A single user request for content (e.g. '10 Reels for IG'), represented as a Firestore document, linked to one brand and producing multiple Outputs.",
+    "output": "Single piece of content: video, image or copy. Linked to a ContentRequest and a Brand.",
+    "usageLimits": "Soft/hard limits per subscription plan to keep model costs within target CAC/LTV economics."
+  },
+  "businessConstraints": {
+    "targetUserProfiles": [
+      "Solo founder",
+      "Small/medium marketing agency",
+      "Creator / influencer"
+    ],
+    "contentConsumptionAssumptions": {
+      "videosPerWeek": {
+        "min": 3,
+        "max": 5
+      },
+      "imagesPerWeek": {
+        "min": 12,
+        "max": 15
+      },
+      "note": "Assumptions are per active brand on a typical plan."
+    },
+    "costTargets": {
+      "mediaGenerationCostPerMonthUSD": {
+        "min": 6,
+        "max": 10
+      },
+      "constraints": [
+        "At least 30% gross margin after infra + media costs.",
+        "Room for up to ~30% referral/affiliate share on top of direct marketing.",
+        "Pricing must be competitive vs. other AI content tools while clearly communicating additional value (master agent + brand memory)."
+      ]
+    }
+  },
+  "dataModelHighLevel": {
+    "collections": [
+      "users",
+      "brands",
+      "brandMemory",
+      "contentRequests",
+      "outputs",
+      "mediaAssets",
+      "aiUsage",
+      "bmkLedger",
+      "novitaTasks",
+      "stripeEvents"
+    ],
+    "relationships": [
+      "User 1–N Brands",
+      "Brand 1–N ContentRequests",
+      "ContentRequest 1–N Outputs",
+      "Brand 1–N MediaAssets"
+    ]
+  },
+  "milestones": [
+    {
+      "id": "M1",
+      "name": "Foundation & Auth",
+      "status": "pending",
+      "goals": [
+        "Clean up repo, env, and base configs.",
+        "Set up Firebase Auth and basic /login, /register, /app shell.",
+        "Ensure CI build passes and local dev instructions are correct."
+      ]
+    },
+    {
+      "id": "M2",
+      "name": "Brand Onboarding & Brand Memory",
+      "status": "pending",
+      "goals": [
+        "Implement quick brand setup (short form).",
+        "Implement extended brand wizard (full brand memory).",
+        "Define Firestore data model + rules for Brand and BrandMemory."
+      ]
+    },
+    {
+      "id": "M3",
+      "name": "Master AI Chat MVP",
+      "status": "pending",
+      "goals": [
+        "Implement /app/brands/{brandId}/chat page with chat UI.",
+        "Implement master AI endpoint (Functions or Next.js API) that creates ContentRequests from chat.",
+        "No real media generation yet – just structured ContentBrief + stub Outputs."
+      ]
+    },
+    {
+      "id": "M4",
+      "name": "Agents & Media Generation",
+      "status": "pending",
+      "goals": [
+        "Implement CopyAgent, VisualAgent and VideoAgent as separate flows/endpoints.",
+        "Integrate Novita image + video APIs.",
+        "Connect agents to master AI flow and persist Outputs in Firestore + Storage."
+      ]
+    },
+    {
+      "id": "M5",
+      "name": "Library, Requests & Calendar",
+      "status": "pending",
+      "goals": [
+        "Implement asset library UI (videos, images, copy).",
+        "Implement contentRequests list/detail pages.",
+        "Implement simple content calendar view per brand."
+      ]
+    },
+    {
+      "id": "M6",
+      "name": "Billing & Limits",
+      "status": "pending",
+      "goals": [
+        "Integrate Stripe for plans and invoicing.",
+        "Track AI usage and Novita tasks per brand/user.",
+        "Enforce soft/hard limits per subscription plan and show warnings in UI."
+      ]
+    },
+    {
+      "id": "M7",
+      "name": "Polish & Analytics",
+      "status": "pending",
+      "goals": [
+        "Add basic analytics dashboard per brand (content volume, reach proxies if available).",
+        "Improve UX for errors, empty states and onboarding.",
+        "Stabilize tests, docs and observability."
+      ]
+    }
+  ],
+  "codex": {
+    "currentMilestoneId": "M1",
+    "allowedScopes": [
+      "frontend",
+      "functions",
+      "config",
+      "tests",
+      "docs"
+    ],
+    "globalRules": [
+      "Never hard-code API keys, secrets or project IDs – always use env variables.",
+      "Do not remove or break existing working flows without explicit instruction.",
+      "Every change that touches Firestore or Storage must be aligned with security rules.",
+      "For every new feature, add at least a minimal test or a smoke test.",
+      "Update README and docs when adding significant features or environment steps.",
+      "Keep TypeScript strict and avoid any casts unless well justified.",
+      "Avoid silent failures – log meaningful errors in Functions and show friendly messages in UI."
+    ],
+    "reporting": {
+      "requireSummary": true,
+      "summaryFormat": "markdown",
+      "mustInclude": [
+        "Files created/updated",
+        "What changed and why",
+        "How to run or test the new code locally",
+        "Potential risks/next steps"
+      ]
+    },
+    "testingExpectations": {
+      "unitTests": "Preferred for pure logic modules.",
+      "integrationTests": "Preferred for Functions endpoints that orchestrate AI or Firestore.",
+      "e2eSmoke": "At least one path: login → create brand → create simple content request."
+    },
+    "references": {
+      "blueprintDoc": "brandmate_v3_Product&ArchitectureBlueprint.md",
+      "envDocs": "docs/ENVIRONMENT.md (to be kept in sync)",
+      "firebaseAuditDoc": "docs/firebase-audit.md"
+    }
+  }
+}
