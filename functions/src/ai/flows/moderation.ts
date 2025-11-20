@@ -1,17 +1,38 @@
-import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
-import { z } from 'zod';
+const CATEGORY_PATTERNS: Record<string, RegExp[]> = {
+  sexual: [/sexual/i, /porn/i, /explicit/i],
+  'self-harm': [/suicide/i, /self[- ]?harm/i],
+  hate: [/hate/i, /racist/i, /bigot/i],
+  violence: [/violence/i, /kill/i, /assault/i],
+  profanity: [/fuck/i, /shit/i, /damn/i],
+};
 
-export const moderateTextFlow = ai.defineFlow(
-  {
-    name: 'moderateTextFlow',
-    inputSchema: z.string(),
-    outputSchema: z.object({ isSafe: z.boolean(), categories: z.array(z.string()) }),
-  },
-  async (_text) => {
-    await ensureGoogleGenAiApiKeyReady();
+export function detectCategories(text: string): string[] {
+  const matches = new Set<string>();
+  const normalised = text.toLowerCase();
 
-    // MIG-2 stub moderation: always safe
-    return { isSafe: true, categories: [] };
-  },
-);
+  for (const [category, patterns] of Object.entries(CATEGORY_PATTERNS)) {
+    for (const pattern of patterns) {
+      if (pattern.test(normalised)) {
+        matches.add(category);
+        break;
+      }
+    }
+  }
+
+  return Array.from(matches);
+}
+
+export function moderateText(text: string): { isSafe: boolean; categories: string[] } {
+  const categories = detectCategories(text);
+  return {
+    isSafe: categories.length === 0,
+    categories,
+  };
+}
+
+export async function moderateTextFlow(text: string): Promise<{ isSafe: boolean; categories: string[] }> {
+  return moderateText(text);
+}
+
+export const _test = { detectCategories, moderateText };
 

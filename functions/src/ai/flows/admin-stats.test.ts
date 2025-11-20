@@ -1,6 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpsError } from 'firebase-functions/v1/https';
 
+vi.mock('../../genkit/ai', () => ({
+  ai: {
+    defineFlow: (_config: unknown, handler: any) =>
+      (input: unknown, options: unknown) => handler(input, options as never),
+  },
+}));
+
 const firebaseAdminMock = globalThis.__vitestFirebaseAdmin;
 
 if (!firebaseAdminMock) {
@@ -8,6 +15,19 @@ if (!firebaseAdminMock) {
 }
 
 const { collection: collectionMock } = firebaseAdminMock.mocks;
+
+vi.mock('firebase-admin/firestore', () => {
+  const mock = globalThis.__vitestFirebaseAdmin;
+  if (!mock) {
+    throw new Error('Firebase admin mock was not initialised');
+  }
+
+  return {
+    getFirestore: () => mock.mocks.firestore(),
+    CollectionReference: class {},
+    Query: class {},
+  };
+});
 
 import { adminStatsFlow } from './admin-stats';
 

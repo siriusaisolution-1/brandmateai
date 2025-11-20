@@ -18,6 +18,14 @@ service cloud.firestore {
       return isAuthenticated() && brandOwner(brandId) == request.auth.uid;
     }
 
+    function chatSessionOwner(sessionId) {
+      return get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId;
+    }
+
+    function isChatSessionOwner(sessionId) {
+      return isAuthenticated() && chatSessionOwner(sessionId) == request.auth.uid;
+    }
+
     // Users can only read/create their own document and cannot change their own role/plan.
     match /users/{userId} {
       allow read, create: if isSelf(userId);
@@ -66,6 +74,29 @@ service cloud.firestore {
     match /adCampaigns/{campaignId} {
       allow read, write: if isSelf(resource.data.ownerId);
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    // M3 baseline: chat sessions and messages are private to the owner.
+    match /chatSessions/{sessionId} {
+      allow read, update, delete: if isChatSessionOwner(sessionId);
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /chatMessages/{messageId} {
+      allow read: if isChatSessionOwner(resource.data.sessionId);
+      allow create: if isAuthenticated()
+                    && (
+                      (request.resource.data.role == 'user' && request.resource.data.userId == request.auth.uid)
+                      || (request.resource.data.role == 'assistant' && isChatSessionOwner(request.resource.data.sessionId))
+                    );
+    }
+
+    // M3 baseline: content requests are scoped to the brand owner.
+    match /contentRequests/{requestId} {
+      allow read, update, delete: if isBrandOwner(resource.data.brandId) && isSelf(resource.data.userId);
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid
+                    && isBrandOwner(request.resource.data.brandId);
     }
   }
 }

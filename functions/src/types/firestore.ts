@@ -147,6 +147,60 @@ export type FirestoreModels = {
   adCampaigns: AdCampaign;
   scraperCache: ScraperCache;
   trendInsights: TrendInsight;
+  chatSessions: ChatSession;
+  chatMessages: ChatMessage;
+  contentRequests: ContentRequest;
 };
+
+export type ContentChannel =
+  | 'instagram_feed'
+  | 'instagram_reels'
+  | 'tiktok'
+  | 'youtube_shorts';
+
+export type ContentOutputType = 'video' | 'image' | 'copy';
+
+export interface ContentRequest extends BaseDocument {
+  brandId: string;
+  userId: string;
+
+  title: string;
+  description?: string;
+
+  goal?: 'increase_sales' | 'brand_awareness' | 'engagement' | 'other';
+  channels: ContentChannel[];
+
+  requestedOutputs: {
+    video?: number;
+    image?: number;
+    copy?: number;
+  };
+
+  status: 'draft' | 'queued' | 'in_progress' | 'needs_revision' | 'approved' | 'cancelled';
+
+  masterBrief: unknown;
+
+  createdFromChatId?: string;
+  createdAt: FirestoreDateLike;
+  updatedAt: FirestoreDateLike;
+}
+
+export interface ChatSession extends BaseDocument {
+  brandId: string;
+  userId: string;
+  title: string;
+  createdAt: FirestoreDateLike;
+  updatedAt: FirestoreDateLike;
+  lastContentRequestId?: string;
+}
+
+export interface ChatMessage extends BaseDocument {
+  sessionId: string;
+  brandId: string;
+  userId?: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  createdAt: FirestoreDateLike;
+}
 
 export type WithId<T extends BaseDocument> = T & { id: string };
