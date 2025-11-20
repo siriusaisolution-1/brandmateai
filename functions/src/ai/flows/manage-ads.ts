@@ -1,18 +1,42 @@
-import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
+import { FieldValue, getFirestore, type DocumentReference } from 'firebase-admin/firestore';
+import { HttpsError } from 'firebase-functions/v1/https';
 import { z } from 'zod';
-export const manageAdsFlow = ai.defineFlow({
-  name: 'manageAdsFlow',
-  inputSchema: z.object({ eventId: z.string(), adAccountId: z.string() }),
-  outputSchema: z.object({ status: z.string() })
-}, async (_input) => {
-  await ensureGoogleGenAiApiKeyReady();
 
-  // MIG-2 stub: integrate DB + ad platform later
-  return { status: 'queued' };
+import { extractAuthUserId } from '../../utils/flow-context';
+
+type FirestoreLike = ReturnType<typeof getFirestore>;
+
+function getDb(): FirestoreLike {
+  const mockCollection = (globalThis as { __vitestFirebaseAdmin?: { mocks?: { collection?: FirestoreLike['collection'] } } })
+    .__vitestFirebaseAdmin?.mocks?.collection;
+
+  if (typeof mockCollection === 'function') {
+    return { collection: mockCollection } as FirestoreLike;
+  }
+
+  return getFirestore();
+}
+
+function getFieldValue() {
+  const mocked = (globalThis as { __vitestFirebaseAdmin?: { mocks?: { FieldValue?: typeof FieldValue } } }).__vitestFirebaseAdmin
+    ?.mocks?.FieldValue;
+  return mocked ?? FieldValue;
+}
+
+export const ManageAdsInputSchema = z.object({
+  eventId: z.string(),
+  adAccountId: z.string(),
+  brandId: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+export const ManageAdsOutputSchema = z.object({
+  status: z.string(),
+  requestId: z.string().optional(),
 });
 
 async function resolveRequester(uid: string): Promise<'admin' | 'user' | string | null> {
-  const snapshot = await firestore.collection('users').doc(uid).get();
+  const snapshot = await getDb().collection('users').doc(uid).get();
   if (!snapshot.exists) {
     return null;
   }
@@ -24,8 +48,9 @@ async function enqueueAdSyncRequest(
   input: z.infer<typeof ManageAdsInputSchema>,
   requestedBy: string,
 ): Promise<z.infer<typeof ManageAdsOutputSchema>> {
-  const queueCollection = firestore.collection('adSyncRequests');
-  const operationsAudit = firestore.collection('operationsAudit');
+  const db = getDb();
+  const queueCollection = db.collection('adSyncRequests');
+  const operationsAudit = db.collection('operationsAudit');
 
   let requestRef: DocumentReference | undefined;
 
@@ -45,21 +70,22 @@ async function enqueueAdSyncRequest(
         notes: input.notes ?? null,
         status: 'queued',
         requestedBy,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
+        createdAt: getFieldValue().serverTimestamp(),
+        updatedAt: getFieldValue().serverTimestamp(),
       },
       { merge: false },
     );
-  } else if (typeof queueCollection.add === 'function') {
-    requestRef = await queueCollection.add({
+  } else if (typeof (queueCollection as { add?: unknown }).add === 'function') {
+    const addFn = (queueCollection as { add: (data: unknown) => Promise<DocumentReference> }).add;
+    requestRef = await addFn({
       eventId: input.eventId,
       adAccountId: input.adAccountId,
       brandId: input.brandId ?? null,
       notes: input.notes ?? null,
       status: 'queued',
       requestedBy,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
+      createdAt: getFieldValue().serverTimestamp(),
+      updatedAt: getFieldValue().serverTimestamp(),
     });
   } else {
     throw new HttpsError('internal', 'Ad sync queue is not configured.');
@@ -72,7 +98,7 @@ async function enqueueAdSyncRequest(
     referenceId: requestId,
     payload: input,
     requestedBy,
-    createdAt: FieldValue.serverTimestamp(),
+    createdAt: getFieldValue().serverTimestamp(),
   });
 
   return ManageAdsOutputSchema.parse({
@@ -81,27 +107,23 @@ async function enqueueAdSyncRequest(
   });
 }
 
-export const manageAdsFlow = ai.defineFlow(
-  {
-    name: 'manageAdsFlow',
-    inputSchema: ManageAdsInputSchema,
-    outputSchema: ManageAdsOutputSchema,
-  },
-  async (input, { context }) => {
-    const uid = extractAuthUserId(context);
+export async function manageAdsFlow(
+  input: z.infer<typeof ManageAdsInputSchema>,
+  { context }: { context?: Record<string, unknown> } = {},
+): Promise<z.infer<typeof ManageAdsOutputSchema>> {
+  const uid = extractAuthUserId(context);
 
-    if (!uid) {
-      throw new HttpsError('unauthenticated', 'Authentication is required.');
-    }
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Authentication is required.');
+  }
 
-    const role = await resolveRequester(uid);
-    if (role !== 'admin') {
-      throw new HttpsError('permission-denied', 'Only administrators may queue ad sync operations.');
-    }
+  const role = await resolveRequester(uid);
+  if (role !== 'admin') {
+    throw new HttpsError('permission-denied', 'Only administrators may queue ad sync operations.');
+  }
 
-    return enqueueAdSyncRequest(input, uid);
-  },
-);
+  return enqueueAdSyncRequest(input, uid);
+}
 
 export const _test = {
   enqueueAdSyncRequest,

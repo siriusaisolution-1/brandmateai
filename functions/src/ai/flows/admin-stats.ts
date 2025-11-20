@@ -1,19 +1,31 @@
-import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
+import { CollectionReference, Query, getFirestore } from 'firebase-admin/firestore';
+import { HttpsError } from 'firebase-functions/v1/https';
 import { z } from 'zod';
-export const adminStatsFlow = ai.defineFlow({
-  name: 'adminStatsFlow',
-  inputSchema: z.object({}),
-  outputSchema: z.object({ totalUsers: z.number(), totalBrands: z.number(), bmkSpentLast24h: z.number() })
-}, async (_input) => {
-  await ensureGoogleGenAiApiKeyReady();
 
-  // TODO: hook to Firestore metrics
-  return { totalUsers: 0, totalBrands: 0, bmkSpentLast24h: 0 };
+import { extractAuthUserId } from '../../utils/flow-context';
+
+type FirestoreLike = ReturnType<typeof getFirestore>;
+
+function getDb(): FirestoreLike {
+  const mockCollection = (globalThis as { __vitestFirebaseAdmin?: { mocks?: { collection?: FirestoreLike['collection'] } } })
+    .__vitestFirebaseAdmin?.mocks?.collection;
+
+  if (typeof mockCollection === 'function') {
+    return { collection: mockCollection } as FirestoreLike;
+  }
+
+  return getFirestore();
+}
+
+const AdminStatsOutputSchema = z.object({
+  totalUsers: z.number(),
+  totalBrands: z.number(),
+  bmkSpentLast24h: z.number(),
 });
 
-async function getCollectionCount(
-  collection: CollectionReference,
-): Promise<number> {
+const AdminStatsInputSchema = z.object({});
+
+async function getCollectionCount(collection: CollectionReference): Promise<number> {
   if (typeof collection.count === 'function') {
     const snapshot = await collection.count().get();
     const count = snapshot.data()?.count;
@@ -24,10 +36,8 @@ async function getCollectionCount(
   return typeof snapshot.size === 'number' ? snapshot.size : 0;
 }
 
-async function calculateBmkSpentSince(
-  threshold: Date,
-): Promise<number> {
-  const ledger = firestore.collection('bmkLedger');
+async function calculateBmkSpentSince(threshold: Date): Promise<number> {
+  const ledger = getDb().collection('bmkLedger');
   let query: Query = ledger;
 
   if (typeof ledger.where === 'function') {
@@ -45,7 +55,7 @@ async function calculateBmkSpentSince(
 
   return docs.reduce((total, doc) => {
     const data = typeof doc.data === 'function' ? doc.data() : undefined;
-    const amount = data?.amount;
+    const amount = (data as { amount?: unknown })?.amount;
     return typeof amount === 'number' && Number.isFinite(amount)
       ? total + amount
       : total;
@@ -53,7 +63,8 @@ async function calculateBmkSpentSince(
 }
 
 async function resolveAdminStats(uid: string): Promise<z.infer<typeof AdminStatsOutputSchema>> {
-  const usersCollection = firestore.collection('users');
+  const db = getDb();
+  const usersCollection = db.collection('users');
   const userDoc = await usersCollection.doc(uid).get();
 
   const role = userDoc.get('role');
@@ -61,7 +72,7 @@ async function resolveAdminStats(uid: string): Promise<z.infer<typeof AdminStats
     throw new HttpsError('permission-denied', 'Admin access is required.');
   }
 
-  const brandsCollection = firestore.collection('brands');
+  const brandsCollection = db.collection('brands');
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   const [totalUsers, totalBrands, bmkSpentLast24h] = await Promise.all([
@@ -77,25 +88,22 @@ async function resolveAdminStats(uid: string): Promise<z.infer<typeof AdminStats
   });
 }
 
-export const adminStatsFlow = ai.defineFlow(
-  {
-    name: 'adminStatsFlow',
-    inputSchema: z.object({}),
-    outputSchema: AdminStatsOutputSchema,
-  },
-  async (_input, { context }) => {
-    const uid = extractAuthUserId(context);
+export async function adminStatsFlow(
+  _input: z.infer<typeof AdminStatsInputSchema>,
+  { context }: { context?: Record<string, unknown> } = {},
+): Promise<z.infer<typeof AdminStatsOutputSchema>> {
+  const uid = extractAuthUserId(context);
 
-    if (!uid) {
-      throw new HttpsError('unauthenticated', 'Authentication is required.');
-    }
+  if (!uid) {
+    throw new HttpsError('unauthenticated', 'Authentication is required.');
+  }
 
-    return resolveAdminStats(uid);
-  },
-);
+  return resolveAdminStats(uid);
+}
 
 export const _test = {
   getCollectionCount,
   calculateBmkSpentSince,
   resolveAdminStats,
+  AdminStatsOutputSchema,
 };

@@ -9,21 +9,47 @@ export interface BaseDocument {
 }
 
 export interface Brand extends BaseDocument {
-  ownerId?: string;
+  id?: string;
+  ownerId: string;
   name: string;
+  industry?: string;
+  website?: string;
+  socialHandles?: { instagram?: string; tiktok?: string; other?: string };
+  priceRange?: 'low' | 'mid' | 'high';
+  targetAudienceSummary?: string;
+  brandMemoryRef?: string;
+  status: 'active' | 'inactive';
+  createdAt: FirestoreDateLike;
+  updatedAt: FirestoreDateLike;
+
+  // Legacy/compatibility fields retained for now
   logoUrl?: string;
   colors?: string[];
   fonts?: string[];
   brandVoice?: string;
   keyInfo?: string;
-  industry?: string;
   description?: string;
   websiteUrl?: string;
   socialLinks?: string[];
   competitorWebsites?: string[];
   primaryContactId?: string;
-  status?: 'draft' | 'active' | 'archived' | string;
   metadata?: Record<string, unknown>;
+}
+
+export interface BrandMemory extends BaseDocument {
+  id: string;
+  brandId: string;
+  toneOfVoice?: string;
+  mission?: string;
+  values?: string[];
+  personas?: { name: string; description: string }[];
+  primaryColors?: string[];
+  fonts?: string[];
+  preferences?: string[];
+  assetsSummary?: string;
+  incomplete: boolean;
+  createdAt: FirestoreDateLike;
+  updatedAt: FirestoreDateLike;
 }
 
 export interface MediaAsset extends BaseDocument {
@@ -139,6 +165,7 @@ export interface TrendInsight extends BaseDocument {
 
 export type FirestoreModels = {
   brands: Brand;
+  brandMemories: BrandMemory;
   mediaAssets: MediaAsset;
   notifications: Notification;
   users: UserProfile;
