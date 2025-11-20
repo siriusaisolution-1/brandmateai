@@ -99,7 +99,7 @@
     {
       "id": "M1",
       "name": "Foundation & Auth",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Clean up repo, env, and base configs.",
         "Set up Firebase Auth and basic /login, /register, /app shell.",
@@ -168,7 +168,7 @@
     }
   ],
   "codex": {
-    "currentMilestoneId": "M1",
+    "currentMilestoneId": "M2",
     "allowedScopes": [
       "frontend",
       "functions",
