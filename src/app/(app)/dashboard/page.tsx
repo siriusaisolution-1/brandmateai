@@ -5,8 +5,10 @@ import './_noop-client';
 export default function AppRootPage() {
   return (
     <div>
-      <h1 className="text-2xl font-bold">Welcome to your Dashboard</h1>
-      <p className="text-copy-secondary">This is where your main dashboard content will go.</p>
+      <h1 className="text-2xl font-bold">Welcome to BrandMate v3</h1>
+      <p className="text-copy-secondary">
+        Here you&apos;ll see your brands and content once M2+ features are implemented.
+      </p>
     </div>
   );
 }

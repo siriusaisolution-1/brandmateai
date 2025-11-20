@@ -1,3 +1,4 @@
+// functions/src/ai/flows/admin-stats.ts
 import { CollectionReference, Query, getFirestore } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v1/https';
 import { z } from 'zod';
@@ -7,8 +8,9 @@ import { extractAuthUserId } from '../../utils/flow-context';
 type FirestoreLike = ReturnType<typeof getFirestore>;
 
 function getDb(): FirestoreLike {
-  const mockCollection = (globalThis as { __vitestFirebaseAdmin?: { mocks?: { collection?: FirestoreLike['collection'] } } })
-    .__vitestFirebaseAdmin?.mocks?.collection;
+  const mockCollection = (globalThis as {
+    __vitestFirebaseAdmin?: { mocks?: { collection?: FirestoreLike['collection'] } };
+  }).__vitestFirebaseAdmin?.mocks?.collection;
 
   if (typeof mockCollection === 'function') {
     return { collection: mockCollection } as FirestoreLike;
@@ -37,7 +39,8 @@ async function getCollectionCount(collection: CollectionReference): Promise<numb
 }
 
 async function calculateBmkSpentSince(threshold: Date): Promise<number> {
-  const ledger = getDb().collection('bmkLedger');
+  const db = getDb();
+  const ledger = db.collection('bmkLedger');
   let query: Query = ledger;
 
   if (typeof ledger.where === 'function') {
@@ -49,20 +52,24 @@ async function calculateBmkSpentSince(threshold: Date): Promise<number> {
 
   const snapshot = await query.get();
 
-  const docs = snapshot && typeof snapshot === 'object' && 'docs' in snapshot && Array.isArray((snapshot as { docs: unknown }).docs)
-    ? (snapshot as { docs: Array<{ data: () => unknown }> }).docs
-    : [];
+  const docs =
+    snapshot &&
+    typeof snapshot === 'object' &&
+    'docs' in snapshot &&
+    Array.isArray((snapshot as { docs: unknown }).docs)
+      ? (snapshot as { docs: Array<{ data: () => unknown }> }).docs
+      : [];
 
   return docs.reduce((total, doc) => {
     const data = typeof doc.data === 'function' ? doc.data() : undefined;
     const amount = (data as { amount?: unknown })?.amount;
-    return typeof amount === 'number' && Number.isFinite(amount)
-      ? total + amount
-      : total;
+    return typeof amount === 'number' && Number.isFinite(amount) ? total + amount : total;
   }, 0);
 }
 
-async function resolveAdminStats(uid: string): Promise<z.infer<typeof AdminStatsOutputSchema>> {
+async function resolveAdminStats(
+  uid: string,
+): Promise<z.infer<typeof AdminStatsOutputSchema>> {
   const db = getDb();
   const usersCollection = db.collection('users');
   const userDoc = await usersCollection.doc(uid).get();
