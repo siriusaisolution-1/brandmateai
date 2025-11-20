@@ -20,4 +20,9 @@ export type {
   TrendInsight,
   FirestoreModels,
   WithId,
+  ContentRequest,
+  ContentChannel,
+  ContentOutputType,
+  ChatSession,
+  ChatMessage,
 } from '../../functions/src/types/firestore';

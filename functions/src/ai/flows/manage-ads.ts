@@ -6,9 +6,13 @@ import { extractAuthUserId } from '../../utils/flow-context';
 
 type FirestoreLike = ReturnType<typeof getFirestore>;
 
+/**
+ * Vrati Firestore mock ako postoji, ili realni Firestore u produkciji.
+ */
 function getDb(): FirestoreLike {
-  const mockCollection = (globalThis as { __vitestFirebaseAdmin?: { mocks?: { collection?: FirestoreLike['collection'] } } })
-    .__vitestFirebaseAdmin?.mocks?.collection;
+  const mockCollection = (globalThis as {
+    __vitestFirebaseAdmin?: { mocks?: { collection?: FirestoreLike['collection'] } };
+  }).__vitestFirebaseAdmin?.mocks?.collection;
 
   if (typeof mockCollection === 'function') {
     return { collection: mockCollection } as FirestoreLike;
@@ -17,9 +21,14 @@ function getDb(): FirestoreLike {
   return getFirestore();
 }
 
+/**
+ * Vrati mockovan FieldValue.serverTimestamp() u testovima, ili pravi u runtime-u.
+ */
 function getFieldValue() {
-  const mocked = (globalThis as { __vitestFirebaseAdmin?: { mocks?: { FieldValue?: typeof FieldValue } } }).__vitestFirebaseAdmin
-    ?.mocks?.FieldValue;
+  const mocked = (globalThis as {
+    __vitestFirebaseAdmin?: { mocks?: { FieldValue?: typeof FieldValue } };
+  }).__vitestFirebaseAdmin?.mocks?.FieldValue;
+
   return mocked ?? FieldValue;
 }
 
@@ -35,31 +44,45 @@ export const ManageAdsOutputSchema = z.object({
   requestId: z.string().optional(),
 });
 
+/**
+ * Učitaj rolu korisnika (admin/user).
+ */
 async function resolveRequester(uid: string): Promise<'admin' | 'user' | string | null> {
   const snapshot = await getDb().collection('users').doc(uid).get();
-  if (!snapshot.exists) {
-    return null;
-  }
+
+  if (!snapshot.exists) return null;
+
   const role = snapshot.get('role');
+
   return typeof role === 'string' ? role : null;
 }
 
+/**
+ * Glavna logika za enqueue-ovanje zahteva za sinhronizaciju oglasa.
+ */
 async function enqueueAdSyncRequest(
   input: z.infer<typeof ManageAdsInputSchema>,
   requestedBy: string,
 ): Promise<z.infer<typeof ManageAdsOutputSchema>> {
   const db = getDb();
+
   const queueCollection = db.collection('adSyncRequests');
   const operationsAudit = db.collection('operationsAudit');
 
   let requestRef: DocumentReference | undefined;
 
+  //
+  // 1) Ako postoji .doc = Firestore Admin API
+  //
   if (typeof queueCollection.doc === 'function') {
     requestRef = queueCollection.doc(input.eventId);
 
     const existing = await requestRef.get();
     if (existing.exists) {
-      throw new HttpsError('already-exists', 'This ad sync event has already been queued.');
+      throw new HttpsError(
+        'already-exists',
+        'This ad sync event has already been queued.',
+      );
     }
 
     await requestRef.set(
@@ -75,8 +98,15 @@ async function enqueueAdSyncRequest(
       },
       { merge: false },
     );
-  } else if (typeof (queueCollection as { add?: unknown }).add === 'function') {
-    const addFn = (queueCollection as { add: (data: unknown) => Promise<DocumentReference> }).add;
+  }
+  //
+  // 2) Ako postoji .add() = Firestore Lite / Mock varianta
+  //
+  else if (typeof (queueCollection as { add?: unknown }).add === 'function') {
+    const addFn = (queueCollection as {
+      add: (data: unknown) => Promise<DocumentReference>;
+    }).add;
+
     requestRef = await addFn({
       eventId: input.eventId,
       adAccountId: input.adAccountId,
@@ -87,12 +117,19 @@ async function enqueueAdSyncRequest(
       createdAt: getFieldValue().serverTimestamp(),
       updatedAt: getFieldValue().serverTimestamp(),
     });
-  } else {
+  }
+  //
+  // 3) U suprotnom greška
+  //
+  else {
     throw new HttpsError('internal', 'Ad sync queue is not configured.');
   }
 
   const requestId = requestRef.id ?? input.eventId;
 
+  //
+  // Audit zapis
+  //
   await operationsAudit.add({
     type: 'adSyncRequest',
     referenceId: requestId,
@@ -107,6 +144,9 @@ async function enqueueAdSyncRequest(
   });
 }
 
+/**
+ * Glavni Flow koji pozivaš iz frontenda.
+ */
 export async function manageAdsFlow(
   input: z.infer<typeof ManageAdsInputSchema>,
   { context }: { context?: Record<string, unknown> } = {},
@@ -119,7 +159,10 @@ export async function manageAdsFlow(
 
   const role = await resolveRequester(uid);
   if (role !== 'admin') {
-    throw new HttpsError('permission-denied', 'Only administrators may queue ad sync operations.');
+    throw new HttpsError(
+      'permission-denied',
+      'Only administrators may queue ad sync operations.',
+    );
   }
 
   return enqueueAdSyncRequest(input, uid);

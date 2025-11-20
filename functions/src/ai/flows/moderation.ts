@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
-export const ModerationOutputSchema = z.object({ isSafe: z.boolean(), categories: z.array(z.string()) });
+export const ModerationOutputSchema = z.object({
+  isSafe: z.boolean(),
+  categories: z.array(z.string()),
+});
 
 const CATEGORY_PATTERNS: Record<string, RegExp[]> = {
   profanity: [/\b(fuck|shit|damn)\b/i],
@@ -22,7 +25,9 @@ export function moderateText(text: string): { isSafe: boolean; categories: strin
   return { isSafe: categories.length === 0, categories };
 }
 
-export async function moderateTextFlow(text: string): Promise<z.infer<typeof ModerationOutputSchema>> {
+export async function moderateTextFlow(
+  text: string,
+): Promise<z.infer<typeof ModerationOutputSchema>> {
   return moderateText(text);
 }
 

@@ -1,4 +1,3 @@
-// functions/src/ai/flows/admin-stats.ts
 import { CollectionReference, Query, getFirestore } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v1/https';
 import { z } from 'zod';
@@ -8,9 +7,11 @@ import { extractAuthUserId } from '../../utils/flow-context';
 type FirestoreLike = ReturnType<typeof getFirestore>;
 
 function getDb(): FirestoreLike {
-  const mockCollection = (globalThis as {
-    __vitestFirebaseAdmin?: { mocks?: { collection?: FirestoreLike['collection'] } };
-  }).__vitestFirebaseAdmin?.mocks?.collection;
+  const mockCollection = (
+    globalThis as {
+      __vitestFirebaseAdmin?: { mocks?: { collection?: FirestoreLike['collection'] } };
+    }
+  ).__vitestFirebaseAdmin?.mocks?.collection;
 
   if (typeof mockCollection === 'function') {
     return { collection: mockCollection } as FirestoreLike;
