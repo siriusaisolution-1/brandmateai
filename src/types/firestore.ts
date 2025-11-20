@@ -6,6 +6,7 @@ export type {
   FirestoreDateLike,
   BaseDocument,
   Brand,
+  BrandMemory,
   MediaAsset,
   Notification,
   UserProfile,

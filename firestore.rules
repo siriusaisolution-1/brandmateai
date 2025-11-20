@@ -26,6 +26,8 @@ service cloud.firestore {
       return isAuthenticated() && chatSessionOwner(sessionId) == request.auth.uid;
     }
 
+    // M2 baseline: rules will be extended for workspaces/teams in future milestones.
+
     // Users can only read/create their own document and cannot change their own role/plan.
     match /users/{userId} {
       allow read, create: if isSelf(userId);
@@ -39,6 +41,13 @@ service cloud.firestore {
     match /brands/{brandId} {
       allow read, update, delete: if isBrandOwner(brandId);
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    // Brand memories are tightly coupled to their parent brand and share the same ownership model.
+    match /brandMemories/{memoryId} {
+      allow get, list: if isBrandOwner(resource.data.brandId);
+      allow update, delete: if isBrandOwner(resource.data.brandId);
+      allow create: if isAuthenticated() && isBrandOwner(request.resource.data.brandId);
     }
 
     // Media assets are registered exclusively through the backend.

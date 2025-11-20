@@ -1,44 +1,45 @@
-# Environment Configuration
+# Environment Configuration (Local & Codex)
 
-This document summarizes the runtime configuration required for BrandMate in the
-Codex environment. Secrets are managed through the Codex console; public
-settings live in the Codex Environment variables panel.
+This project relies on Firebase (client + admin), Sentry, and AI provider keys. Use the templates below to configure local development and make sure secrets are never committed.
 
-## Codex Secrets (server-side)
+## Local development
 
-| Key | Purpose | Notes |
-| --- | --- | --- |
-| `NOVITA_API_KEY` | Authenticates Novita.ai image/video flows. | Required for all Novita callable functions and pollers. |
-| `GOOGLE_GENAI_API_KEY` | Access token for Google GenAI via Genkit. | Required for every Genkit flow. |
-| `GEMINI_MODEL_ID` | Overrides the default Gemini model (defaults to `gemini-1.5-pro-latest`). | Optional; set only if a different model is desired. |
-| `ENCRYPTION_KEY` | 32-character key for encrypting OAuth tokens before persisting. | Required for auth trigger to store credentials. |
-| `FIREBASE_SERVICE_ACCOUNT_BASE64` | Base64-encoded Firebase service account JSON. | Powers Admin SDK usage in Next.js server routes. |
-| `FIREBASE_STORAGE_BUCKET` | Storage bucket used by Admin SDK helpers. | Should match the Firebase project configuration. |
-| `SENTRY_DSN` | Server-side Sentry DSN. | Enables error reporting for API routes and server components. |
-| `SENTRY_ENVIRONMENT` | Overrides the environment tag reported to Sentry. | Optional; defaults to `NODE_ENV`. |
-| `SENTRY_TRACES_SAMPLE_RATE` / `SENTRY_PROFILES_SAMPLE_RATE` | Fine-grained sampling controls. | Optional numeric values between 0 and 1. |
-| `STRIPE_SECRET_KEY` | Authenticates the Stripe SDK for checkout/session APIs. | Required for billing flows. |
-| `STRIPE_WEBHOOK_SECRET` | Verifies webhook payload authenticity. | Required when deploying the Stripe webhook function. |
+1. Copy `.env.example` to `.env.local` in the repo root.
+2. Populate the Firebase web app config values from your Firebase console (Project settings → General → Your apps).
+3. If you run Functions locally, also export the same values to your shell or to a `.env` file inside `functions/` as needed.
+4. Start the dev server with `pnpm dev`.
 
-Configure these secrets under **Codex → Secrets** for the production and
-staging environments. Redeploy Functions after updating secrets so new values
-are picked up.
+### Required for Next.js (client)
 
-## Codex Environment (public + build-time)
+Set these in `.env.local` so the browser SDK can initialize:
 
-| Key | Purpose |
-| --- | --- |
-| `NEXT_PUBLIC_FIREBASE_API_KEY` | Firebase web app config. |
-| `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Firebase web app config. |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Firebase web app config. |
-| `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Firebase web app config. |
-| `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Firebase web app config. |
-| `NEXT_PUBLIC_FIREBASE_APP_ID` | Firebase web app config. |
-| `NEXT_PUBLIC_SENTRY_DSN` | Browser Sentry DSN. |
-| `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | Optional browser traces sampling rate override. |
-| `NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE` / `NEXT_PUBLIC_SENTRY_REPLAYS_ERROR_SAMPLE_RATE` | Optional Replay sampling controls. |
-| `NEXT_PUBLIC_FEAT_*` | Feature flags for admin, reports, video studio, newsletter, etc. |
-| `SENTRY_ORG` / `SENTRY_PROJECT` | Build-time configuration for uploading sourcemaps. |
+- `NEXT_PUBLIC_FIREBASE_API_KEY`
+- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+- `NEXT_PUBLIC_FIREBASE_APP_ID`
 
-Set these values under **Codex → Environment** so they are available to both the
-Next.js build and runtime. Keep `.env.local` in sync for local development.
+Optional client flags: `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID`, `NEXT_PUBLIC_USE_LONG_POLLING`, `NEXT_PUBLIC_ALLOWED_DEV_ORIGINS`, `NEXT_PUBLIC_FEATURE_WATCHTOWERS`, Sentry sampling envs.
+
+### Required for server features
+
+Set these in `.env.local` for server routes and tooling:
+
+- `FIREBASE_SERVICE_ACCOUNT_BASE64` (preferred) or `FIREBASE_SERVICE_ACCOUNT` JSON
+- `FIREBASE_STORAGE_BUCKET`
+- `FIREBASE_PROJECT_ID` / `GOOGLE_CLOUD_PROJECT`
+- `SENTRY_DSN` (if you want error reporting locally)
+- `GOOGLE_GENAI_API_KEY`, `NOVITA_API_KEY`, `GEMINI_MODEL_ID`, `ENCRYPTION_KEY` (AI + token encryption)
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` for billing flows when enabled
+
+Testing helpers (optional): `BRANDMATE_E2E_SESSION_TOKEN`, `BRANDMATE_E2E_ADMIN_TOKEN`, `PLAYWRIGHT_TEST_BASE_PORT`.
+
+## Codex / hosted environments
+
+Configure the same variables in the Codex console:
+
+- **Secrets**: all non-public values (service accounts, Stripe, Novita, GenAI, Sentry server DSN).
+- **Environment variables**: public build-time values such as `NEXT_PUBLIC_FIREBASE_*`, `NEXT_PUBLIC_SENTRY_*`, feature flags, release metadata (`SENTRY_RELEASE`, `NEXT_PUBLIC_APP_VERSION`).
+
+Redeploy Functions after changing secrets so the new values propagate to the runtime.
