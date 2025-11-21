@@ -13,8 +13,14 @@
       "framework": "Next.js",
       "version": "15.x",
       "language": "TypeScript",
-      "ui": ["React 18", "TailwindCSS", "shadcn/ui"],
-      "state": ["React Query"],
+      "ui": [
+        "React 18",
+        "TailwindCSS",
+        "shadcn/ui"
+      ],
+      "state": [
+        "React Query"
+      ],
       "routing": "App Router (/app/* for application, public routes for marketing site)"
     },
     "backend": {
@@ -89,10 +95,10 @@
       "stripeEvents"
     ],
     "relationships": [
-      "User 1–N Brands",
-      "Brand 1–N ContentRequests",
-      "ContentRequest 1–N Outputs",
-      "Brand 1–N MediaAssets"
+      "User 1\u2013N Brands",
+      "Brand 1\u2013N ContentRequests",
+      "ContentRequest 1\u2013N Outputs",
+      "Brand 1\u2013N MediaAssets"
     ]
   },
   "milestones": [
@@ -123,7 +129,7 @@
       "goals": [
         "Implement /app/brands/{brandId}/chat page with chat UI.",
         "Implement master AI endpoint (Functions or Next.js API) that creates ContentRequests from chat.",
-        "No real media generation yet – just structured ContentBrief + stub Outputs."
+        "No real media generation yet \u2013 just structured ContentBrief + stub Outputs."
       ]
     },
     {
@@ -159,7 +165,7 @@
     {
       "id": "M7",
       "name": "Polish & Analytics",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Add basic analytics dashboard per brand (content volume, reach proxies if available).",
         "Improve UX for errors, empty states and onboarding.",
@@ -168,7 +174,7 @@
     }
   ],
   "codex": {
-    "currentMilestoneId": "M1",
+    "currentMilestoneId": "M7",
     "allowedScopes": [
       "frontend",
       "functions",
@@ -177,13 +183,13 @@
       "docs"
     ],
     "globalRules": [
-      "Never hard-code API keys, secrets or project IDs – always use env variables.",
+      "Never hard-code API keys, secrets or project IDs \u2013 always use env variables.",
       "Do not remove or break existing working flows without explicit instruction.",
       "Every change that touches Firestore or Storage must be aligned with security rules.",
       "For every new feature, add at least a minimal test or a smoke test.",
       "Update README and docs when adding significant features or environment steps.",
       "Keep TypeScript strict and avoid any casts unless well justified.",
-      "Avoid silent failures – log meaningful errors in Functions and show friendly messages in UI."
+      "Avoid silent failures \u2013 log meaningful errors in Functions and show friendly messages in UI."
     ],
     "reporting": {
       "requireSummary": true,
@@ -198,7 +204,7 @@
     "testingExpectations": {
       "unitTests": "Preferred for pure logic modules.",
       "integrationTests": "Preferred for Functions endpoints that orchestrate AI or Firestore.",
-      "e2eSmoke": "At least one path: login → create brand → create simple content request."
+      "e2eSmoke": "At least one path: login \u2192 create brand \u2192 create simple content request."
     },
     "references": {
       "blueprintDoc": "brandmate_v3_Product&ArchitectureBlueprint.md",

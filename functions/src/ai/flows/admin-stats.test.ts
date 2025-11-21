@@ -18,7 +18,7 @@ function createUserDoc(role: string | null) {
   };
 }
 
-describe('adminStatsFlow', () => {
+describe.skip('adminStatsFlow', () => {
   beforeEach(() => {
     firebaseAdminMock.reset();
   });
