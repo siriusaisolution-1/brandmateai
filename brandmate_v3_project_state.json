@@ -95,10 +95,10 @@
       "stripeEvents"
     ],
     "relationships": [
-      "User 1\u2013N Brands",
-      "Brand 1\u2013N ContentRequests",
-      "ContentRequest 1\u2013N Outputs",
-      "Brand 1\u2013N MediaAssets"
+      "User 1–N Brands",
+      "Brand 1–N ContentRequests",
+      "ContentRequest 1–N Outputs",
+      "Brand 1–N MediaAssets"
     ]
   },
   "milestones": [
@@ -129,7 +129,7 @@
       "goals": [
         "Implement /app/brands/{brandId}/chat page with chat UI.",
         "Implement master AI endpoint (Functions or Next.js API) that creates ContentRequests from chat.",
-        "No real media generation yet \u2013 just structured ContentBrief + stub Outputs."
+        "No real media generation yet – just structured ContentBrief + stub Outputs."
       ]
     },
     {
@@ -181,10 +181,30 @@
         "Improve UX for errors, empty states and onboarding.",
         "Stabilize tests, docs and observability."
       ]
+    },
+    {
+      "id": "M8",
+      "name": "Closed Beta Prep",
+      "status": "done",
+      "goals": [
+        "Stabilize marketing routes and billing preview screens.",
+        "Align usage snapshots for beta testers.",
+        "Prepare reporting hooks for billing/usage."
+      ]
+    },
+    {
+      "id": "M9",
+      "name": "Closed Beta Launch & Pricing Alignment",
+      "status": "done",
+      "goals": [
+        "Align plan registry with Starter/Pro/Agency (monthly & yearly).",
+        "Implement agency extra brand slots and limits.",
+        "Add beta diagnostics (health + Sentry stub + build info)."
+      ]
     }
   ],
   "codex": {
-    "currentMilestoneId": "M7",
+    "currentMilestoneId": "M10",
     "allowedScopes": [
       "frontend",
       "functions",
@@ -193,13 +213,13 @@
       "docs"
     ],
     "globalRules": [
-      "Never hard-code API keys, secrets or project IDs \u2013 always use env variables.",
+      "Never hard-code API keys, secrets or project IDs – always use env variables.",
       "Do not remove or break existing working flows without explicit instruction.",
       "Every change that touches Firestore or Storage must be aligned with security rules.",
       "For every new feature, add at least a minimal test or a smoke test.",
       "Update README and docs when adding significant features or environment steps.",
       "Keep TypeScript strict and avoid any casts unless well justified.",
-      "Avoid silent failures \u2013 log meaningful errors in Functions and show friendly messages in UI."
+      "Avoid silent failures – log meaningful errors in Functions and show friendly messages in UI."
     ],
     "reporting": {
       "requireSummary": true,
@@ -214,7 +234,7 @@
     "testingExpectations": {
       "unitTests": "Preferred for pure logic modules.",
       "integrationTests": "Preferred for Functions endpoints that orchestrate AI or Firestore.",
-      "e2eSmoke": "At least one path: login \u2192 create brand \u2192 create simple content request."
+      "e2eSmoke": "At least one path: login → create brand → create simple content request."
     },
     "references": {
       "blueprintDoc": "brandmate_v3_Product&ArchitectureBlueprint.md",

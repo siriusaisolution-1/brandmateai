@@ -40,6 +40,7 @@ export interface Brand extends BaseDocument {
   competitorWebsites?: string[];
   primaryContactId?: string;
   metadata?: Record<string, unknown>;
+  isExtraBrand?: boolean;
 }
 
 export interface BrandMemory extends BaseDocument {
@@ -93,7 +94,33 @@ export interface UserProfile extends BaseDocument {
   displayName?: string | null;
   photoURL?: string | null;
   role?: 'admin' | 'user' | 'viewer' | 'editor' | string;
-  subscriptionPlan?: 'starter' | 'free' | 'solo' | 'pro' | 'agency' | string;
+
+  /**
+   * Current + legacy subscription plan ids.
+   * - current: starter/pro/agency (+ yearly variants) + free
+   * - legacy compat: solo
+   */
+  subscriptionPlan?:
+    | 'starter'
+    | 'pro'
+    | 'agency'
+    | 'starter_yearly'
+    | 'pro_yearly'
+    | 'agency_yearly'
+    | 'free'
+    | 'solo'
+    | string;
+
+  /**
+   * Extra per-user overrides / agency add-ons.
+   * Used for extra brand slots + custom limits/pricing.
+   */
+  subscriptionMeta?: {
+    baseBrandLimit?: number;
+    extraBrandCount?: number;
+    extraBrandPriceUsd?: number;
+  } | null;
+
   bmkCredits?: number;
   bmkBalance?: number;
   onboardingComplete?: boolean;
