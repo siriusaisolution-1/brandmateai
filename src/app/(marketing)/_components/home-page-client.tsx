@@ -4,6 +4,15 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 
 import { Button } from "@/components/ui/button";
+import { isBetaMode } from "@/lib/featureFlags";
+
+type PricingPlan = {
+  name: string;
+  price: string;
+  descriptor: string;
+  features: string[];
+  highlighted?: boolean;
+};
 
 const fadeUp = {
   hidden: { opacity: 0, y: 32 },
@@ -11,6 +20,28 @@ const fadeUp = {
 };
 
 export function HomePageClient() {
+  const betaMode = isBetaMode();
+  const pricingPlans: PricingPlan[] = [
+    {
+      name: "Starter",
+      price: "$0",
+      descriptor: "per month",
+      features: ["2 active brands", "300 BMK credits", "Unlimited collaborators"],
+    },
+    {
+      name: "Growth",
+      price: "$149",
+      descriptor: "per month",
+      features: ["10 active brands", "5,000 BMK credits", "Advanced automations"],
+      highlighted: true,
+    },
+    {
+      name: "Enterprise",
+      price: "Custom",
+      descriptor: "annual agreements",
+      features: ["Unlimited brands", "Dedicated success partner", "SOC 2 Type II compliance"],
+    },
+  ];
   return (
     <div className="bg-[#0d0d12] text-zinc-100">
       <main className="relative mx-auto max-w-7xl px-6 pb-24 sm:px-8 lg:px-12">
@@ -98,12 +129,20 @@ export function HomePageClient() {
             transition={{ duration: 0.6, delay: 0.1 }}
           >
             <div className="mx-auto flex max-w-3xl flex-col gap-8">
-              <div className="inline-flex items-center justify-center gap-2 self-center rounded-full border border-white/10 bg-white/5 px-4 py-1 text-sm text-zinc-300">
-                <span
-                  className="h-2 w-2 rounded-full bg-emerald-400"
-                  aria-hidden
-                />
-                AI marketing copilot for scaling brands
+              <div className="flex flex-col items-center gap-2">
+                {betaMode && (
+                  <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-200">
+                    <span className="h-2 w-2 rounded-full bg-amber-300" aria-hidden />
+                    Closed Beta
+                  </span>
+                )}
+                <div className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1 text-sm text-zinc-300">
+                  <span
+                    className="h-2 w-2 rounded-full bg-emerald-400"
+                    aria-hidden
+                  />
+                  AI marketing copilot for scaling brands
+                </div>
               </div>
               <h1 className="text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">
                 Launch campaigns that feel handcrafted, powered by BrandMate AI
@@ -566,43 +605,11 @@ export function HomePageClient() {
                 </p>
               </div>
               <div className="grid gap-6 text-left sm:grid-cols-2 lg:grid-cols-3">
-                {[
-                  {
-                    name: "Starter",
-                    price: "$0",
-                    descriptor: "per month",
-                    features: [
-                      "2 active brands",
-                      "300 BMK credits",
-                      "Unlimited collaborators",
-                    ],
-                  },
-                  {
-                    name: "Growth",
-                    price: "$149",
-                    descriptor: "per month",
-                    features: [
-                      "10 active brands",
-                      "5,000 BMK credits",
-                      "Advanced automations",
-                    ],
-                    highlighted: true as const,
-                  },
-                  {
-                    name: "Enterprise",
-                    price: "Custom",
-                    descriptor: "annual agreements",
-                    features: [
-                      "Unlimited brands",
-                      "Dedicated success partner",
-                      "SOC 2 Type II compliance",
-                    ],
-                  },
-                ].map((plan) => (
+                {pricingPlans.map((plan) => (
                   <div
                     key={plan.name}
                     className={`rounded-2xl border ${
-                      (plan as any).highlighted
+                      plan.highlighted
                         ? "border-emerald-400/60 bg-emerald-500/10"
                         : "border-white/10 bg-white/5"
                     } p-6`}
@@ -630,7 +637,7 @@ export function HomePageClient() {
                     <Button
                       asChild
                       className="mt-8 w-full"
-                      variant={(plan as any).highlighted ? "default" : "secondary"}
+                      variant={plan.highlighted ? "default" : "secondary"}
                     >
                       <Link
                         href={

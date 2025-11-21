@@ -165,10 +165,20 @@
         "Improve UX for errors, empty states and onboarding.",
         "Stabilize tests, docs and observability."
       ]
+    },
+    {
+      "id": "M10",
+      "name": "Closed Beta UX & Tech Hardening",
+      "status": "done",
+      "goals": [
+        "Add beta banner, marketing badge and feature flag plumbing.",
+        "Implement welcome tour tied to onboarding flags.",
+        "Polish chat, library, requests, calendar and billing UX states for the beta."
+      ]
     }
   ],
   "codex": {
-    "currentMilestoneId": "M1",
+    "currentMilestoneId": "M11",
     "allowedScopes": [
       "frontend",
       "functions",

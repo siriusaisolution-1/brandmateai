@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation';
 import { BrandCalendar } from '@/components/brand-calendar';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-export default function BrandCalendarPage() {
+export default function BrandCalendarRoute() {
   const params = useParams<{ brandId: string }>();
   const brandId = params?.brandId;
 

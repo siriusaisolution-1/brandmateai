@@ -3,13 +3,17 @@
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useUser } from "reactfire";
+import { useRouter } from "next/navigation";
+
+import { BrandSelector } from "@/components/brand-selector";
 
 export function AppTopbar() {
+  const router = useRouter();
   const { data: user } = useUser(); // može biti undefined dok se učitava
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-      <div className="w-full flex-1">
+      <div className="flex w-full flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:gap-6">
         <form>
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -25,6 +29,9 @@ export function AppTopbar() {
             />
           </div>
         </form>
+        <div className="w-full max-w-xs">
+          <BrandSelector onBrandSelected={brandId => router.push(`/brands/${brandId}/home`)} />
+        </div>
       </div>
 
       <div className="flex items-center gap-3">

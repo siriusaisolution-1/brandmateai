@@ -3,17 +3,21 @@ import { redirect } from "next/navigation";
 
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppTopbar } from "@/components/app-topbar";
+import { AppWelcomeTour } from "@/components/app-welcome-tour";
+import { BetaBanner } from "@/components/beta-banner";
 import { CommandPalette } from "@/components/command-palette";
 import { MasterAiChat } from "@/components/master-ai-chat";
 import QueryProvider from "@/components/query-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseAuthError, requireServerAuthSession } from "@/lib/auth/verify-id-token";
+import { isBetaMode } from "@/lib/featureFlags";
 
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const betaMode = isBetaMode();
   let userId: string;
   try {
     const session = await requireServerAuthSession();
@@ -34,6 +38,7 @@ export default async function AppLayout({
       <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
         <AppSidebar />
         <div className="flex flex-col">
+          {betaMode && <BetaBanner />}
           <AppTopbar />
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
             {children}
@@ -44,6 +49,7 @@ export default async function AppLayout({
       <CommandPalette userId={userId} />
       <MasterAiChat />
       <Toaster />
+      <AppWelcomeTour />
     </QueryProvider>
   );
 }
