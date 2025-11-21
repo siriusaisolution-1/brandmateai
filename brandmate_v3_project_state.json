@@ -165,10 +165,30 @@
         "Improve UX for errors, empty states and onboarding.",
         "Stabilize tests, docs and observability."
       ]
+    },
+    {
+      "id": "M8",
+      "name": "Closed Beta Prep",
+      "status": "done",
+      "goals": [
+        "Stabilize marketing routes and billing preview screens.",
+        "Align usage snapshots for beta testers.",
+        "Prepare reporting hooks for billing/usage."
+      ]
+    },
+    {
+      "id": "M9",
+      "name": "Closed Beta Launch & Pricing Alignment",
+      "status": "done",
+      "goals": [
+        "Align plan registry with Starter/Pro/Agency (monthly & yearly).",
+        "Implement agency extra brand slots and limits.",
+        "Add beta diagnostics (health + Sentry stub + build info)."
+      ]
     }
   ],
   "codex": {
-    "currentMilestoneId": "M1",
+    "currentMilestoneId": "M10",
     "allowedScopes": [
       "frontend",
       "functions",

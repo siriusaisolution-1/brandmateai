@@ -53,6 +53,7 @@ function createFirebaseAdminMock() {
   const addMock = vi.fn();
   const whereMock = vi.fn();
   const countMock = vi.fn();
+  const countGetMock = vi.fn();
   const collectionGetMock = vi.fn();
   const firestoreFn = vi.fn();
   const bucketMock = vi.fn();
@@ -84,6 +85,9 @@ function createFirebaseAdminMock() {
     count: countMock,
     get: collectionGetMock,
   }));
+  whereMock.mockImplementation(() => ({ count: countMock, get: collectionGetMock, where: whereMock }));
+  countMock.mockImplementation(() => ({ get: countGetMock }));
+  countGetMock.mockImplementation(() => ({ data: () => ({ count: 0 }) }));
   bucketMock.mockImplementation(() => ({ file: fileMock }));
   fileMock.mockImplementation(() => ({ getSignedUrl: getSignedUrlMock }));
 
@@ -126,6 +130,12 @@ function createFirebaseAdminMock() {
       count: countMock,
       get: collectionGetMock,
     }));
+    whereMock.mockReset();
+    whereMock.mockImplementation(() => ({ count: countMock, get: collectionGetMock, where: whereMock }));
+    countGetMock.mockReset();
+    countGetMock.mockImplementation(() => ({ data: () => ({ count: 0 }) }));
+    countMock.mockReset();
+    countMock.mockImplementation(() => ({ get: countGetMock }));
     addMock.mockReset();
     whereMock.mockReset();
     countMock.mockReset();
@@ -196,6 +206,16 @@ vi.mock(new URL("./functions/src/utils/firebase.ts", import.meta.url).pathname, 
   return {
     ...actual,
     getAssetUrl: getAssetUrlMock,
+  };
+});
+
+vi.mock(new URL("./functions/src/genkit/ai.ts", import.meta.url).pathname, () => {
+  return {
+    ai: {
+      defineFlow: (_config: unknown, handler: unknown) => handler,
+      currentContext: () => undefined,
+    },
+    ensureGoogleGenAiApiKeyReady: vi.fn(),
   };
 });
 

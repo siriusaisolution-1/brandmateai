@@ -3,8 +3,9 @@
 // Marketing ruta i App ruta uvoze ovu komponentu sa variant="marketing" | "app".
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Check, Crown, Rocket, Building2 } from "lucide-react";
+import { Check, Building2, Crown, Rocket } from "lucide-react";
 
 import { MarketingHeader } from "@/components/marketing-header";
 import { Button } from "@/components/ui/button";
@@ -16,98 +17,79 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-type PlanId = "solo" | "pro" | "agency" | "enterprise";
-
-interface Plan {
-  id: PlanId;
-  name: string;
-  priceUsd: number | null; // null = custom
-  bmk: number | "Custom";
-  tagline: string;
-  bestFor: string;
-  outputs: string[];
-  features: string[];
-  ctaLabel: string;
-  ctaHref: string;
-  highlight?: boolean; // visual accent on Pro
-}
+import { Switch } from "@/components/ui/switch";
+import { getPlanConfig } from "@/lib/billing/plans";
 
 const ENTERPRISE_CONTACT_URL =
   process.env.NEXT_PUBLIC_ENTERPRISE_CONTACT_URL ?? "mailto:sales@brandmate.ai";
 
-interface PricingPageProps {
-  variant?: "marketing" | "app";
+type BillingCycle = "monthly" | "yearly";
+
+interface DisplayPlan {
+  id: "starter" | "pro" | "agency";
+  name: string;
+  monthlyPlanId: string;
+  yearlyPlanId: string;
+  bestFor: string;
+  monthlyPrice: number;
+  yearlyPrice: number;
+  brandLimit: number;
+  videos: number;
+  images: number;
+  highlight?: boolean;
+  tagline: string;
+  ctaHref: string;
 }
 
-const PLANS: Plan[] = [
+const BASE_PLAN_DEFS: DisplayPlan[] = [
   {
-    id: "solo",
-    name: "Solo",
-    priceUsd: 99,
-    bmk: 1000,
-    tagline: "Everything you need to get started.",
-    bestFor: "Solo creators and small projects",
-    outputs: ["≈ 15–20 videos / mo", "100+ photos & edits", "~25 SEO blog posts"],
-    features: ["Access to all AI tools", "1 brand LoRA training", "Basic analytics and reporting"],
-    ctaLabel: "Get Started",
-    ctaHref: "/register?plan=solo",
+    id: "starter",
+    name: "Starter",
+    monthlyPlanId: "starter",
+    yearlyPlanId: "starter_yearly",
+    monthlyPrice: getPlanConfig("starter").monthlyPriceUsd ?? 0,
+    yearlyPrice: getPlanConfig("starter_yearly").yearlyPriceUsd ?? 0,
+    brandLimit: getPlanConfig("starter").baseBrandLimit,
+    videos: getPlanConfig("starter").includedVideoPerMonth,
+    images: getPlanConfig("starter").includedImagePerMonth,
+    bestFor: "Solo founders and creators",
+    tagline: "Kickstart AI content with an included brand kit.",
+    ctaHref: "/register?plan=starter",
   },
   {
     id: "pro",
     name: "Pro",
-    priceUsd: 297,
-    bmk: 3000,
-    tagline: "The best balance of power and value.",
-    bestFor: "Growing teams and SMB",
-    outputs: ["≈ 45–60 videos / mo", "300+ photos & edits", "~75 SEO blog posts"],
-    features: [
-      "Includes 2 brand LoRA trainings",
-      "Team workspaces & approvals",
-      "Priority rendering",
-    ],
-    ctaLabel: "Choose Pro",
-    ctaHref: "/register?plan=pro",
+    monthlyPlanId: "pro",
+    yearlyPlanId: "pro_yearly",
+    monthlyPrice: getPlanConfig("pro").monthlyPriceUsd ?? 0,
+    yearlyPrice: getPlanConfig("pro_yearly").yearlyPriceUsd ?? 0,
+    brandLimit: getPlanConfig("pro").baseBrandLimit,
+    videos: getPlanConfig("pro").includedVideoPerMonth,
+    images: getPlanConfig("pro").includedImagePerMonth,
+    bestFor: "Growing teams & SMB marketing",
+    tagline: "More headroom for campaigns across multiple brands.",
     highlight: true,
+    ctaHref: "/register?plan=pro",
   },
   {
     id: "agency",
     name: "Agency",
-    priceUsd: 889,
-    bmk: 9000,
-    tagline: "Scale without limits.",
-    bestFor: "Agencies and larger teams",
-    outputs: ["≈ 150–200 videos / mo", "900+ photos & edits", "Unlimited text content"],
-    features: [
-      "Includes 10 brand LoRA trainings",
-      "Multi-brand asset management",
-      "Advanced analytics & API access",
-    ],
-    ctaLabel: "Go Agency",
+    monthlyPlanId: "agency",
+    yearlyPlanId: "agency_yearly",
+    monthlyPrice: getPlanConfig("agency").monthlyPriceUsd ?? 0,
+    yearlyPrice: getPlanConfig("agency_yearly").yearlyPriceUsd ?? 0,
+    brandLimit: getPlanConfig("agency").baseBrandLimit,
+    videos: getPlanConfig("agency").includedVideoPerMonth,
+    images: getPlanConfig("agency").includedImagePerMonth,
+    bestFor: "Agencies running many brands",
+    tagline: "Multi-brand management with premium quotas.",
     ctaHref: "/register?plan=agency",
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    priceUsd: null,
-    bmk: "Custom",
-    tagline: "Security, SLA and bespoke integrations.",
-    bestFor: "Enterprises and large organizations",
-    outputs: ["Tailored BMK allowances", "Dedicated AI pipelines", "Private content deployments"],
-    features: [
-      "Custom BMK quotas",
-      "Dedicated Customer Success",
-      "Advanced security & SSO",
-      "Priority SLA, private models",
-    ],
-    ctaLabel: "Contact Sales",
-    ctaHref: ENTERPRISE_CONTACT_URL,
   },
 ];
 
-function PlanIcon({ id }: { id: PlanId }) {
+function PlanIcon({ id }: { id: DisplayPlan["id"] }) {
   switch (id) {
-    case "solo":
+    case "starter":
       return <Rocket className="h-4 w-4" />;
     case "pro":
       return <Crown className="h-4 w-4" />;
@@ -118,109 +100,143 @@ function PlanIcon({ id }: { id: PlanId }) {
   }
 }
 
+interface PricingPageProps {
+  variant?: "marketing" | "app";
+}
+
 export default function PricingPage({ variant = "marketing" }: PricingPageProps) {
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+
+  const plans = useMemo(() => BASE_PLAN_DEFS, []);
+
+  const billingLabel = billingCycle === "monthly" ? "Monthly" : "Yearly";
+  const ctaSuffix = billingCycle === "monthly" ? "month" : "year";
+
   return (
     <div className="bg-background">
-      {variant === "marketing" && <MarketingHeader current="pricing" />}
+      {variant === "marketing" && <MarketingHeader />}
 
-      <main className="container mx-auto px-4 py-12">
-        {/* Hero */}
+      <section className="container pb-16 pt-8">
         <div className="mx-auto mb-12 max-w-3xl text-center">
-          <h1 id="pricing-v3-marker" className="text-4xl font-bold tracking-tight">
+          <p className="text-primary font-semibold">Pricing</p>
+          <h1 className="mt-2 text-4xl font-bold tracking-tight">
             Choose your plan — scale your content
           </h1>
           <p className="mt-4 text-lg text-muted-foreground">
-            Credits-based pricing for AI text, image and video. Use BMK on any generator and scale
-            when you need more.
+            Transparent, usage-aware plans with monthly or yearly billing. Yearly plans include 2 months free.
           </p>
-          <p className="mt-2 text-sm text-muted-foreground">1 BMK ≈ $0.10 (indicative)</p>
+
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <span className={`text-sm ${billingCycle === "monthly" ? "font-semibold" : "text-muted-foreground"}`}>
+              Monthly
+            </span>
+            <Switch
+              aria-label="Toggle billing cycle"
+              checked={billingCycle === "yearly"}
+              onCheckedChange={(checked) => setBillingCycle(checked ? "yearly" : "monthly")}
+            />
+            <span className={`text-sm ${billingCycle === "yearly" ? "font-semibold" : "text-muted-foreground"}`}>
+              Yearly (2 months free)
+            </span>
+          </div>
         </div>
 
-        {/* Plans */}
-        <div
-          className="grid grid-cols-1 items-stretch gap-6 md:grid-cols-2 lg:grid-cols-4"
-          data-testid="plans-grid"
-        >
-          {PLANS.map((plan) => (
-            <Card
-              key={plan.id}
-              className={`relative flex flex-col ${
-                plan.highlight
-                  ? "border-primary ring-2 ring-primary/40 overflow-visible"
-                  : "overflow-hidden"
-              }`}
-            >
-              {plan.highlight && (
-                <span
-                  className="absolute -top-2 right-3 z-10 rounded-full bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground shadow"
-                  data-testid="plan-pro-badge"
-                >
-                  Most popular
-                </span>
-              )}
+        <div className="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-3" data-testid="plans-grid">
+          {plans.map((plan) => {
+            const price = billingCycle === "monthly" ? plan.monthlyPrice : plan.yearlyPrice;
+            const planIdForCta = billingCycle === "monthly" ? plan.monthlyPlanId : plan.yearlyPlanId;
 
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-2xl">
-                  <PlanIcon id={plan.id} />
-                  {plan.name}
-                </CardTitle>
-                <CardDescription>{plan.tagline}</CardDescription>
-              </CardHeader>
+            return (
+              <Card
+                key={plan.id}
+                className={`relative flex flex-col ${
+                  plan.highlight ? "border-primary ring-2 ring-primary/40 overflow-visible" : "overflow-hidden"
+                }`}
+              >
+                {plan.highlight && (
+                  <span
+                    className="absolute -top-2 right-3 z-10 rounded-full bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground shadow"
+                    data-testid="plan-pro-badge"
+                  >
+                    Most popular
+                  </span>
+                )}
 
-              <CardContent className="flex flex-1 flex-col gap-6">
-                <div className="space-y-1">
-                  <div className="text-4xl font-bold leading-none">
-                    {plan.priceUsd !== null ? `$${plan.priceUsd}` : "Custom"}
-                    {plan.priceUsd !== null && (
-                      <span className="ml-1 text-sm font-normal text-muted-foreground">/month</span>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <PlanIcon id={plan.id} />
+                    {plan.name}
+                  </CardTitle>
+                  <CardDescription>{plan.tagline}</CardDescription>
+                </CardHeader>
+
+                <CardContent className="flex flex-1 flex-col gap-6">
+                  <div className="space-y-1">
+                    <div className="text-4xl font-bold leading-none">
+                      ${price}
+                      <span className="ml-1 text-sm font-normal text-muted-foreground">
+                        /{billingCycle === "monthly" ? "month" : "year"}
+                      </span>
+                    </div>
+                    {billingCycle === "yearly" && (
+                      <div className="text-xs text-green-600">2 months free</div>
                     )}
+                    <div className="text-sm text-muted-foreground">Up to {plan.brandLimit} brands included</div>
+                    <div className="text-xs text-muted-foreground">Best for: {plan.bestFor}</div>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {typeof plan.bmk === "number"
-                      ? `${plan.bmk.toLocaleString()} BMK`
-                      : "Custom BMK"}
-                  </div>
-                  <div className="text-xs text-muted-foreground">Best for: {plan.bestFor}</div>
-                </div>
 
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/80">
-                    What you can create
-                  </p>
-                  <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                    {plan.outputs.map((item) => (
-                      <li key={item} className="flex items-start gap-2">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/80">
+                      Included output per month
+                    </p>
+                    <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+                      <li className="flex items-start gap-2">
                         <Check className="mt-0.5 h-3.5 w-3.5 text-primary" />
-                        <span>{item}</span>
+                        <span>{plan.videos} videos</span>
                       </li>
-                    ))}
-                  </ul>
-                </div>
+                      <li className="flex items-start gap-2">
+                        <Check className="mt-0.5 h-3.5 w-3.5 text-primary" />
+                        <span>{plan.images} images</span>
+                      </li>
+                    </ul>
+                  </div>
 
-                <ul className="space-y-2">
-                  {plan.features.map((f) => (
-                    <li key={f} className="flex items-start">
-                      <Check className="mr-2 mt-0.5 h-4 w-4 text-green-500" />
-                      <span className="text-sm text-muted-foreground">{f}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
+                  {plan.id === "agency" && (
+                    <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground" data-testid="agency-extra-note">
+                      +30 USD / month per extra brand (includes +20 videos & +100 images)
+                    </div>
+                  )}
+                </CardContent>
 
-              <CardFooter>
-                <Button
-                  asChild
-                  className="w-full"
-                  variant={plan.id === "enterprise" ? "secondary" : "default"}
-                >
-                  <Link href={plan.ctaHref}>{plan.ctaLabel}</Link>
-                </Button>
-              </CardFooter>
-            </Card>
-          ))}
+                <CardFooter>
+                  <Button asChild className="w-full" variant={plan.highlight ? "default" : "secondary"}>
+                    <Link href={`/register?plan=${planIdForCta}`}>
+                      {billingLabel} · Start for ${price}/{ctaSuffix}
+                    </Link>
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
+
+          <Card className="flex flex-col justify-between border-dashed">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <Building2 className="h-4 w-4" /> Enterprise
+              </CardTitle>
+              <CardDescription>Security, SLA and bespoke integrations.</CardDescription>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground">
+              Custom BMK quotas, SSO/SCIM, dedicated support and private deployments.
+            </CardContent>
+            <CardFooter>
+              <Button asChild className="w-full" variant="secondary">
+                <Link href={ENTERPRISE_CONTACT_URL}>Contact Sales</Link>
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
 
-        {/* Included belt */}
         <section
           id="included"
           data-testid="included-belt"
@@ -254,42 +270,7 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
             </li>
           </ul>
         </section>
-
-        {/* FAQ */}
-        <section className="mx-auto mt-16 max-w-3xl" id="faq">
-          <h2 className="text-2xl font-semibold">FAQ</h2>
-          <div className="mt-6 space-y-6 text-sm text-muted-foreground">
-            <div>
-              <p className="font-medium text-foreground">How do BMK credits work?</p>
-              <p className="mt-1">
-                BMK are credits used for AI generation (text, images, video). Each operation
-                consumes a predefined number of credits.
-              </p>
-            </div>
-            <div>
-              <p className="font-medium text-foreground">Can I switch plans later?</p>
-              <p className="mt-1">
-                Yes — you can upgrade/downgrade anytime. Remaining credits carry over.
-              </p>
-            </div>
-            <div>
-              <p className="font-medium text-foreground">Do you offer enterprise terms?</p>
-              <p className="mt-1">
-                We do. SSO, custom quotas, private models and SLA —{" "}
-                <Link href={ENTERPRISE_CONTACT_URL} className="underline">
-                  contact us
-                </Link>
-                .
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <p className="mx-auto mt-12 max-w-3xl text-center text-xs text-muted-foreground">
-          Prices are indicative and subject to change. Taxes/VAT are not included and depend on your
-          jurisdiction.
-        </p>
-      </main>
+      </section>
     </div>
   );
 }

@@ -24,6 +24,7 @@ export interface Brand extends BaseDocument {
   primaryContactId?: string;
   status?: 'draft' | 'active' | 'archived' | string;
   metadata?: Record<string, unknown>;
+  isExtraBrand?: boolean;
 }
 
 export interface MediaAsset extends BaseDocument {
@@ -54,6 +55,11 @@ export interface UserProfile extends BaseDocument {
   photoURL?: string | null;
   role?: 'admin' | 'user' | 'viewer' | 'editor' | string;
   subscriptionPlan?: 'free' | 'solo' | 'pro' | 'agency' | string;
+  subscriptionMeta?: {
+    baseBrandLimit?: number;
+    extraBrandCount?: number;
+    extraBrandPriceUsd?: number;
+  };
   bmkCredits?: number;
   bmkBalance?: number;
   onboardingComplete?: boolean;

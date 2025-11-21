@@ -27,6 +27,7 @@ service cloud.firestore {
     }
 
     // Anyone authenticated can create a brand, as long as they set themselves as the owner.
+    // Brand count enforcement is handled in the manageBrandFlow backend guard (subscriptionMeta.extraBrandCount).
     // Only the owner of a brand can read, update, or delete it.
     match /brands/{brandId} {
       allow read, update, delete: if isBrandOwner(brandId);
