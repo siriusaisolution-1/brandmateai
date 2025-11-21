@@ -1,57 +1,50 @@
 import { z } from 'zod';
 
-import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
+export const ModerationOutputSchema = z.object({
+  isSafe: z.boolean(),
+  categories: z.array(z.string()),
+});
 
-const ModerationOutputSchema = z.object({ isSafe: z.boolean(), categories: z.array(z.string()) });
+const CATEGORY_PATTERNS: Record<string, RegExp[]> = {
+  sexual: [/sexual/i, /porn/i, /explicit/i, /nsfw/i, /sex/i],
+  'self-harm': [/suicide/i, /self[- ]?harm/i, /kill myself/i],
+  hate: [/hate/i, /racist/i, /bigot/i],
+  violence: [/violence/i, /violent/i, /kill/i, /assault/i, /attack/i, /murder/i],
+  profanity: [/\b(fuck|shit|damn)\b/i],
+};
 
-function normaliseText(text: string): string {
-  return text.toLowerCase();
-}
+export function detectCategories(text: string): string[] {
+  const normalised = text.toLowerCase();
 
-function detectCategories(text: string): string[] {
-  const normalised = normaliseText(text);
-  const categories: string[] = [];
+  const categories = Object.entries(CATEGORY_PATTERNS)
+    .filter(([, patterns]) => patterns.some((regex) => regex.test(normalised)))
+    .map(([key]) => key);
 
-  if (/sex|explicit|porn|nsfw/.test(normalised)) {
-    categories.push('sexual');
-  }
-  if (/suicide|self-?harm|kill myself/.test(normalised)) {
-    categories.push('self-harm');
-  }
-  if (/hate|racist|bigot/.test(normalised)) {
-    categories.push('hate');
-  }
-  if (/violence|murder|attack/.test(normalised)) {
-    categories.push('violence');
-  }
-  if (/fuck|shit|damn/.test(normalised)) {
-    categories.push('profanity');
-  }
-
+  // de-dup just in case
   return Array.from(new Set(categories));
 }
 
-function moderateText(text: string) {
+export function moderateText(
+  text: string,
+): { isSafe: boolean; categories: string[] } {
   const categories = detectCategories(text);
   return {
     isSafe: categories.length === 0,
     categories,
-  } satisfies z.infer<typeof ModerationOutputSchema>;
+  };
 }
 
-export const moderateTextFlow = ai.defineFlow(
-  {
-    name: 'moderateTextFlow',
-    inputSchema: z.string(),
-    outputSchema: ModerationOutputSchema,
-  },
-  async (text) => {
-    await ensureGoogleGenAiApiKeyReady();
-    return moderateText(text);
-  },
-);
+export async function moderateTextFlow(
+  text: string,
+): Promise<z.infer<typeof ModerationOutputSchema>> {
+  // Pure/local moderation (no external provider / no Genkit dependency)
+  return ModerationOutputSchema.parse(moderateText(text));
+}
 
-export const _test = { detectCategories, moderateText };
+export const _test = {
+  detectCategories,
+  moderateText,
+  ModerationOutputSchema,
+};
 
 export default moderateTextFlow;
-

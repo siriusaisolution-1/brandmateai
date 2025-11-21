@@ -6,6 +6,7 @@ export type {
   FirestoreDateLike,
   BaseDocument,
   Brand,
+  BrandMemory,
   MediaAsset,
   Notification,
   UserProfile,
@@ -17,9 +18,20 @@ export type {
   AdCampaign,
   ScraperCache,
   TrendInsight,
+
+  // Content + outputs
+  ContentChannel,
+  ContentOutputType,
+  ContentRequest,
+  OutputType,
+  OutputMeta,
+  Output,
+
+  // Chat
+  ChatSession,
+  ChatMessage,
+
+  // Model map helpers
   FirestoreModels,
   WithId,
-  ContentRequest,
-  Output,
-  OutputType,
 } from '../../functions/src/types/firestore';
