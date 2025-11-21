@@ -18,11 +18,20 @@ export type {
   AdCampaign,
   ScraperCache,
   TrendInsight,
-  FirestoreModels,
-  WithId,
-  ContentRequest,
+
+  // Content + outputs
   ContentChannel,
   ContentOutputType,
+  ContentRequest,
+  OutputType,
+  OutputMeta,
+  Output,
+
+  // Chat
   ChatSession,
   ChatMessage,
+
+  // Model map helpers
+  FirestoreModels,
+  WithId,
 } from '../../functions/src/types/firestore';

@@ -6,22 +6,27 @@ export const ModerationOutputSchema = z.object({
 });
 
 const CATEGORY_PATTERNS: Record<string, RegExp[]> = {
-  sexual: [/sexual/i, /porn/i, /explicit/i],
-  'self-harm': [/suicide/i, /self[- ]?harm/i],
+  sexual: [/sexual/i, /porn/i, /explicit/i, /nsfw/i, /sex/i],
+  'self-harm': [/suicide/i, /self[- ]?harm/i, /kill myself/i],
   hate: [/hate/i, /racist/i, /bigot/i],
-  violence: [/violence/i, /violent/i, /kill/i, /assault/i, /attack/i],
+  violence: [/violence/i, /violent/i, /kill/i, /assault/i, /attack/i, /murder/i],
   profanity: [/\b(fuck|shit|damn)\b/i],
 };
 
 export function detectCategories(text: string): string[] {
   const normalised = text.toLowerCase();
 
-  return Object.entries(CATEGORY_PATTERNS)
+  const categories = Object.entries(CATEGORY_PATTERNS)
     .filter(([, patterns]) => patterns.some((regex) => regex.test(normalised)))
     .map(([key]) => key);
+
+  // de-dup just in case
+  return Array.from(new Set(categories));
 }
 
-export function moderateText(text: string): { isSafe: boolean; categories: string[] } {
+export function moderateText(
+  text: string,
+): { isSafe: boolean; categories: string[] } {
   const categories = detectCategories(text);
   return {
     isSafe: categories.length === 0,
@@ -32,7 +37,8 @@ export function moderateText(text: string): { isSafe: boolean; categories: strin
 export async function moderateTextFlow(
   text: string,
 ): Promise<z.infer<typeof ModerationOutputSchema>> {
-  return moderateText(text);
+  // Pure/local moderation (no external provider / no Genkit dependency)
+  return ModerationOutputSchema.parse(moderateText(text));
 }
 
 export const _test = {
@@ -40,3 +46,5 @@ export const _test = {
   moderateText,
   ModerationOutputSchema,
 };
+
+export default moderateTextFlow;

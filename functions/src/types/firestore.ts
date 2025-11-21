@@ -1,5 +1,8 @@
 import type { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
+/**
+ * Firestore timestamp / FieldValue / JS date helpers.
+ */
 export type FirestoreDateLike = Timestamp | FieldValue | Date | number | string;
 
 export interface BaseDocument {
@@ -8,8 +11,11 @@ export interface BaseDocument {
   updatedAt?: FirestoreDateLike;
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                   Brands                                   */
+/* -------------------------------------------------------------------------- */
+
 export interface Brand extends BaseDocument {
-  id?: string;
   ownerId: string;
   name: string;
   industry?: string;
@@ -22,7 +28,7 @@ export interface Brand extends BaseDocument {
   createdAt: FirestoreDateLike;
   updatedAt: FirestoreDateLike;
 
-  // Legacy/compatibility fields retained for now
+  // Legacy/compat fields
   logoUrl?: string;
   colors?: string[];
   fonts?: string[];
@@ -52,6 +58,10 @@ export interface BrandMemory extends BaseDocument {
   updatedAt: FirestoreDateLike;
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                 Media/Notif                                */
+/* -------------------------------------------------------------------------- */
+
 export interface MediaAsset extends BaseDocument {
   brandId: string;
   userId: string;
@@ -74,6 +84,10 @@ export interface Notification extends BaseDocument {
   priority?: 'low' | 'normal' | 'high';
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                     User                                   */
+/* -------------------------------------------------------------------------- */
+
 export interface UserProfile extends BaseDocument {
   email?: string | null;
   displayName?: string | null;
@@ -87,8 +101,12 @@ export interface UserProfile extends BaseDocument {
   settings?: Record<string, unknown>;
 }
 
-// Kompatibilnost sa starijim importima koji su koristili `User`
+// Back-compat alias
 export type User = UserProfile;
+
+/* -------------------------------------------------------------------------- */
+/*                               Brand Reports                                */
+/* -------------------------------------------------------------------------- */
 
 export interface BrandReportSection {
   title: string;
@@ -107,8 +125,13 @@ export interface BrandReport extends BaseDocument {
   metadata?: Record<string, unknown>;
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                  Calendar                                  */
+/* -------------------------------------------------------------------------- */
+
 export interface CalendarEvent extends BaseDocument {
   brandId: string;
+  ownerId?: string; // legacy
   title: string;
   description?: string;
   channel?: string;
@@ -117,6 +140,10 @@ export interface CalendarEvent extends BaseDocument {
   status?: 'draft' | 'scheduled' | 'sent' | 'cancelled' | string;
   metadata?: Record<string, unknown>;
 }
+
+/* -------------------------------------------------------------------------- */
+/*                                 AdCampaigns                                */
+/* -------------------------------------------------------------------------- */
 
 export interface AdCampaignMetrics {
   impressions?: number;
@@ -144,6 +171,10 @@ export interface AdCampaign extends BaseDocument {
   metadata?: Record<string, unknown>;
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                Scraper/Trends                              */
+/* -------------------------------------------------------------------------- */
+
 export interface ScraperCache extends BaseDocument {
   url: string;
   brandId?: string;
@@ -163,7 +194,9 @@ export interface TrendInsight extends BaseDocument {
   metadata?: Record<string, unknown>;
 }
 
-/* ----------------------------- M4 Outputs ----------------------------- */
+/* -------------------------------------------------------------------------- */
+/*                                   Outputs                                  */
+/* -------------------------------------------------------------------------- */
 
 export type OutputType = 'video' | 'image' | 'copy';
 
@@ -176,19 +209,30 @@ export interface OutputMeta {
 
 export interface Output extends BaseDocument {
   brandId: string;
-  requestId: string;
+  requestId: string; // primary link to ContentRequest
   type: OutputType;
   platform?: string;
   variantIndex?: number;
-  status: 'draft' | 'approved' | 'published' | string;
+  status: 'draft' | 'approved' | 'published' | 'error' | string;
   meta?: OutputMeta;
   storagePath?: string;
   url?: string;
   text?: string;
   createdBy: string;
+
+  // Legacy/compat fields
+  ownerId?: string;
+  contentRequestId?: string;
+  title?: string;
+  summary?: string;
+  mediaUrl?: string;
+  thumbnailUrl?: string;
+  metadata?: Record<string, unknown>;
 }
 
-/* ------------------------ Content Requests (M3+) ------------------------ */
+/* -------------------------------------------------------------------------- */
+/*                              Content Requests (M3+)                        */
+/* -------------------------------------------------------------------------- */
 
 export type ContentChannel =
   | 'instagram_feed'
@@ -198,6 +242,18 @@ export type ContentChannel =
 
 export type ContentOutputType = 'video' | 'image' | 'copy';
 
+export type ContentRequestStatus =
+  | 'draft'
+  | 'queued'
+  | 'in_progress'
+  | 'processing'      // legacy synonym
+  | 'done'
+  | 'failed'
+  | 'needs_revision'
+  | 'approved'
+  | 'cancelled'
+  | string;
+
 export interface ContentRequest extends BaseDocument {
   brandId: string;
   userId: string;
@@ -205,7 +261,7 @@ export interface ContentRequest extends BaseDocument {
   title: string;
   description?: string;
 
-  goal?: 'increase_sales' | 'brand_awareness' | 'engagement' | 'other';
+  goal?: 'increase_sales' | 'brand_awareness' | 'engagement' | 'other' | string;
   channels: ContentChannel[];
 
   requestedOutputs: {
@@ -214,22 +270,26 @@ export interface ContentRequest extends BaseDocument {
     copy?: number;
   };
 
-  status:
-    | 'draft'
-    | 'queued'
-    | 'in_progress'
-    | 'needs_revision'
-    | 'approved'
-    | 'cancelled';
+  status: ContentRequestStatus;
 
   masterBrief: unknown;
 
   createdFromChatId?: string;
   createdAt: FirestoreDateLike;
   updatedAt: FirestoreDateLike;
+
+  // Legacy/compat fields
+  ownerId?: string;
+  channel?: string;
+  requestedVideos?: number;
+  requestedImages?: number;
+  requestedCopy?: number;
+  metadata?: Record<string, unknown>;
 }
 
-/* ----------------------------- Chat (M3) ----------------------------- */
+/* -------------------------------------------------------------------------- */
+/*                                   Chat (M3)                                */
+/* -------------------------------------------------------------------------- */
 
 export interface ChatSession extends BaseDocument {
   brandId: string;
@@ -249,7 +309,9 @@ export interface ChatMessage extends BaseDocument {
   createdAt: FirestoreDateLike;
 }
 
-/* ----------------------------- Model Map ----------------------------- */
+/* -------------------------------------------------------------------------- */
+/*                                   Model Map                                */
+/* -------------------------------------------------------------------------- */
 
 export type FirestoreModels = {
   brands: Brand;
@@ -263,15 +325,13 @@ export type FirestoreModels = {
   scraperCache: ScraperCache;
   trendInsights: TrendInsight;
 
-  // M4
+  // Core generation models
+  contentRequests: ContentRequest;
   outputs: Output;
 
-  // M3
+  // Chat
   chatSessions: ChatSession;
   chatMessages: ChatMessage;
-
-  // M3+
-  contentRequests: ContentRequest;
 };
 
 export type WithId<T extends BaseDocument> = T & { id: string };

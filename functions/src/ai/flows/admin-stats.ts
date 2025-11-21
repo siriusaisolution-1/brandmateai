@@ -49,7 +49,7 @@ async function getCollectionCount(collection: CollectionReference): Promise<numb
 async function calculateBmkSpentSince(threshold: Date): Promise<number> {
   const db = getDb();
   const ledger = db.collection('bmkLedger');
-  let query: Query = ledger;
+  let query: Query = ledger as unknown as Query;
 
   if (typeof (ledger as any).where === 'function') {
     const filteredByDirection = (ledger as any).where('direction', '==', 'debit');
@@ -80,6 +80,7 @@ async function calculateBmkSpentSince(threshold: Date): Promise<number> {
 
 async function resolveAdminStats(uid: string): Promise<z.infer<typeof AdminStatsOutputSchema>> {
   const db = getDb();
+
   const usersCollection = db.collection('users');
   const userDoc = await usersCollection.doc(uid).get();
 
@@ -92,8 +93,8 @@ async function resolveAdminStats(uid: string): Promise<z.infer<typeof AdminStats
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   const [totalUsers, totalBrands, bmkSpentLast24h] = await Promise.all([
-    getCollectionCount(usersCollection),
-    getCollectionCount(brandsCollection),
+    getCollectionCount(usersCollection as unknown as CollectionReference),
+    getCollectionCount(brandsCollection as unknown as CollectionReference),
     calculateBmkSpentSince(dayAgo),
   ]);
 

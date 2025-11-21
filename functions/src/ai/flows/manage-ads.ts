@@ -1,5 +1,4 @@
 // functions/src/ai/flows/manage-ads.ts
-
 import {
   FieldValue,
   getFirestore,
@@ -54,8 +53,8 @@ export const ManageAdsInputSchema = z.object({
 });
 
 export const ManageAdsOutputSchema = z.object({
-  status: z.string(),
-  requestId: z.string().optional(),
+  status: z.literal('queued'),
+  requestId: z.string(),
 });
 
 /**
@@ -65,7 +64,6 @@ async function resolveRequester(
   uid: string,
 ): Promise<'admin' | 'user' | string | null> {
   const snapshot = await getDb().collection('users').doc(uid).get();
-
   if (!snapshot.exists) return null;
 
   const role = snapshot.get('role');
@@ -86,8 +84,8 @@ async function enqueueAdSyncRequest(
   let requestRef: DocumentReference | undefined;
 
   // 1) Admin Firestore API (.doc)
-  if (typeof queueCollection.doc === 'function') {
-    requestRef = queueCollection.doc(input.eventId);
+  if (typeof (queueCollection as any).doc === 'function') {
+    requestRef = (queueCollection as any).doc(input.eventId);
 
     const existing = await requestRef.get();
     if (existing.exists) {
@@ -112,12 +110,8 @@ async function enqueueAdSyncRequest(
     );
   }
   // 2) Lite/Mock varijanta (.add)
-  else if (typeof (queueCollection as { add?: unknown }).add === 'function') {
-    const addFn = (queueCollection as {
-      add: (data: unknown) => Promise<DocumentReference>;
-    }).add;
-
-    requestRef = await addFn({
+  else if (typeof (queueCollection as any).add === 'function') {
+    requestRef = await (queueCollection as any).add({
       eventId: input.eventId,
       adAccountId: input.adAccountId,
       brandId: input.brandId ?? null,
@@ -133,7 +127,6 @@ async function enqueueAdSyncRequest(
 
   const requestId = requestRef.id ?? input.eventId;
 
-  // Audit zapis
   await operationsAudit.add({
     type: 'adSyncRequest',
     referenceId: requestId,
