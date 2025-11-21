@@ -83,6 +83,7 @@ export interface BrandReport extends BaseDocument {
 
 export interface CalendarEvent extends BaseDocument {
   brandId: string;
+  ownerId?: string;
   title: string;
   description?: string;
   channel?: string;
@@ -118,6 +119,44 @@ export interface AdCampaign extends BaseDocument {
   metadata?: Record<string, unknown>;
 }
 
+export interface ContentRequest extends BaseDocument {
+  brandId: string;
+  ownerId?: string;
+  title: string;
+  description?: string;
+  goal?: string;
+  channel?: string;
+  requestedVideos?: number;
+  requestedImages?: number;
+  requestedCopy?: number;
+  status?:
+    | 'draft'
+    | 'queued'
+    | 'processing'
+    | 'done'
+    | 'failed'
+    | 'needs_revision'
+    | string;
+  metadata?: Record<string, unknown>;
+}
+
+export type OutputType = 'video' | 'image' | 'copy' | string;
+
+export interface Output extends BaseDocument {
+  brandId: string;
+  ownerId?: string;
+  contentRequestId?: string;
+  type: OutputType;
+  title?: string;
+  summary?: string;
+  text?: string;
+  mediaUrl?: string;
+  thumbnailUrl?: string;
+  platform?: string;
+  status?: 'draft' | 'ready' | 'error' | 'published' | string;
+  metadata?: Record<string, unknown>;
+}
+
 export interface ScraperCache extends BaseDocument {
   url: string;
   brandId?: string;
@@ -147,6 +186,8 @@ export type FirestoreModels = {
   adCampaigns: AdCampaign;
   scraperCache: ScraperCache;
   trendInsights: TrendInsight;
+  contentRequests: ContentRequest;
+  outputs: Output;
 };
 
 export type WithId<T extends BaseDocument> = T & { id: string };

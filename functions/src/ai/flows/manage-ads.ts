@@ -1,14 +1,24 @@
-import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
+import admin from 'firebase-admin';
+import type { DocumentReference } from 'firebase-admin/firestore';
+import { HttpsError } from 'firebase-functions/v1/https';
 import { z } from 'zod';
-export const manageAdsFlow = ai.defineFlow({
-  name: 'manageAdsFlow',
-  inputSchema: z.object({ eventId: z.string(), adAccountId: z.string() }),
-  outputSchema: z.object({ status: z.string() })
-}, async (_input) => {
-  await ensureGoogleGenAiApiKeyReady();
 
-  // MIG-2 stub: integrate DB + ad platform later
-  return { status: 'queued' };
+import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
+import { extractAuthUserId } from '../../utils/flow-context';
+
+const firestore = admin.firestore();
+const { FieldValue } = admin.firestore;
+
+const ManageAdsInputSchema = z.object({
+  eventId: z.string(),
+  adAccountId: z.string(),
+  brandId: z.string().optional(),
+  notes: z.string().optional(),
+});
+
+const ManageAdsOutputSchema = z.object({
+  status: z.literal('queued'),
+  requestId: z.string(),
 });
 
 async function resolveRequester(uid: string): Promise<'admin' | 'user' | string | null> {
@@ -88,6 +98,8 @@ export const manageAdsFlow = ai.defineFlow(
     outputSchema: ManageAdsOutputSchema,
   },
   async (input, { context }) => {
+    await ensureGoogleGenAiApiKeyReady();
+
     const uid = extractAuthUserId(context);
 
     if (!uid) {
@@ -109,3 +121,5 @@ export const _test = {
   ManageAdsInputSchema,
   ManageAdsOutputSchema,
 };
+
+export default manageAdsFlow;

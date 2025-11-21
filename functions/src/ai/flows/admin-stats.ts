@@ -1,14 +1,17 @@
-import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
+import admin from 'firebase-admin';
+import type { CollectionReference, Query } from 'firebase-admin/firestore';
+import { HttpsError } from 'firebase-functions/v1/https';
 import { z } from 'zod';
-export const adminStatsFlow = ai.defineFlow({
-  name: 'adminStatsFlow',
-  inputSchema: z.object({}),
-  outputSchema: z.object({ totalUsers: z.number(), totalBrands: z.number(), bmkSpentLast24h: z.number() })
-}, async (_input) => {
-  await ensureGoogleGenAiApiKeyReady();
 
-  // TODO: hook to Firestore metrics
-  return { totalUsers: 0, totalBrands: 0, bmkSpentLast24h: 0 };
+import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
+import { extractAuthUserId } from '../../utils/flow-context';
+
+const firestore = admin.firestore();
+
+const AdminStatsOutputSchema = z.object({
+  totalUsers: z.number(),
+  totalBrands: z.number(),
+  bmkSpentLast24h: z.number(),
 });
 
 async function getCollectionCount(
@@ -53,6 +56,8 @@ async function calculateBmkSpentSince(
 }
 
 async function resolveAdminStats(uid: string): Promise<z.infer<typeof AdminStatsOutputSchema>> {
+  await ensureGoogleGenAiApiKeyReady();
+
   const usersCollection = firestore.collection('users');
   const userDoc = await usersCollection.doc(uid).get();
 
@@ -99,3 +104,5 @@ export const _test = {
   calculateBmkSpentSince,
   resolveAdminStats,
 };
+
+export default adminStatsFlow;

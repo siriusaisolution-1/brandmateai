@@ -4,7 +4,7 @@
     "codeName": "brandmate_ai_studio",
     "owner": "Sirius AI Solution",
     "version": "3.0.0",
-    "status": "planning",
+    "status": "active",
     "primaryDoc": "brandmate_v3_Product&ArchitectureBlueprint.md",
     "description": "AI-driven content studio for video, visuals and copy, orchestrated by a master AI agent, focused on solo founders, small agencies and creators."
   },
@@ -99,7 +99,7 @@
     {
       "id": "M1",
       "name": "Foundation & Auth",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Clean up repo, env, and base configs.",
         "Set up Firebase Auth and basic /login, /register, /app shell.",
@@ -109,7 +109,7 @@
     {
       "id": "M2",
       "name": "Brand Onboarding & Brand Memory",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Implement quick brand setup (short form).",
         "Implement extended brand wizard (full brand memory).",
@@ -119,7 +119,7 @@
     {
       "id": "M3",
       "name": "Master AI Chat MVP",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Implement /app/brands/{brandId}/chat page with chat UI.",
         "Implement master AI endpoint (Functions or Next.js API) that creates ContentRequests from chat.",
@@ -129,7 +129,7 @@
     {
       "id": "M4",
       "name": "Agents & Media Generation",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Implement CopyAgent, VisualAgent and VideoAgent as separate flows/endpoints.",
         "Integrate Novita image + video APIs.",
@@ -139,11 +139,21 @@
     {
       "id": "M5",
       "name": "Library, Requests & Calendar",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Implement asset library UI (videos, images, copy).",
         "Implement contentRequests list/detail pages.",
         "Implement simple content calendar view per brand."
+      ]
+    },
+    {
+      "id": "M5b",
+      "name": "Test Stabilization",
+      "status": "done",
+      "goals": [
+        "Resolve duplicate export errors in admin-stats and manage-ads flows.",
+        "Stabilize moderation and GenAI-related tests with shims and mocks.",
+        "Harden Firestore rules checks with emulator guards."
       ]
     },
     {
@@ -168,7 +178,7 @@
     }
   ],
   "codex": {
-    "currentMilestoneId": "M1",
+    "currentMilestoneId": "M6",
     "allowedScopes": [
       "frontend",
       "functions",

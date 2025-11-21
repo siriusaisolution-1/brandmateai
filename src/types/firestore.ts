@@ -19,4 +19,7 @@ export type {
   TrendInsight,
   FirestoreModels,
   WithId,
+  ContentRequest,
+  Output,
+  OutputType,
 } from '../../functions/src/types/firestore';
