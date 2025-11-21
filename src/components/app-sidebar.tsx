@@ -1,10 +1,14 @@
 'use client';
 
+import type { ElementType } from 'react';
+
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Megaphone, Calendar, BarChart, PlusCircle, Building } from "lucide-react";
+import { isOwnerUser } from "@/lib/auth/owner";
+import { LayoutDashboard, Megaphone, Calendar, BarChart, PlusCircle, Building, Shield } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useUser } from "reactfire";
 
 const navItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -13,7 +17,7 @@ const navItems = [
     { href: '/analytics', label: 'Analytics', icon: BarChart },
 ];
 
-const NavLink = ({ href, label, icon: Icon }: { href: string, label: string, icon: React.ElementType }) => {
+const NavLink = ({ href, label, icon: Icon }: { href: string; label: string; icon: ElementType }) => {
     const pathname = usePathname();
     const isActive = pathname.startsWith(href);
 
@@ -32,6 +36,9 @@ const NavLink = ({ href, label, icon: Icon }: { href: string, label: string, ico
 
 
 export function AppSidebar() {
+    const { data: user } = useUser();
+    const showAdminLink = isOwnerUser(user ?? undefined);
+
     return (
         <div className="hidden border-r bg-muted/40 md:block">
             <div className="flex h-full max-h-screen flex-col gap-2">
@@ -44,12 +51,13 @@ export function AppSidebar() {
                 <div className="flex-1">
                     <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
                         <div className="mb-4">
-                             <Button className="w-full">
+                            <Button className="w-full">
                                 <PlusCircle className="mr-2 h-4 w-4" />
                                 Create New
                             </Button>
                         </div>
                         {navItems.map(item => <NavLink key={item.href} {...item} />)}
+                        {showAdminLink && <NavLink href="/admin/beta" label="Beta Admin" icon={Shield} />}
                     </nav>
                 </div>
             </div>

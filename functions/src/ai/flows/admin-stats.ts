@@ -1,19 +1,20 @@
-import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
+import * as admin from 'firebase-admin';
+import type { CollectionReference, Query } from 'firebase-admin/firestore';
+import { HttpsError } from 'firebase-functions/v1/https';
 import { z } from 'zod';
-export const adminStatsFlow = ai.defineFlow({
-  name: 'adminStatsFlow',
-  inputSchema: z.object({}),
-  outputSchema: z.object({ totalUsers: z.number(), totalBrands: z.number(), bmkSpentLast24h: z.number() })
-}, async (_input) => {
-  await ensureGoogleGenAiApiKeyReady();
 
-  // TODO: hook to Firestore metrics
-  return { totalUsers: 0, totalBrands: 0, bmkSpentLast24h: 0 };
+import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
+import { extractAuthUserId } from '../../utils/flow-context';
+
+const firestore = admin.firestore();
+
+const AdminStatsOutputSchema = z.object({
+  totalUsers: z.number(),
+  totalBrands: z.number(),
+  bmkSpentLast24h: z.number(),
 });
 
-async function getCollectionCount(
-  collection: CollectionReference,
-): Promise<number> {
+async function getCollectionCount(collection: CollectionReference): Promise<number> {
   if (typeof collection.count === 'function') {
     const snapshot = await collection.count().get();
     const count = snapshot.data()?.count;
@@ -24,9 +25,7 @@ async function getCollectionCount(
   return typeof snapshot.size === 'number' ? snapshot.size : 0;
 }
 
-async function calculateBmkSpentSince(
-  threshold: Date,
-): Promise<number> {
+async function calculateBmkSpentSince(threshold: Date): Promise<number> {
   const ledger = firestore.collection('bmkLedger');
   let query: Query = ledger;
 
@@ -38,7 +37,6 @@ async function calculateBmkSpentSince(
   }
 
   const snapshot = await query.get();
-
   const docs = snapshot && typeof snapshot === 'object' && 'docs' in snapshot && Array.isArray((snapshot as { docs: unknown }).docs)
     ? (snapshot as { docs: Array<{ data: () => unknown }> }).docs
     : [];
@@ -84,6 +82,8 @@ export const adminStatsFlow = ai.defineFlow(
     outputSchema: AdminStatsOutputSchema,
   },
   async (_input, { context }) => {
+    await ensureGoogleGenAiApiKeyReady();
+
     const uid = extractAuthUserId(context);
 
     if (!uid) {
@@ -98,4 +98,5 @@ export const _test = {
   getCollectionCount,
   calculateBmkSpentSince,
   resolveAdminStats,
+  AdminStatsOutputSchema,
 };

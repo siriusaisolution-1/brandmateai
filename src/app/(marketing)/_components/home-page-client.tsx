@@ -566,7 +566,7 @@ export function HomePageClient() {
                 </p>
               </div>
               <div className="grid gap-6 text-left sm:grid-cols-2 lg:grid-cols-3">
-                {[
+                {([
                   {
                     name: "Starter",
                     price: "$0",
@@ -598,11 +598,17 @@ export function HomePageClient() {
                       "SOC 2 Type II compliance",
                     ],
                   },
-                ].map((plan) => (
+                ] as {
+                  name: string;
+                  price: string;
+                  descriptor: string;
+                  features: string[];
+                  highlighted?: boolean;
+                }[]).map((plan) => (
                   <div
                     key={plan.name}
                     className={`rounded-2xl border ${
-                      (plan as any).highlighted
+                      plan.highlighted
                         ? "border-emerald-400/60 bg-emerald-500/10"
                         : "border-white/10 bg-white/5"
                     } p-6`}
@@ -630,7 +636,7 @@ export function HomePageClient() {
                     <Button
                       asChild
                       className="mt-8 w-full"
-                      variant={(plan as any).highlighted ? "default" : "secondary"}
+                      variant={plan.highlighted ? "default" : "secondary"}
                     >
                       <Link
                         href={

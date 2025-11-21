@@ -199,6 +199,29 @@ vi.mock(new URL("./functions/src/utils/firebase.ts", import.meta.url).pathname, 
   };
 });
 
+vi.mock(new URL("./functions/src/genkit/ai.ts", import.meta.url).pathname, () => {
+  const defineFlow = <Input, Output>(
+    _config: unknown,
+    handler: (input: Input, invocation?: { context?: unknown }) => Promise<Output> | Output,
+  ) => {
+    return (
+      input: Input,
+      invocation?: { context?: unknown },
+    ) => handler(input, invocation ?? { context: undefined });
+  };
+
+  const aiMock = {
+    defineFlow,
+    currentContext: vi.fn(() => undefined),
+    generate: vi.fn(async () => ({ text: '' })),
+  };
+
+  return {
+    ai: aiMock,
+    ensureGoogleGenAiApiKeyReady: vi.fn(async () => 'test-google-genai'),
+  };
+});
+
 beforeEach(() => {
   firebaseAdminMock.reset();
   getAssetUrlMock.mockClear();
