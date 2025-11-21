@@ -1,3 +1,4 @@
+// functions/src/ai/flows/admin-stats.ts
 import { CollectionReference, Query, getFirestore } from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v1/https';
 import { z } from 'zod';
@@ -6,6 +7,10 @@ import { extractAuthUserId } from '../../utils/flow-context';
 
 type FirestoreLike = ReturnType<typeof getFirestore>;
 
+/**
+ * Test-friendly DB accessor.
+ * In Vitest, __vitestFirebaseAdmin.mocks.collection is injected so we avoid loading real Admin SDK.
+ */
 function getDb(): FirestoreLike {
   const mockCollection = (
     globalThis as {
@@ -20,21 +25,23 @@ function getDb(): FirestoreLike {
   return getFirestore();
 }
 
-const AdminStatsOutputSchema = z.object({
+export const AdminStatsOutputSchema = z.object({
   totalUsers: z.number(),
   totalBrands: z.number(),
   bmkSpentLast24h: z.number(),
 });
 
-const AdminStatsInputSchema = z.object({});
+export const AdminStatsInputSchema = z.object({});
 
 async function getCollectionCount(collection: CollectionReference): Promise<number> {
-  if (typeof collection.count === 'function') {
-    const snapshot = await collection.count().get();
+  // New Firestore aggregation count() API (if available)
+  if (typeof (collection as any).count === 'function') {
+    const snapshot = await (collection as any).count().get();
     const count = snapshot.data()?.count;
     return typeof count === 'number' && Number.isFinite(count) ? count : 0;
   }
 
+  // Fallback for emulator/tests/older SDKs
   const snapshot = await collection.get();
   return typeof snapshot.size === 'number' ? snapshot.size : 0;
 }
@@ -44,10 +51,11 @@ async function calculateBmkSpentSince(threshold: Date): Promise<number> {
   const ledger = db.collection('bmkLedger');
   let query: Query = ledger;
 
-  if (typeof ledger.where === 'function') {
-    const filteredByDirection = ledger.where('direction', '==', 'debit');
-    if (filteredByDirection && typeof (filteredByDirection as Query).where === 'function') {
-      query = (filteredByDirection as Query).where('createdAt', '>=', threshold);
+  if (typeof (ledger as any).where === 'function') {
+    const filteredByDirection = (ledger as any).where('direction', '==', 'debit');
+
+    if (filteredByDirection && typeof (filteredByDirection as any).where === 'function') {
+      query = (filteredByDirection as any).where('createdAt', '>=', threshold);
     }
   }
 
@@ -64,13 +72,13 @@ async function calculateBmkSpentSince(threshold: Date): Promise<number> {
   return docs.reduce((total, doc) => {
     const data = typeof doc.data === 'function' ? doc.data() : undefined;
     const amount = (data as { amount?: unknown })?.amount;
-    return typeof amount === 'number' && Number.isFinite(amount) ? total + amount : total;
+    return typeof amount === 'number' && Number.isFinite(amount)
+      ? total + amount
+      : total;
   }, 0);
 }
 
-async function resolveAdminStats(
-  uid: string,
-): Promise<z.infer<typeof AdminStatsOutputSchema>> {
+async function resolveAdminStats(uid: string): Promise<z.infer<typeof AdminStatsOutputSchema>> {
   const db = getDb();
   const usersCollection = db.collection('users');
   const userDoc = await usersCollection.doc(uid).get();

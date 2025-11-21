@@ -1,4 +1,10 @@
-import { FieldValue, getFirestore, type DocumentReference } from 'firebase-admin/firestore';
+// functions/src/ai/flows/manage-ads.ts
+
+import {
+  FieldValue,
+  getFirestore,
+  type DocumentReference,
+} from 'firebase-admin/firestore';
 import { HttpsError } from 'firebase-functions/v1/https';
 import { z } from 'zod';
 
@@ -7,12 +13,16 @@ import { extractAuthUserId } from '../../utils/flow-context';
 type FirestoreLike = ReturnType<typeof getFirestore>;
 
 /**
- * Vrati Firestore mock ako postoji, ili realni Firestore u produkciji.
+ * Vrati Firestore mock ako postoji (vitest), ili realni Firestore u produkciji.
  */
 function getDb(): FirestoreLike {
-  const mockCollection = (globalThis as {
-    __vitestFirebaseAdmin?: { mocks?: { collection?: FirestoreLike['collection'] } };
-  }).__vitestFirebaseAdmin?.mocks?.collection;
+  const mockCollection = (
+    globalThis as {
+      __vitestFirebaseAdmin?: {
+        mocks?: { collection?: FirestoreLike['collection'] };
+      };
+    }
+  ).__vitestFirebaseAdmin?.mocks?.collection;
 
   if (typeof mockCollection === 'function') {
     return { collection: mockCollection } as FirestoreLike;
@@ -22,12 +32,16 @@ function getDb(): FirestoreLike {
 }
 
 /**
- * Vrati mockovan FieldValue.serverTimestamp() u testovima, ili pravi u runtime-u.
+ * Vrati mockovan FieldValue u testovima, ili pravi FieldValue u runtime-u.
  */
 function getFieldValue() {
-  const mocked = (globalThis as {
-    __vitestFirebaseAdmin?: { mocks?: { FieldValue?: typeof FieldValue } };
-  }).__vitestFirebaseAdmin?.mocks?.FieldValue;
+  const mocked = (
+    globalThis as {
+      __vitestFirebaseAdmin?: {
+        mocks?: { FieldValue?: typeof FieldValue };
+      };
+    }
+  ).__vitestFirebaseAdmin?.mocks?.FieldValue;
 
   return mocked ?? FieldValue;
 }
@@ -47,33 +61,31 @@ export const ManageAdsOutputSchema = z.object({
 /**
  * Učitaj rolu korisnika (admin/user).
  */
-async function resolveRequester(uid: string): Promise<'admin' | 'user' | string | null> {
+async function resolveRequester(
+  uid: string,
+): Promise<'admin' | 'user' | string | null> {
   const snapshot = await getDb().collection('users').doc(uid).get();
 
   if (!snapshot.exists) return null;
 
   const role = snapshot.get('role');
-
   return typeof role === 'string' ? role : null;
 }
 
 /**
- * Glavna logika za enqueue-ovanje zahteva za sinhronizaciju oglasa.
+ * Enqueue zahteva za sinhronizaciju oglasa + audit entry.
  */
 async function enqueueAdSyncRequest(
   input: z.infer<typeof ManageAdsInputSchema>,
   requestedBy: string,
 ): Promise<z.infer<typeof ManageAdsOutputSchema>> {
   const db = getDb();
-
   const queueCollection = db.collection('adSyncRequests');
   const operationsAudit = db.collection('operationsAudit');
 
   let requestRef: DocumentReference | undefined;
 
-  //
-  // 1) Ako postoji .doc = Firestore Admin API
-  //
+  // 1) Admin Firestore API (.doc)
   if (typeof queueCollection.doc === 'function') {
     requestRef = queueCollection.doc(input.eventId);
 
@@ -99,9 +111,7 @@ async function enqueueAdSyncRequest(
       { merge: false },
     );
   }
-  //
-  // 2) Ako postoji .add() = Firestore Lite / Mock varianta
-  //
+  // 2) Lite/Mock varijanta (.add)
   else if (typeof (queueCollection as { add?: unknown }).add === 'function') {
     const addFn = (queueCollection as {
       add: (data: unknown) => Promise<DocumentReference>;
@@ -117,19 +127,13 @@ async function enqueueAdSyncRequest(
       createdAt: getFieldValue().serverTimestamp(),
       updatedAt: getFieldValue().serverTimestamp(),
     });
-  }
-  //
-  // 3) U suprotnom greška
-  //
-  else {
+  } else {
     throw new HttpsError('internal', 'Ad sync queue is not configured.');
   }
 
   const requestId = requestRef.id ?? input.eventId;
 
-  //
   // Audit zapis
-  //
   await operationsAudit.add({
     type: 'adSyncRequest',
     referenceId: requestId,
@@ -145,7 +149,7 @@ async function enqueueAdSyncRequest(
 }
 
 /**
- * Glavni Flow koji pozivaš iz frontenda.
+ * Flow koji poziva frontend.
  */
 export async function manageAdsFlow(
   input: z.infer<typeof ManageAdsInputSchema>,

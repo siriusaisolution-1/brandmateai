@@ -129,7 +129,7 @@
     {
       "id": "M4",
       "name": "Agents & Media Generation",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Implement CopyAgent, VisualAgent and VideoAgent as separate flows/endpoints.",
         "Integrate Novita image + video APIs.",
@@ -168,7 +168,7 @@
     }
   ],
   "codex": {
-    "currentMilestoneId": "M2",
+    "currentMilestoneId": "M4",
     "allowedScopes": [
       "frontend",
       "functions",

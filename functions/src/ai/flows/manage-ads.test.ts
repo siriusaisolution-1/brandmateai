@@ -1,7 +1,9 @@
-import { describe, it } from 'vitest';
+import { describe, it, beforeEach, expect, vi } from 'vitest';
 import { HttpsError } from 'firebase-functions/v1/https';
 
+// ---------------------------------------------------------------------------
 // Mock Genkit AI (test-safe stub)
+// ---------------------------------------------------------------------------
 vi.mock('../../genkit/ai', () => ({
   ai: {
     defineFlow: (_config: unknown, handler: any) =>
@@ -9,7 +11,9 @@ vi.mock('../../genkit/ai', () => ({
   },
 }));
 
+// ---------------------------------------------------------------------------
 // Access Firebase Admin test mock
+// ---------------------------------------------------------------------------
 const firebaseAdminMock = globalThis.__vitestFirebaseAdmin;
 
 if (!firebaseAdminMock) {
@@ -18,7 +22,9 @@ if (!firebaseAdminMock) {
 
 const { collection: collectionMock, FieldValue } = firebaseAdminMock.mocks;
 
+// ---------------------------------------------------------------------------
 // Mock Firestore admin SDK
+// ---------------------------------------------------------------------------
 vi.mock('firebase-admin/firestore', () => {
   const mock = globalThis.__vitestFirebaseAdmin;
   if (!mock) {

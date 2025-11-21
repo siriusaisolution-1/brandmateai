@@ -85,6 +85,12 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
     }
 
+    // M4 baseline: outputs su vezani za content requests i brandove.
+    match /outputs/{outputId} {
+      allow read: if isBrandOwner(resource.data.brandId);
+      allow create, update, delete: if isBrandOwner(request.resource.data.brandId);
+    }
+
     // M3 baseline: chat sessions and messages are private to the owner.
     match /chatSessions/{sessionId} {
       allow read, update, delete: if isChatSessionOwner(sessionId);

@@ -12,6 +12,7 @@ export * from "./ai/flows/manage-ads";
 export * from "./ai/flows/manage-brand";
 export * from "./ai/flows/manage-calendar";
 export * from "./ai/flows/moderation";
+export * from "./ai/flows/processContentRequestFlow";
 export * from "./ai/flows/social-burst";
 export * from "./ai/flows/strategic-analysis";
 

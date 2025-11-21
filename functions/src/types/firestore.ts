@@ -163,21 +163,32 @@ export interface TrendInsight extends BaseDocument {
   metadata?: Record<string, unknown>;
 }
 
-export type FirestoreModels = {
-  brands: Brand;
-  brandMemories: BrandMemory;
-  mediaAssets: MediaAsset;
-  notifications: Notification;
-  users: UserProfile;
-  brandReports: BrandReport;
-  calendar: CalendarEvent;
-  adCampaigns: AdCampaign;
-  scraperCache: ScraperCache;
-  trendInsights: TrendInsight;
-  chatSessions: ChatSession;
-  chatMessages: ChatMessage;
-  contentRequests: ContentRequest;
-};
+/* ----------------------------- M4 Outputs ----------------------------- */
+
+export type OutputType = 'video' | 'image' | 'copy';
+
+export interface OutputMeta {
+  durationSec?: number;
+  width?: number;
+  height?: number;
+  styleId?: string;
+}
+
+export interface Output extends BaseDocument {
+  brandId: string;
+  requestId: string;
+  type: OutputType;
+  platform?: string;
+  variantIndex?: number;
+  status: 'draft' | 'approved' | 'published' | string;
+  meta?: OutputMeta;
+  storagePath?: string;
+  url?: string;
+  text?: string;
+  createdBy: string;
+}
+
+/* ------------------------ Content Requests (M3+) ------------------------ */
 
 export type ContentChannel =
   | 'instagram_feed'
@@ -203,7 +214,13 @@ export interface ContentRequest extends BaseDocument {
     copy?: number;
   };
 
-  status: 'draft' | 'queued' | 'in_progress' | 'needs_revision' | 'approved' | 'cancelled';
+  status:
+    | 'draft'
+    | 'queued'
+    | 'in_progress'
+    | 'needs_revision'
+    | 'approved'
+    | 'cancelled';
 
   masterBrief: unknown;
 
@@ -211,6 +228,8 @@ export interface ContentRequest extends BaseDocument {
   createdAt: FirestoreDateLike;
   updatedAt: FirestoreDateLike;
 }
+
+/* ----------------------------- Chat (M3) ----------------------------- */
 
 export interface ChatSession extends BaseDocument {
   brandId: string;
@@ -229,5 +248,30 @@ export interface ChatMessage extends BaseDocument {
   content: string;
   createdAt: FirestoreDateLike;
 }
+
+/* ----------------------------- Model Map ----------------------------- */
+
+export type FirestoreModels = {
+  brands: Brand;
+  brandMemories: BrandMemory;
+  mediaAssets: MediaAsset;
+  notifications: Notification;
+  users: UserProfile;
+  brandReports: BrandReport;
+  calendar: CalendarEvent;
+  adCampaigns: AdCampaign;
+  scraperCache: ScraperCache;
+  trendInsights: TrendInsight;
+
+  // M4
+  outputs: Output;
+
+  // M3
+  chatSessions: ChatSession;
+  chatMessages: ChatMessage;
+
+  // M3+
+  contentRequests: ContentRequest;
+};
 
 export type WithId<T extends BaseDocument> = T & { id: string };
