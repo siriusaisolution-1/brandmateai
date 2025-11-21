@@ -44,6 +44,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@genkit-ai/google-genai': path.resolve(__dirname, 'functions/src/ai/flows/genai-shim.ts'),
       '@': path.resolve(__dirname, 'src'),
     },
   },

@@ -1,111 +1,190 @@
-import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
-import { z } from 'zod';
-export const manageAdsFlow = ai.defineFlow({
-  name: 'manageAdsFlow',
-  inputSchema: z.object({ eventId: z.string(), adAccountId: z.string() }),
-  outputSchema: z.object({ status: z.string() })
-}, async (_input) => {
-  await ensureGoogleGenAiApiKeyReady();
+import { describe, it, beforeEach, expect, vi } from 'vitest';
+import { HttpsError } from 'firebase-functions/v1/https';
 
-  // MIG-2 stub: integrate DB + ad platform later
-  return { status: 'queued' };
+// ---------------------------------------------------------------------------
+// Mock Genkit AI (test-safe stub)
+// ---------------------------------------------------------------------------
+vi.mock('../../genkit/ai', () => ({
+  ai: {
+    defineFlow: (_config: unknown, handler: any) =>
+      (input: unknown, options: unknown) => handler(input, options as never),
+  },
+}));
+
+// ---------------------------------------------------------------------------
+// Access Firebase Admin test mock
+// ---------------------------------------------------------------------------
+const firebaseAdminMock = globalThis.__vitestFirebaseAdmin;
+
+if (!firebaseAdminMock) {
+  throw new Error('Firebase admin mock was not initialised');
+}
+
+const { collection: collectionMock, FieldValue } = firebaseAdminMock.mocks;
+
+// ---------------------------------------------------------------------------
+// Mock Firestore admin SDK
+// ---------------------------------------------------------------------------
+vi.mock('firebase-admin/firestore', () => {
+  const mock = globalThis.__vitestFirebaseAdmin;
+  if (!mock) {
+    throw new Error('Firebase admin mock was not initialised');
+  }
+
+  return {
+    getFirestore: () => mock.mocks.firestore(),
+    FieldValue: mock.mocks.FieldValue,
+    DocumentReference: class {},
+  };
 });
 
-async function resolveRequester(uid: string): Promise<'admin' | 'user' | string | null> {
-  const snapshot = await firestore.collection('users').doc(uid).get();
-  if (!snapshot.exists) {
-    return null;
-  }
-  const role = snapshot.get('role');
-  return typeof role === 'string' ? role : null;
-}
+import { manageAdsFlow } from './manage-ads';
 
-async function enqueueAdSyncRequest(
-  input: z.infer<typeof ManageAdsInputSchema>,
-  requestedBy: string,
-): Promise<z.infer<typeof ManageAdsOutputSchema>> {
-  const queueCollection = firestore.collection('adSyncRequests');
-  const operationsAudit = firestore.collection('operationsAudit');
+describe('manageAdsFlow', () => {
+  beforeEach(() => {
+    firebaseAdminMock.reset();
+  });
 
-  let requestRef: DocumentReference | undefined;
+  it('requires authentication', async () => {
+    await expect(
+      manageAdsFlow(
+        { eventId: 'evt-1', adAccountId: 'act-1' },
+        { context: undefined as unknown as Record<string, unknown> },
+      ),
+    ).rejects.toThrowError(HttpsError);
+  });
 
-  if (typeof queueCollection.doc === 'function') {
-    requestRef = queueCollection.doc(input.eventId);
+  it('rejects non-admin callers', async () => {
+    const userDocGet = vi.fn().mockResolvedValue({
+      exists: true,
+      get: (field: string) => (field === 'role' ? 'user' : undefined),
+    });
 
-    const existing = await requestRef.get();
-    if (existing.exists) {
-      throw new HttpsError('already-exists', 'This ad sync event has already been queued.');
-    }
+    collectionMock.mockImplementation((name: string) => {
+      if (name === 'users') {
+        return {
+          doc: vi.fn(() => ({ get: userDocGet })),
+          count: vi.fn(),
+        };
+      }
+      if (name === 'adSyncRequests') {
+        return {
+          doc: vi.fn(() => ({ get: vi.fn(), set: vi.fn() })),
+        };
+      }
+      if (name === 'operationsAudit') {
+        return { add: vi.fn() };
+      }
+      throw new Error(`Unexpected collection ${name}`);
+    });
 
-    await requestRef.set(
+    await expect(
+      manageAdsFlow(
+        { eventId: 'evt-2', adAccountId: 'act-9' },
+        { context: { auth: { uid: 'user-1' } } as Record<string, unknown> },
+      ),
+    ).rejects.toThrowError(/Only administrators/);
+  });
+
+  it('queues ad sync requests and writes audit entries', async () => {
+    const setMock = vi.fn().mockResolvedValue(undefined);
+    const auditAddMock = vi.fn().mockResolvedValue({ id: 'audit-1' });
+
+    collectionMock.mockImplementation((name: string) => {
+      if (name === 'users') {
+        return {
+          doc: vi.fn(() => ({
+            get: vi.fn().mockResolvedValue({
+              exists: true,
+              get: (field: string) => (field === 'role' ? 'admin' : undefined),
+            }),
+          })),
+        };
+      }
+      if (name === 'adSyncRequests') {
+        const docMock = vi.fn(() => ({
+          get: vi.fn().mockResolvedValue({ exists: false }),
+          set: setMock,
+        }));
+        return {
+          doc: docMock,
+        };
+      }
+      if (name === 'operationsAudit') {
+        return { add: auditAddMock };
+      }
+      throw new Error(`Unexpected collection ${name}`);
+    });
+
+    const response = await manageAdsFlow(
       {
-        eventId: input.eventId,
-        adAccountId: input.adAccountId,
-        brandId: input.brandId ?? null,
-        notes: input.notes ?? null,
-        status: 'queued',
-        requestedBy,
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
+        eventId: 'evt-queue',
+        adAccountId: 'act-55',
+        brandId: 'brand-1',
+        notes: 'Sync nightly',
       },
+      { context: { auth: { uid: 'admin-1' } } as Record<string, unknown> },
+    );
+
+    expect(response.status).toBe('queued');
+    expect(response.requestId).toBe('evt-queue');
+
+    expect(setMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventId: 'evt-queue',
+        adAccountId: 'act-55',
+        brandId: 'brand-1',
+        requestedBy: 'admin-1',
+        status: 'queued',
+        createdAt: FieldValue.serverTimestamp(),
+      }),
       { merge: false },
     );
-  } else if (typeof queueCollection.add === 'function') {
-    requestRef = await queueCollection.add({
-      eventId: input.eventId,
-      adAccountId: input.adAccountId,
-      brandId: input.brandId ?? null,
-      notes: input.notes ?? null,
-      status: 'queued',
-      requestedBy,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
+
+    expect(auditAddMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        referenceId: 'evt-queue',
+        requestedBy: 'admin-1',
+      }),
+    );
+  });
+
+  it('prevents duplicate queue entries', async () => {
+    const setMock = vi.fn();
+
+    collectionMock.mockImplementation((name: string) => {
+      if (name === 'users') {
+        return {
+          doc: vi.fn(() => ({
+            get: vi.fn().mockResolvedValue({
+              exists: true,
+              get: (field: string) => (field === 'role' ? 'admin' : undefined),
+            }),
+          })),
+        };
+      }
+      if (name === 'adSyncRequests') {
+        const docMock = vi.fn(() => ({
+          get: vi.fn().mockResolvedValue({ exists: true }),
+          set: setMock,
+        }));
+        return {
+          doc: docMock,
+        };
+      }
+      if (name === 'operationsAudit') {
+        return { add: vi.fn() };
+      }
+      throw new Error(`Unexpected collection ${name}`);
     });
-  } else {
-    throw new HttpsError('internal', 'Ad sync queue is not configured.');
-  }
 
-  const requestId = requestRef.id ?? input.eventId;
+    await expect(
+      manageAdsFlow(
+        { eventId: 'evt-dup', adAccountId: 'act-1' },
+        { context: { auth: { uid: 'admin-1' } } as Record<string, unknown> },
+      ),
+    ).rejects.toThrowError(/already been queued/);
 
-  await operationsAudit.add({
-    type: 'adSyncRequest',
-    referenceId: requestId,
-    payload: input,
-    requestedBy,
-    createdAt: FieldValue.serverTimestamp(),
+    expect(setMock).not.toHaveBeenCalled();
   });
-
-  return ManageAdsOutputSchema.parse({
-    status: 'queued',
-    requestId,
-  });
-}
-
-export const manageAdsFlow = ai.defineFlow(
-  {
-    name: 'manageAdsFlow',
-    inputSchema: ManageAdsInputSchema,
-    outputSchema: ManageAdsOutputSchema,
-  },
-  async (input, { context }) => {
-    const uid = extractAuthUserId(context);
-
-    if (!uid) {
-      throw new HttpsError('unauthenticated', 'Authentication is required.');
-    }
-
-    const role = await resolveRequester(uid);
-    if (role !== 'admin') {
-      throw new HttpsError('permission-denied', 'Only administrators may queue ad sync operations.');
-    }
-
-    return enqueueAdSyncRequest(input, uid);
-  },
-);
-
-export const _test = {
-  enqueueAdSyncRequest,
-  resolveRequester,
-  ManageAdsInputSchema,
-  ManageAdsOutputSchema,
-};
+});

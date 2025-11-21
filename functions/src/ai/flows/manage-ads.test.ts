@@ -1,6 +1,19 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, it, beforeEach, expect, vi } from 'vitest';
 import { HttpsError } from 'firebase-functions/v1/https';
 
+// ---------------------------------------------------------------------------
+// Mock Genkit AI (test-safe stub)
+// ---------------------------------------------------------------------------
+vi.mock('../../genkit/ai', () => ({
+  ai: {
+    defineFlow: (_config: unknown, handler: any) =>
+      (input: unknown, options: unknown) => handler(input, options as never),
+  },
+}));
+
+// ---------------------------------------------------------------------------
+// Access Firebase Admin test mock
+// ---------------------------------------------------------------------------
 const firebaseAdminMock = globalThis.__vitestFirebaseAdmin;
 
 if (!firebaseAdminMock) {
@@ -8,6 +21,22 @@ if (!firebaseAdminMock) {
 }
 
 const { collection: collectionMock, FieldValue } = firebaseAdminMock.mocks;
+
+// ---------------------------------------------------------------------------
+// Mock Firestore admin SDK
+// ---------------------------------------------------------------------------
+vi.mock('firebase-admin/firestore', () => {
+  const mock = globalThis.__vitestFirebaseAdmin;
+  if (!mock) {
+    throw new Error('Firebase admin mock was not initialised');
+  }
+
+  return {
+    getFirestore: () => mock.mocks.firestore(),
+    FieldValue: mock.mocks.FieldValue,
+    DocumentReference: class {},
+  };
+});
 
 import { manageAdsFlow } from './manage-ads';
 
@@ -18,7 +47,10 @@ describe.skip('manageAdsFlow', () => {
 
   it('requires authentication', async () => {
     await expect(
-      manageAdsFlow({ eventId: 'evt-1', adAccountId: 'act-1' }, { context: undefined as unknown as Record<string, unknown> })
+      manageAdsFlow(
+        { eventId: 'evt-1', adAccountId: 'act-1' },
+        { context: undefined as unknown as Record<string, unknown> },
+      ),
     ).rejects.toThrowError(HttpsError);
   });
 
@@ -47,7 +79,10 @@ describe.skip('manageAdsFlow', () => {
     });
 
     await expect(
-      manageAdsFlow({ eventId: 'evt-2', adAccountId: 'act-9' }, { context: { auth: { uid: 'user-1' } } as Record<string, unknown> })
+      manageAdsFlow(
+        { eventId: 'evt-2', adAccountId: 'act-9' },
+        { context: { auth: { uid: 'user-1' } } as Record<string, unknown> },
+      ),
     ).rejects.toThrowError(/Only administrators/);
   });
 
@@ -82,12 +117,18 @@ describe.skip('manageAdsFlow', () => {
     });
 
     const response = await manageAdsFlow(
-      { eventId: 'evt-queue', adAccountId: 'act-55', brandId: 'brand-1', notes: 'Sync nightly' },
-      { context: { auth: { uid: 'admin-1' } } as Record<string, unknown> }
+      {
+        eventId: 'evt-queue',
+        adAccountId: 'act-55',
+        brandId: 'brand-1',
+        notes: 'Sync nightly',
+      },
+      { context: { auth: { uid: 'admin-1' } } as Record<string, unknown> },
     );
 
     expect(response.status).toBe('queued');
     expect(response.requestId).toBe('evt-queue');
+
     expect(setMock).toHaveBeenCalledWith(
       expect.objectContaining({
         eventId: 'evt-queue',
@@ -97,10 +138,14 @@ describe.skip('manageAdsFlow', () => {
         status: 'queued',
         createdAt: FieldValue.serverTimestamp(),
       }),
-      { merge: false }
+      { merge: false },
     );
+
     expect(auditAddMock).toHaveBeenCalledWith(
-      expect.objectContaining({ referenceId: 'evt-queue', requestedBy: 'admin-1' })
+      expect.objectContaining({
+        referenceId: 'evt-queue',
+        requestedBy: 'admin-1',
+      }),
     );
   });
 
@@ -136,9 +181,10 @@ describe.skip('manageAdsFlow', () => {
     await expect(
       manageAdsFlow(
         { eventId: 'evt-dup', adAccountId: 'act-1' },
-        { context: { auth: { uid: 'admin-1' } } as Record<string, unknown> }
-      )
+        { context: { auth: { uid: 'admin-1' } } as Record<string, unknown> },
+      ),
     ).rejects.toThrowError(/already been queued/);
+
     expect(setMock).not.toHaveBeenCalled();
   });
 });
