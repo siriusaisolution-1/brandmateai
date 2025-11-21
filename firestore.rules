@@ -67,5 +67,11 @@ service cloud.firestore {
       allow read, write: if isSelf(resource.data.ownerId);
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
     }
+
+    // Outputs are linked to content requests and brands.
+    match /outputs/{outputId} {
+      allow read: if isBrandOwner(resource.data.brandId);
+      allow create, update, delete: if isBrandOwner(request.resource.data.brandId);
+    }
   }
 }

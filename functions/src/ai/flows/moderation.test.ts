@@ -1,4 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('../../genkit/ai', () => ({
+  ai: { defineFlow: (_config: unknown, handler: any) => handler },
+  ensureGoogleGenAiApiKeyReady: vi.fn(),
+}));
 
 import { moderateTextFlow, _test } from './moderation';
 

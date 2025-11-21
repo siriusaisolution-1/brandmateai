@@ -55,6 +55,9 @@ function createFirebaseAdminMock() {
   const countMock = vi.fn();
   const collectionGetMock = vi.fn();
   const firestoreFn = vi.fn();
+  const batchMock = vi.fn();
+  const batchSetMock = vi.fn();
+  const batchCommitMock = vi.fn();
   const bucketMock = vi.fn();
   const fileMock = vi.fn();
   const getSignedUrlMock = vi.fn();
@@ -65,6 +68,7 @@ function createFirebaseAdminMock() {
 
   const firestoreInstance = {
     collection: (...args: unknown[]) => collectionMock(...args),
+    batch: batchMock,
   };
 
   const storageInstance = {
@@ -76,13 +80,17 @@ function createFirebaseAdminMock() {
     storage: vi.fn(() => storageInstance),
   };
 
-  docMock.mockImplementation(() => ({ get: getMock, set: setMock }));
+  docMock.mockImplementation(() => ({ get: getMock, set: setMock, id: 'mock-id' }));
   collectionMock.mockImplementation(() => ({
     doc: docMock,
     add: addMock,
     where: whereMock,
     count: countMock,
     get: collectionGetMock,
+  }));
+  batchMock.mockImplementation(() => ({
+    set: batchSetMock,
+    commit: batchCommitMock,
   }));
   bucketMock.mockImplementation(() => ({ file: fileMock }));
   fileMock.mockImplementation(() => ({ getSignedUrl: getSignedUrlMock }));
@@ -117,7 +125,7 @@ function createFirebaseAdminMock() {
     getMock.mockReset();
     setMock.mockReset();
     docMock.mockReset();
-    docMock.mockImplementation(() => ({ get: getMock, set: setMock }));
+    docMock.mockImplementation(() => ({ get: getMock, set: setMock, id: 'mock-id' }));
     collectionMock.mockReset();
     collectionMock.mockImplementation(() => ({
       doc: docMock,
@@ -130,6 +138,13 @@ function createFirebaseAdminMock() {
     whereMock.mockReset();
     countMock.mockReset();
     collectionGetMock.mockReset();
+    batchMock.mockReset();
+    batchSetMock.mockReset();
+    batchCommitMock.mockReset();
+    batchMock.mockImplementation(() => ({
+      set: batchSetMock,
+      commit: batchCommitMock,
+    }));
     bucketMock.mockReset();
     bucketMock.mockImplementation(() => ({ file: fileMock }));
     fileMock.mockReset();
@@ -167,6 +182,9 @@ function createFirebaseAdminMock() {
       add: addMock,
       where: whereMock,
       count: countMock,
+      batch: batchMock,
+      batchSet: batchSetMock,
+      batchCommit: batchCommitMock,
       firestore: firestoreFn,
       FieldValue,
       bucket: bucketMock,

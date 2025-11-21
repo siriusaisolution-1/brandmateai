@@ -137,6 +137,42 @@ export interface TrendInsight extends BaseDocument {
   metadata?: Record<string, unknown>;
 }
 
+export type OutputType = 'video' | 'image' | 'copy';
+
+export interface OutputMeta {
+  durationSec?: number;
+  width?: number;
+  height?: number;
+  styleId?: string;
+}
+
+export interface Output extends BaseDocument {
+  brandId: string;
+  requestId: string;
+  type: OutputType;
+  platform?: string;
+  variantIndex?: number;
+  status: 'draft' | 'approved' | 'published' | string;
+  meta?: OutputMeta;
+  storagePath?: string;
+  url?: string;
+  text?: string;
+  createdBy: string;
+}
+
+export type ContentRequestStatus = 'queued' | 'processing' | 'done' | 'failed';
+
+export interface ContentRequest extends BaseDocument {
+  brandId: string;
+  userId: string;
+  platform?: string;
+  requestedImages?: number;
+  requestedVideos?: number;
+  requestedCopies?: number;
+  brief?: string;
+  status: ContentRequestStatus;
+}
+
 export type FirestoreModels = {
   brands: Brand;
   mediaAssets: MediaAsset;
@@ -147,6 +183,8 @@ export type FirestoreModels = {
   adCampaigns: AdCampaign;
   scraperCache: ScraperCache;
   trendInsights: TrendInsight;
+  outputs: Output;
+  contentRequests: ContentRequest;
 };
 
 export type WithId<T extends BaseDocument> = T & { id: string };
