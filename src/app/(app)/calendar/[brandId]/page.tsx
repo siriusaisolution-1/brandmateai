@@ -15,9 +15,14 @@ export default function BrandCalendarPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            We&rsquo;ll bring this back once Genkit flows are replaced with our Firebase v11 + React Query integration.
-          </p>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              We&rsquo;ll bring this back once Genkit flows are replaced with our Firebase v11 + React Query integration.
+            </p>
+            <div className="rounded-md border border-dashed border-muted-foreground/30 p-4 text-sm text-muted-foreground">
+              No scheduled events yet. When the calendar is re-enabled, your approved posts will appear here.
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

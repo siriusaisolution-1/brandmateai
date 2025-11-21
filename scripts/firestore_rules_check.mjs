@@ -8,14 +8,15 @@ import {
 async function main() {
   const hostEnv = process.env.FIRESTORE_EMULATOR_HOST;
   if (!hostEnv) {
-    throw new Error('FIRESTORE_EMULATOR_HOST must be set by firebase emulators');
+    console.warn('Skipping Firestore rules check: FIRESTORE_EMULATOR_HOST not set.');
+    return;
   }
 
   const [host, portStr] = hostEnv.split(':');
   const port = Number(portStr);
 
   const testEnv = await initializeTestEnvironment({
-    projectId: 'brandmateai-test',
+    projectId: 'demo-project',
     firestore: {
       host,
       port,

@@ -1,5 +1,8 @@
 import type { FieldValue, Timestamp } from 'firebase-admin/firestore';
 
+/**
+ * Firestore timestamp / FieldValue / JS date helpers.
+ */
 export type FirestoreDateLike = Timestamp | FieldValue | Date | number | string;
 
 export interface BaseDocument {
@@ -8,24 +11,57 @@ export interface BaseDocument {
   updatedAt?: FirestoreDateLike;
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                   Brands                                   */
+/* -------------------------------------------------------------------------- */
+
 export interface Brand extends BaseDocument {
-  ownerId?: string;
+  ownerId: string;
   name: string;
+  industry?: string;
+  website?: string;
+  socialHandles?: { instagram?: string; tiktok?: string; other?: string };
+  priceRange?: 'low' | 'mid' | 'high';
+  targetAudienceSummary?: string;
+  brandMemoryRef?: string;
+  status: 'active' | 'inactive';
+  createdAt: FirestoreDateLike;
+  updatedAt: FirestoreDateLike;
+
+  // Legacy/compat fields
   logoUrl?: string;
   colors?: string[];
   fonts?: string[];
   brandVoice?: string;
   keyInfo?: string;
-  industry?: string;
   description?: string;
   websiteUrl?: string;
   socialLinks?: string[];
   competitorWebsites?: string[];
   primaryContactId?: string;
-  status?: 'draft' | 'active' | 'archived' | string;
   metadata?: Record<string, unknown>;
   isExtraBrand?: boolean;
 }
+
+export interface BrandMemory extends BaseDocument {
+  id: string;
+  brandId: string;
+  toneOfVoice?: string;
+  mission?: string;
+  values?: string[];
+  personas?: { name: string; description: string }[];
+  primaryColors?: string[];
+  fonts?: string[];
+  preferences?: string[];
+  assetsSummary?: string;
+  incomplete: boolean;
+  createdAt: FirestoreDateLike;
+  updatedAt: FirestoreDateLike;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                 Media/Notif                                */
+/* -------------------------------------------------------------------------- */
 
 export interface MediaAsset extends BaseDocument {
   brandId: string;
@@ -49,17 +85,42 @@ export interface Notification extends BaseDocument {
   priority?: 'low' | 'normal' | 'high';
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                     User                                   */
+/* -------------------------------------------------------------------------- */
+
 export interface UserProfile extends BaseDocument {
   email?: string | null;
   displayName?: string | null;
   photoURL?: string | null;
   role?: 'admin' | 'user' | 'viewer' | 'editor' | string;
-  subscriptionPlan?: 'free' | 'solo' | 'pro' | 'agency' | string;
+
+  /**
+   * Current + legacy subscription plan ids.
+   * - current: starter/pro/agency (+ yearly variants) + free
+   * - legacy compat: solo
+   */
+  subscriptionPlan?:
+    | 'starter'
+    | 'pro'
+    | 'agency'
+    | 'starter_yearly'
+    | 'pro_yearly'
+    | 'agency_yearly'
+    | 'free'
+    | 'solo'
+    | string;
+
+  /**
+   * Extra per-user overrides / agency add-ons.
+   * Used for extra brand slots + custom limits/pricing.
+   */
   subscriptionMeta?: {
     baseBrandLimit?: number;
     extraBrandCount?: number;
     extraBrandPriceUsd?: number;
-  };
+  } | null;
+
   bmkCredits?: number;
   bmkBalance?: number;
   onboardingComplete?: boolean;
@@ -67,8 +128,12 @@ export interface UserProfile extends BaseDocument {
   settings?: Record<string, unknown>;
 }
 
-// Kompatibilnost sa starijim importima koji su koristili `User`
+// Back-compat alias
 export type User = UserProfile;
+
+/* -------------------------------------------------------------------------- */
+/*                               Brand Reports                                */
+/* -------------------------------------------------------------------------- */
 
 export interface BrandReportSection {
   title: string;
@@ -87,8 +152,13 @@ export interface BrandReport extends BaseDocument {
   metadata?: Record<string, unknown>;
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                  Calendar                                  */
+/* -------------------------------------------------------------------------- */
+
 export interface CalendarEvent extends BaseDocument {
   brandId: string;
+  ownerId?: string; // legacy
   title: string;
   description?: string;
   channel?: string;
@@ -97,6 +167,10 @@ export interface CalendarEvent extends BaseDocument {
   status?: 'draft' | 'scheduled' | 'sent' | 'cancelled' | string;
   metadata?: Record<string, unknown>;
 }
+
+/* -------------------------------------------------------------------------- */
+/*                                 AdCampaigns                                */
+/* -------------------------------------------------------------------------- */
 
 export interface AdCampaignMetrics {
   impressions?: number;
@@ -124,6 +198,10 @@ export interface AdCampaign extends BaseDocument {
   metadata?: Record<string, unknown>;
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                Scraper/Trends                              */
+/* -------------------------------------------------------------------------- */
+
 export interface ScraperCache extends BaseDocument {
   url: string;
   brandId?: string;
@@ -143,8 +221,128 @@ export interface TrendInsight extends BaseDocument {
   metadata?: Record<string, unknown>;
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                   Outputs                                  */
+/* -------------------------------------------------------------------------- */
+
+export type OutputType = 'video' | 'image' | 'copy';
+
+export interface OutputMeta {
+  durationSec?: number;
+  width?: number;
+  height?: number;
+  styleId?: string;
+}
+
+export interface Output extends BaseDocument {
+  brandId: string;
+  requestId: string; // primary link to ContentRequest
+  type: OutputType;
+  platform?: string;
+  variantIndex?: number;
+  status: 'draft' | 'approved' | 'published' | 'error' | string;
+  meta?: OutputMeta;
+  storagePath?: string;
+  url?: string;
+  text?: string;
+  createdBy: string;
+
+  // Legacy/compat fields
+  ownerId?: string;
+  contentRequestId?: string;
+  title?: string;
+  summary?: string;
+  mediaUrl?: string;
+  thumbnailUrl?: string;
+  metadata?: Record<string, unknown>;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                              Content Requests (M3+)                        */
+/* -------------------------------------------------------------------------- */
+
+export type ContentChannel =
+  | 'instagram_feed'
+  | 'instagram_reels'
+  | 'tiktok'
+  | 'youtube_shorts';
+
+export type ContentOutputType = 'video' | 'image' | 'copy';
+
+export type ContentRequestStatus =
+  | 'draft'
+  | 'queued'
+  | 'in_progress'
+  | 'processing'      // legacy synonym
+  | 'done'
+  | 'failed'
+  | 'needs_revision'
+  | 'approved'
+  | 'cancelled'
+  | string;
+
+export interface ContentRequest extends BaseDocument {
+  brandId: string;
+  userId: string;
+
+  title: string;
+  description?: string;
+
+  goal?: 'increase_sales' | 'brand_awareness' | 'engagement' | 'other' | string;
+  channels: ContentChannel[];
+
+  requestedOutputs: {
+    video?: number;
+    image?: number;
+    copy?: number;
+  };
+
+  status: ContentRequestStatus;
+
+  masterBrief: unknown;
+
+  createdFromChatId?: string;
+  createdAt: FirestoreDateLike;
+  updatedAt: FirestoreDateLike;
+
+  // Legacy/compat fields
+  ownerId?: string;
+  channel?: string;
+  requestedVideos?: number;
+  requestedImages?: number;
+  requestedCopy?: number;
+  metadata?: Record<string, unknown>;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                   Chat (M3)                                */
+/* -------------------------------------------------------------------------- */
+
+export interface ChatSession extends BaseDocument {
+  brandId: string;
+  userId: string;
+  title: string;
+  createdAt: FirestoreDateLike;
+  updatedAt: FirestoreDateLike;
+  lastContentRequestId?: string;
+}
+
+export interface ChatMessage extends BaseDocument {
+  sessionId: string;
+  brandId: string;
+  userId?: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  createdAt: FirestoreDateLike;
+}
+
+/* -------------------------------------------------------------------------- */
+/*                                   Model Map                                */
+/* -------------------------------------------------------------------------- */
+
 export type FirestoreModels = {
   brands: Brand;
+  brandMemories: BrandMemory;
   mediaAssets: MediaAsset;
   notifications: Notification;
   users: UserProfile;
@@ -153,6 +351,14 @@ export type FirestoreModels = {
   adCampaigns: AdCampaign;
   scraperCache: ScraperCache;
   trendInsights: TrendInsight;
+
+  // Core generation models
+  contentRequests: ContentRequest;
+  outputs: Output;
+
+  // Chat
+  chatSessions: ChatSession;
+  chatMessages: ChatMessage;
 };
 
 export type WithId<T extends BaseDocument> = T & { id: string };

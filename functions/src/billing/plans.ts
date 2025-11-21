@@ -1,3 +1,10 @@
+// functions/src/billing/plans.ts
+// Unified plan registry:
+// - Keeps Codex pricing/yearly/free/extra-brand logic
+// - Preserves older main exports (PLAN_DEFINITIONS, coercePlanId, getPlanForUser)
+
+import type { UserProfile } from '../types/firestore';
+
 export type PlanId =
   | 'starter'
   | 'pro'
@@ -20,6 +27,8 @@ export interface PlanConfig {
   extraBrandIncludedImagePerMonth?: number;
   billingInterval: 'monthly' | 'yearly' | 'free';
   marketingTagline?: string;
+  /** Legacy/compat: max requests per month for this plan. */
+  maxRequestsPerMonth?: number;
 }
 
 const BASE_PLANS: PlanConfig[] = [
@@ -32,6 +41,7 @@ const BASE_PLANS: PlanConfig[] = [
     includedImagePerMonth: 100,
     billingInterval: 'monthly',
     marketingTagline: 'Kickstart AI content for a single brand.',
+    maxRequestsPerMonth: 120,
   },
   {
     id: 'pro',
@@ -42,6 +52,7 @@ const BASE_PLANS: PlanConfig[] = [
     includedImagePerMonth: 400,
     billingInterval: 'monthly',
     marketingTagline: 'More capacity for growing teams and portfolios.',
+    maxRequestsPerMonth: 480,
   },
   {
     id: 'agency',
@@ -55,6 +66,7 @@ const BASE_PLANS: PlanConfig[] = [
     extraBrandIncludedImagePerMonth: 100,
     billingInterval: 'monthly',
     marketingTagline: 'Scale multi-brand operations with built-in headroom.',
+    maxRequestsPerMonth: 1800,
   },
   {
     id: 'starter_yearly',
@@ -66,6 +78,7 @@ const BASE_PLANS: PlanConfig[] = [
     includedImagePerMonth: 100,
     billingInterval: 'yearly',
     marketingTagline: 'Pay yearly and get 2 months free.',
+    maxRequestsPerMonth: 120,
   },
   {
     id: 'pro_yearly',
@@ -77,6 +90,7 @@ const BASE_PLANS: PlanConfig[] = [
     includedImagePerMonth: 400,
     billingInterval: 'yearly',
     marketingTagline: 'Best value for scaling brands year-round.',
+    maxRequestsPerMonth: 480,
   },
   {
     id: 'agency_yearly',
@@ -91,6 +105,7 @@ const BASE_PLANS: PlanConfig[] = [
     extraBrandIncludedImagePerMonth: 100,
     billingInterval: 'yearly',
     marketingTagline: 'Agency at annual scale – 2 months free.',
+    maxRequestsPerMonth: 1800,
   },
   {
     id: 'free',
@@ -101,6 +116,7 @@ const BASE_PLANS: PlanConfig[] = [
     includedImagePerMonth: 0,
     billingInterval: 'free',
     marketingTagline: 'Sandbox access for onboarding and trials.',
+    maxRequestsPerMonth: 0,
   },
 ];
 
@@ -109,6 +125,9 @@ const PLAN_REGISTRY: Record<PlanId, PlanConfig> = BASE_PLANS.reduce(
   {} as Record<PlanId, PlanConfig>,
 );
 
+/**
+ * Get PlanConfig by id. Falls back to free.
+ */
 export function getPlanConfig(planId: string | undefined | null): PlanConfig {
   if (planId && planId in PLAN_REGISTRY) {
     return PLAN_REGISTRY[planId as PlanId];
@@ -116,6 +135,9 @@ export function getPlanConfig(planId: string | undefined | null): PlanConfig {
   return PLAN_REGISTRY.free;
 }
 
+/**
+ * Allowed brand count = baseBrandLimit(plan or override) + extraBrandCount(meta)
+ */
 export function getAllowedBrandCountForUser(user: {
   subscriptionPlan?: string | null;
   subscriptionMeta?: {
@@ -129,3 +151,72 @@ export function getAllowedBrandCountForUser(user: {
   return baseLimit + extra;
 }
 
+/* -------------------------------------------------------------------------- */
+/* Legacy-compatible exports from main branch                                  */
+/* -------------------------------------------------------------------------- */
+
+export type SubscriptionPlanId = 'starter' | 'pro' | 'agency';
+
+export interface PlanLimits {
+  maxVideosPerMonth: number;
+  maxImagesPerMonth: number;
+  maxRequestsPerMonth: number;
+}
+
+export interface PlanDefinition {
+  id: SubscriptionPlanId;
+  label: string;
+  limits: PlanLimits;
+  description?: string;
+}
+
+/**
+ * Legacy view of the three core plans.
+ * Backed by the unified PLAN_REGISTRY.
+ */
+export const PLAN_DEFINITIONS: Record<SubscriptionPlanId, PlanDefinition> = {
+  starter: {
+    id: 'starter',
+    label: PLAN_REGISTRY.starter.name,
+    limits: {
+      maxVideosPerMonth: PLAN_REGISTRY.starter.includedVideoPerMonth,
+      maxImagesPerMonth: PLAN_REGISTRY.starter.includedImagePerMonth,
+      maxRequestsPerMonth: PLAN_REGISTRY.starter.maxRequestsPerMonth ?? 120,
+    },
+    description: PLAN_REGISTRY.starter.marketingTagline,
+  },
+  pro: {
+    id: 'pro',
+    label: PLAN_REGISTRY.pro.name,
+    limits: {
+      maxVideosPerMonth: PLAN_REGISTRY.pro.includedVideoPerMonth,
+      maxImagesPerMonth: PLAN_REGISTRY.pro.includedImagePerMonth,
+      maxRequestsPerMonth: PLAN_REGISTRY.pro.maxRequestsPerMonth ?? 480,
+    },
+    description: PLAN_REGISTRY.pro.marketingTagline,
+  },
+  agency: {
+    id: 'agency',
+    label: PLAN_REGISTRY.agency.name,
+    limits: {
+      maxVideosPerMonth: PLAN_REGISTRY.agency.includedVideoPerMonth,
+      maxImagesPerMonth: PLAN_REGISTRY.agency.includedImagePerMonth,
+      maxRequestsPerMonth: PLAN_REGISTRY.agency.maxRequestsPerMonth ?? 1800,
+    },
+    description: PLAN_REGISTRY.agency.marketingTagline,
+  },
+};
+
+export function coercePlanId(plan?: string | null): SubscriptionPlanId {
+  if (plan === 'pro' || plan === 'agency' || plan === 'starter') {
+    return plan;
+  }
+  return 'starter';
+}
+
+export function getPlanForUser(
+  user: UserProfile | null | undefined,
+): PlanDefinition {
+  const planId = coercePlanId(user?.subscriptionPlan);
+  return PLAN_DEFINITIONS[planId];
+}
