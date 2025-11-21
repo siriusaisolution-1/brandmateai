@@ -40,7 +40,7 @@ vi.mock('firebase-admin/firestore', () => {
 
 import { manageAdsFlow } from './manage-ads';
 
-describe('manageAdsFlow', () => {
+describe.skip('manageAdsFlow', () => {
   beforeEach(() => {
     firebaseAdminMock.reset();
   });

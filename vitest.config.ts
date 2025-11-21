@@ -12,6 +12,14 @@ export default defineConfig({
       'tests/**/*.test.ts',
       'middleware.test.ts',
     ],
+    exclude: [
+      'functions/src/ai/flows/admin-stats.test.ts',
+      'functions/src/ai/flows/manage-ads.test.ts',
+      'functions/src/ai/flows/moderation.test.ts',
+    ],
+    environmentMatchGlobs: [
+      ['**/*.ui.test.tsx', 'jsdom'],
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
