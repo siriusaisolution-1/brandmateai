@@ -2,6 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -18,6 +19,16 @@ service cloud.firestore {
       return isAuthenticated() && brandOwner(brandId) == request.auth.uid;
     }
 
+    function chatSessionOwner(sessionId) {
+      return get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId;
+    }
+
+    function isChatSessionOwner(sessionId) {
+      return isAuthenticated() && chatSessionOwner(sessionId) == request.auth.uid;
+    }
+
+    // M2 baseline: rules will be extended for workspaces/teams in future milestones.
+
     // Users can only read/create their own document and cannot change their own role/plan.
     match /users/{userId} {
       allow read, create: if isSelf(userId);
@@ -33,6 +44,13 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
     }
 
+    // Brand memories are tightly coupled to their parent brand and share the same ownership model.
+    match /brandMemories/{memoryId} {
+      allow get, list: if isBrandOwner(resource.data.brandId);
+      allow update, delete: if isBrandOwner(resource.data.brandId);
+      allow create: if isAuthenticated() && isBrandOwner(request.resource.data.brandId);
+    }
+
     // Media assets are registered exclusively through the backend.
     match /mediaAssets/{assetId} {
       allow read: if isBrandOwner(resource.data.brandId);
@@ -44,10 +62,10 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // The scraped cache is read-only for clients, but writable by server-side functions.
+    // The scraped cache is read-only for clients, but writable by server-side functions (admin SDK).
     match /scrapedCache/{cacheId} {
       allow read: if isAuthenticated();
-      allow write: if false; // Only backend (admin SDK) can write
+      allow write: if false;
     }
 
     // Notifications are private to the owner.
@@ -68,10 +86,44 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
     }
 
-    // Usage snapshots are private to each user.
+    // M6: Usage snapshots are private to each user.
     match /usageSnapshots/{usageId} {
       allow read, update, delete: if isSelf(resource.data.userId);
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid;
+    }
+
+    // M3 baseline: chat sessions and messages are private to the owner.
+    match /chatSessions/{sessionId} {
+      allow read, update, delete: if isChatSessionOwner(sessionId);
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /chatMessages/{messageId} {
+      allow read: if isChatSessionOwner(resource.data.sessionId);
+      allow create: if isAuthenticated()
+                    && (
+                      (request.resource.data.role == 'user'
+                        && request.resource.data.userId == request.auth.uid)
+                      || (request.resource.data.role == 'assistant'
+                        && isChatSessionOwner(request.resource.data.sessionId))
+                    );
+    }
+
+    // M3+: content requests are scoped to the brand owner + requester.
+    match /contentRequests/{requestId} {
+      allow read, update, delete: if isBrandOwner(resource.data.brandId)
+                                  && isSelf(resource.data.userId);
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid
+                    && isBrandOwner(request.resource.data.brandId);
+    }
+
+    // M4 baseline: outputs are tied to content requests and brands.
+    match /outputs/{outputId} {
+      allow read: if isBrandOwner(resource.data.brandId);
+      allow create, update, delete: if isBrandOwner(request.resource.data.brandId);
     }
   }
 }

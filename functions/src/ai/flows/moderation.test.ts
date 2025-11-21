@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
+// Mock Genkit AI (deterministic, test-safe)
 vi.mock('../../genkit/ai', () => ({
   ai: {
-    defineFlow: (_config: unknown, handler: (input: string) => unknown) => ({
+    defineFlow: (_config: unknown, handler: any) => ({
       run: handler,
       __handler: handler,
     }),

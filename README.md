@@ -4,7 +4,31 @@ Brandmate Studio is a Next.js workspace paired with Firebase Cloud Functions
 and supporting tooling. The repo uses pnpm workspaces to manage the monorepo
 (deep dependencies live under `functions/` and `scraper-service/`).
 
+## Local Development – Quickstart (M1)
+
+1. **Clone the repo**
+   ```bash
+   git clone <this-repo-url>
+   cd brandmateai
+   ```
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
+3. **Set up environment variables** – copy the template and fill in your Firebase web app config.
+   ```bash
+   cp .env.example .env.local
+   ```
+   Populate `NEXT_PUBLIC_FIREBASE_*` with values from Firebase → Project settings → General.
+4. **Run the app**
+   ```bash
+   pnpm dev
+   ```
+   Visit http://localhost:3000, register or log in, and you will be redirected to `/dashboard` after authentication.
+
 ## Quick Start
+
+The full CI-aligned setup remains available if you need the extra tooling.
 
 1. **Install dependencies**
    ```bash
