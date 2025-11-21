@@ -2,19 +2,30 @@
 // Lightweight, provider-free moderation.
 // Pure/local rules only, to keep tests deterministic and avoid upstream SDK issues.
 
-import { z } from 'zod';
+import { z } from "zod";
 
 export const ModerationOutputSchema = z.object({
   isSafe: z.boolean(),
   categories: z.array(z.string()),
 });
 
+/**
+ * Simple local regex-based category detection.
+ * Keep it conservative and deterministic.
+ */
 const CATEGORY_PATTERNS: Record<string, RegExp[]> = {
-  sexual: [/sexual/i, /porn/i, /explicit/i, /nsfw/i, /sex/i],
-  'self-harm': [/suicide/i, /self[- ]?harm/i, /kill myself/i],
-  hate: [/hate/i, /racist/i, /bigot/i],
-  violence: [/violence/i, /violent/i, /kill/i, /assault/i, /attack/i, /murder/i],
-  profanity: [/\b(fuck|shit|damn)\b/i],
+  sexual: [/sexual/i, /porn/i, /explicit/i, /nsfw/i, /\bsex\b/i],
+  "self-harm": [/suicide/i, /self[- ]?harm/i, /kill myself/i],
+  hate: [/hate/i, /racist/i, /bigot/i, /supremacist/i],
+  violence: [
+    /violence/i,
+    /violent/i,
+    /\bkill\b/i,
+    /assault/i,
+    /attack/i,
+    /murder/i,
+  ],
+  profanity: [/\b(fuck|shit|damn|bitch)\b/i],
 };
 
 export function detectCategories(text: string): string[] {
@@ -24,7 +35,7 @@ export function detectCategories(text: string): string[] {
     .filter(([, patterns]) => patterns.some((regex) => regex.test(normalised)))
     .map(([key]) => key);
 
-  // De-dup, just in case multiple patterns map to same category
+  // De-dup, just in case multiple patterns map to same category.
   return Array.from(new Set(categories));
 }
 

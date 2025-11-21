@@ -105,6 +105,7 @@ If a hosted environment requires it as a secret for any reason, keep it duplicat
 | `NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE` | Optional Replay sampling controls. |
 | `NEXT_PUBLIC_SENTRY_REPLAYS_ERROR_SAMPLE_RATE` | Optional Replay sampling controls. |
 | `NEXT_PUBLIC_FEAT_*` | Feature flags for admin, reports, video studio, newsletter, etc. |
+| `NEXT_PUBLIC_BETA_MODE` | Set to `true` during the closed beta to show banners/badges. Disable (`false`) once GA-ready. |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Publishable key for client-side Stripe (upgrade CTA placeholder). |
 | `SENTRY_ORG` / `SENTRY_PROJECT` | Build-time configuration for uploading sourcemaps. |
 | `SENTRY_RELEASE` | Release id (often commit SHA). |
@@ -113,6 +114,11 @@ If a hosted environment requires it as a secret for any reason, keep it duplicat
 
 Set these values under **Codex → Environment** so they are available to both the
 Next.js build and runtime. Keep `.env.local` in sync for local development.
+
+For local development the `.env.local` should keep `NEXT_PUBLIC_BETA_MODE=true`
+so the banner and welcome tour are exercised. When deploying to Vercel or Codex
+environments flip the variable to `false` once the beta label should disappear –
+the UI reacts instantly after the next deployment.
 
 ---
 

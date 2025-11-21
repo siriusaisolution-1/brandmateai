@@ -5,9 +5,16 @@ import { useParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { CalendarClock, Loader2, PlayCircle } from 'lucide-react';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 
 import { useBrandContentRequests } from '@/hooks/brand-content';
 import { useToast } from '@/hooks/use-toast';
@@ -24,33 +31,51 @@ const statusVariant: Record<string, string> = {
   needs_revision: 'destructive',
 };
 
-function formatDate(value?: Date) {
+function formatDate(
+  value?: Date | number | string | { seconds: number } | null,
+) {
   if (!value) return 'Unknown';
-  try {
-    return value.toLocaleDateString();
-  } catch {
-    return 'Unknown';
+  if (value instanceof Date) return value.toLocaleDateString();
+  if (typeof value === 'number') return new Date(value).toLocaleDateString();
+  if (typeof value === 'string') return new Date(value).toLocaleDateString();
+  if (typeof value === 'object' && 'seconds' in value) {
+    return new Date(value.seconds * 1000).toLocaleDateString();
   }
+  return 'Unknown';
 }
 
 function summarizeOutputs(request: ContentRequest) {
   const parts: string[] = [];
   if (request.requestedVideos)
     parts.push(
-      `${request.requestedVideos} video${request.requestedVideos > 1 ? 's' : ''}`,
+      `${request.requestedVideos} video${
+        request.requestedVideos > 1 ? 's' : ''
+      }`,
     );
   if (request.requestedImages)
     parts.push(
-      `${request.requestedImages} image${request.requestedImages > 1 ? 's' : ''}`,
+      `${request.requestedImages} image${
+        request.requestedImages > 1 ? 's' : ''
+      }`,
     );
-  if (request.requestedCopy)
-    parts.push(`${request.requestedCopy} copy`);
+  if (request.requestedCopy) parts.push(`${request.requestedCopy} copy`);
   return parts.join(', ') || 'Not specified';
 }
 
 export default function BrandRequestsPage() {
   const params = useParams<{ brandId: string }>();
   const brandId = params?.brandId as string | undefined;
+
+  if (!brandId) {
+    return (
+      <Alert>
+        <div className="font-semibold">Select a brand</div>
+        <AlertDescription>
+          Pick a brand to review requests.
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   const { toast } = useToast();
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -59,7 +84,12 @@ export default function BrandRequestsPage() {
   const requests = useMemo(
     () =>
       (data as Array<
-        ContentRequest & { id: string; title?: string; status?: string; summary?: string }
+        ContentRequest & {
+          id: string;
+          title?: string;
+          status?: string;
+          summary?: string;
+        }
       > | undefined) ?? [],
     [data],
   );
@@ -73,12 +103,14 @@ export default function BrandRequestsPage() {
       await processContentRequest(id);
       toast({
         title: 'Processing started',
-        description: 'The orchestrator will handle this request shortly.',
+        description:
+          'The orchestrator will handle this request shortly.',
       });
     } catch (err) {
       toast({
         title: 'Could not trigger processing',
-        description: err instanceof Error ? err.message : 'Unknown error',
+        description:
+          err instanceof Error ? err.message : 'Unknown error',
       });
     } finally {
       setProcessingId(null);
@@ -90,22 +122,32 @@ export default function BrandRequestsPage() {
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold">Content Requests</h1>
         <p className="text-sm text-muted-foreground">
-          Track generation requests for this brand. You can trigger processing for drafts or queued requests.
+          Track generation requests for this brand. You can trigger
+          processing for drafts or queued requests.
         </p>
       </div>
 
       {resolvedStatus === 'loading' && (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, idx) => (
-            <div key={idx} className="h-24 rounded-md bg-muted animate-pulse" />
+            <div
+              key={idx}
+              className="h-24 rounded-md bg-muted animate-pulse"
+            />
           ))}
         </div>
       )}
 
       {resolvedStatus === 'error' && (
-        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-          Failed to load requests. Please try again later.
-        </div>
+        <Alert variant="destructive">
+          <div className="font-semibold">
+            Failed to load requests
+          </div>
+          <AlertDescription>
+            Something went wrong while loading the queue. Please try
+            again later.
+          </AlertDescription>
+        </Alert>
       )}
 
       {resolvedStatus === 'success' && requests.length === 0 && (
@@ -113,7 +155,8 @@ export default function BrandRequestsPage() {
           <CardHeader>
             <CardTitle>No content requests yet</CardTitle>
             <CardDescription>
-              Use the chat or generation tools to create your first brief.
+              Use the chat or generation tools to create your first
+              brief.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -141,7 +184,9 @@ export default function BrandRequestsPage() {
                       {req.title ?? 'Untitled request'}
                     </CardTitle>
                     <CardDescription className="text-xs">
-                      {req.description ?? req.summary ?? 'Awaiting generation steps...'}
+                      {req.description ??
+                        req.summary ??
+                        'Awaiting generation steps...'}
                     </CardDescription>
                   </div>
 
@@ -172,11 +217,14 @@ export default function BrandRequestsPage() {
 
                 <CardContent className="flex flex-wrap items-center justify-between gap-2 text-sm">
                   <div className="text-muted-foreground">
-                    Requested outputs: <span className="text-foreground">{summarizeOutputs(req)}</span>
+                    Requested outputs:{' '}
+                    <span className="text-foreground">
+                      {summarizeOutputs(req)}
+                    </span>
                   </div>
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <CalendarClock className="h-4 w-4" />
-                    {formatDate(req.createdAt)}
+                    {formatDate(req.createdAt as any)}
                   </div>
                 </CardContent>
               </Card>

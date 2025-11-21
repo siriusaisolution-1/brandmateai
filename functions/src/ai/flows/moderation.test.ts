@@ -1,6 +1,8 @@
+// functions/src/ai/flows/moderation.test.ts
 import { describe, expect, it, vi } from 'vitest';
 
-// Mock Genkit AI (deterministic, test-safe)
+// Mock Genkit AI (deterministic, test-safe).
+// Even though moderation is now local/pure, other modules may import genkit in tests.
 vi.mock('../../genkit/ai', () => ({
   ai: {
     defineFlow: (_config: unknown, handler: any) => ({
@@ -11,13 +13,13 @@ vi.mock('../../genkit/ai', () => ({
   ensureGoogleGenAiApiKeyReady: vi.fn(),
 }));
 
-import { moderateTextFlow, _test } from './moderation';
+import moderateTextFlow, { _test } from './moderation';
 
 const { detectCategories, moderateText } = _test;
 
 describe.skip('moderation flow', () => {
   it('marks neutral content as safe', async () => {
-    const result = await (moderateTextFlow as any).__handler('Hello, how are you?');
+    const result = await moderateTextFlow('Hello, how are you?');
     expect(result).toEqual({ isSafe: true, categories: [] });
   });
 
@@ -30,6 +32,8 @@ describe.skip('moderation flow', () => {
   it('normalises text and returns structured response', () => {
     const result = moderateText('FUCK this violence!');
     expect(result.isSafe).toBe(false);
-    expect(result.categories).toEqual(expect.arrayContaining(['profanity', 'violence']));
+    expect(result.categories).toEqual(
+      expect.arrayContaining(['profanity', 'violence']),
+    );
   });
 });

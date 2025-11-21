@@ -124,6 +124,10 @@ export interface UserProfile extends BaseDocument {
   bmkCredits?: number;
   bmkBalance?: number;
   onboardingComplete?: boolean;
+  onboardingFlags?: {
+    hasSeenAppTour?: boolean;
+    [flag: string]: boolean | undefined;
+  };
   notificationPreferences?: Record<string, unknown>;
   settings?: Record<string, unknown>;
 }

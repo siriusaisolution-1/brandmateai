@@ -1,10 +1,11 @@
-import { describe, it, beforeEach, expect, vi } from 'vitest';
-import { HttpsError } from 'firebase-functions/v1/https';
+// functions/src/ai/flows/manage-ads.test.ts
+import { describe, it, beforeEach, expect, vi } from "vitest";
+import { HttpsError } from "firebase-functions/v1/https";
 
 // ---------------------------------------------------------------------------
 // Mock Genkit AI (test-safe stub)
 // ---------------------------------------------------------------------------
-vi.mock('../../genkit/ai', () => ({
+vi.mock("../../genkit/ai", () => ({
   ai: {
     defineFlow: (_config: unknown, handler: any) =>
       (input: unknown, options: unknown) => handler(input, options as never),
@@ -17,7 +18,7 @@ vi.mock('../../genkit/ai', () => ({
 const firebaseAdminMock = globalThis.__vitestFirebaseAdmin;
 
 if (!firebaseAdminMock) {
-  throw new Error('Firebase admin mock was not initialised');
+  throw new Error("Firebase admin mock was not initialised");
 }
 
 const { collection: collectionMock, FieldValue } = firebaseAdminMock.mocks;
@@ -25,10 +26,10 @@ const { collection: collectionMock, FieldValue } = firebaseAdminMock.mocks;
 // ---------------------------------------------------------------------------
 // Mock Firestore admin SDK
 // ---------------------------------------------------------------------------
-vi.mock('firebase-admin/firestore', () => {
+vi.mock("firebase-admin/firestore", () => {
   const mock = globalThis.__vitestFirebaseAdmin;
   if (!mock) {
-    throw new Error('Firebase admin mock was not initialised');
+    throw new Error("Firebase admin mock was not initialised");
   }
 
   return {
@@ -38,41 +39,41 @@ vi.mock('firebase-admin/firestore', () => {
   };
 });
 
-import { manageAdsFlow } from './manage-ads';
+import { manageAdsFlow } from "./manage-ads";
 
-describe.skip('manageAdsFlow', () => {
+describe.skip("manageAdsFlow", () => {
   beforeEach(() => {
     firebaseAdminMock.reset();
   });
 
-  it('requires authentication', async () => {
+  it("requires authentication", async () => {
     await expect(
       manageAdsFlow(
-        { eventId: 'evt-1', adAccountId: 'act-1' },
+        { eventId: "evt-1", adAccountId: "act-1" },
         { context: undefined as unknown as Record<string, unknown> },
       ),
     ).rejects.toThrowError(HttpsError);
   });
 
-  it('rejects non-admin callers', async () => {
+  it("rejects non-admin callers", async () => {
     const userDocGet = vi.fn().mockResolvedValue({
       exists: true,
-      get: (field: string) => (field === 'role' ? 'user' : undefined),
+      get: (field: string) => (field === "role" ? "user" : undefined),
     });
 
     collectionMock.mockImplementation((name: string) => {
-      if (name === 'users') {
+      if (name === "users") {
         return {
           doc: vi.fn(() => ({ get: userDocGet })),
           count: vi.fn(),
         };
       }
-      if (name === 'adSyncRequests') {
+      if (name === "adSyncRequests") {
         return {
           doc: vi.fn(() => ({ get: vi.fn(), set: vi.fn() })),
         };
       }
-      if (name === 'operationsAudit') {
+      if (name === "operationsAudit") {
         return { add: vi.fn() };
       }
       throw new Error(`Unexpected collection ${name}`);
@@ -80,28 +81,28 @@ describe.skip('manageAdsFlow', () => {
 
     await expect(
       manageAdsFlow(
-        { eventId: 'evt-2', adAccountId: 'act-9' },
-        { context: { auth: { uid: 'user-1' } } as Record<string, unknown> },
+        { eventId: "evt-2", adAccountId: "act-9" },
+        { context: { auth: { uid: "user-1" } } as Record<string, unknown> },
       ),
     ).rejects.toThrowError(/Only administrators/);
   });
 
-  it('queues ad sync requests and writes audit entries', async () => {
+  it("queues ad sync requests and writes audit entries", async () => {
     const setMock = vi.fn().mockResolvedValue(undefined);
-    const auditAddMock = vi.fn().mockResolvedValue({ id: 'audit-1' });
+    const auditAddMock = vi.fn().mockResolvedValue({ id: "audit-1" });
 
     collectionMock.mockImplementation((name: string) => {
-      if (name === 'users') {
+      if (name === "users") {
         return {
           doc: vi.fn(() => ({
             get: vi.fn().mockResolvedValue({
               exists: true,
-              get: (field: string) => (field === 'role' ? 'admin' : undefined),
+              get: (field: string) => (field === "role" ? "admin" : undefined),
             }),
           })),
         };
       }
-      if (name === 'adSyncRequests') {
+      if (name === "adSyncRequests") {
         const docMock = vi.fn(() => ({
           get: vi.fn().mockResolvedValue({ exists: false }),
           set: setMock,
@@ -110,7 +111,7 @@ describe.skip('manageAdsFlow', () => {
           doc: docMock,
         };
       }
-      if (name === 'operationsAudit') {
+      if (name === "operationsAudit") {
         return { add: auditAddMock };
       }
       throw new Error(`Unexpected collection ${name}`);
@@ -118,24 +119,24 @@ describe.skip('manageAdsFlow', () => {
 
     const response = await manageAdsFlow(
       {
-        eventId: 'evt-queue',
-        adAccountId: 'act-55',
-        brandId: 'brand-1',
-        notes: 'Sync nightly',
+        eventId: "evt-queue",
+        adAccountId: "act-55",
+        brandId: "brand-1",
+        notes: "Sync nightly",
       },
-      { context: { auth: { uid: 'admin-1' } } as Record<string, unknown> },
+      { context: { auth: { uid: "admin-1" } } as Record<string, unknown> },
     );
 
-    expect(response.status).toBe('queued');
-    expect(response.requestId).toBe('evt-queue');
+    expect(response.status).toBe("queued");
+    expect(response.requestId).toBe("evt-queue");
 
     expect(setMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        eventId: 'evt-queue',
-        adAccountId: 'act-55',
-        brandId: 'brand-1',
-        requestedBy: 'admin-1',
-        status: 'queued',
+        eventId: "evt-queue",
+        adAccountId: "act-55",
+        brandId: "brand-1",
+        requestedBy: "admin-1",
+        status: "queued",
         createdAt: FieldValue.serverTimestamp(),
       }),
       { merge: false },
@@ -143,27 +144,27 @@ describe.skip('manageAdsFlow', () => {
 
     expect(auditAddMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        referenceId: 'evt-queue',
-        requestedBy: 'admin-1',
+        referenceId: "evt-queue",
+        requestedBy: "admin-1",
       }),
     );
   });
 
-  it('prevents duplicate queue entries', async () => {
+  it("prevents duplicate queue entries", async () => {
     const setMock = vi.fn();
 
     collectionMock.mockImplementation((name: string) => {
-      if (name === 'users') {
+      if (name === "users") {
         return {
           doc: vi.fn(() => ({
             get: vi.fn().mockResolvedValue({
               exists: true,
-              get: (field: string) => (field === 'role' ? 'admin' : undefined),
+              get: (field: string) => (field === "role" ? "admin" : undefined),
             }),
           })),
         };
       }
-      if (name === 'adSyncRequests') {
+      if (name === "adSyncRequests") {
         const docMock = vi.fn(() => ({
           get: vi.fn().mockResolvedValue({ exists: true }),
           set: setMock,
@@ -172,7 +173,7 @@ describe.skip('manageAdsFlow', () => {
           doc: docMock,
         };
       }
-      if (name === 'operationsAudit') {
+      if (name === "operationsAudit") {
         return { add: vi.fn() };
       }
       throw new Error(`Unexpected collection ${name}`);
@@ -180,8 +181,8 @@ describe.skip('manageAdsFlow', () => {
 
     await expect(
       manageAdsFlow(
-        { eventId: 'evt-dup', adAccountId: 'act-1' },
-        { context: { auth: { uid: 'admin-1' } } as Record<string, unknown> },
+        { eventId: "evt-dup", adAccountId: "act-1" },
+        { context: { auth: { uid: "admin-1" } } as Record<string, unknown> },
       ),
     ).rejects.toThrowError(/already been queued/);
 

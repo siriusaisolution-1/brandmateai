@@ -64,6 +64,7 @@ describe('middleware configuration', () => {
       '/calendar/:path*',
       '/notifications/:path*',
       '/reports/:path*',
+      '/billing/:path*',
       '/admin/:path*',
     ]);
   });

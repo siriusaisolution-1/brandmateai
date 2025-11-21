@@ -2,6 +2,8 @@
 
 import { useFirestore, useFirestoreCollectionData, useUser } from 'reactfire';
 import { collection, query, where } from 'firebase/firestore';
+import { captureException } from '@sentry/nextjs';
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Brand } from '@/types/firestore';
 
@@ -18,16 +20,21 @@ export function BrandSelector({ onBrandSelected, disabled }: BrandSelectorProps)
   // In a multi-tenant app, this would be: collection(firestore, 'users', user.uid, 'brands')
   const brandsQuery = query(brandsCollection, where('ownerId', '==', user?.uid || ''));
 
-  const { status, data: brands } = useFirestoreCollectionData(brandsQuery, {
+  const { status, data: brands, error } = useFirestoreCollectionData(brandsQuery, {
     idField: 'id',
   });
 
   if (status === 'loading') {
     return <div className="w-full h-10 bg-gray-700 rounded-md animate-pulse" />;
   }
-  
+
+  if (status === 'error') {
+    captureException(error);
+    return <p className="text-sm text-red-400">Unable to load brands.</p>;
+  }
+
   if (brands?.length === 0) {
-      return <p className='text-sm text-copy-secondary'>No brands found. Please create one first.</p>
+    return <p className="text-sm text-copy-secondary">No brands found. Please create one first.</p>;
   }
 
   return (

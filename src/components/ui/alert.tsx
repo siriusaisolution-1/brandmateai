@@ -38,3 +38,5 @@ export const AlertDescription = React.forwardRef<
   <p ref={ref} className={cn("text-sm leading-relaxed", className)} {...props} />
 ));
 AlertDescription.displayName = "AlertDescription";
+
+// Deprecated AlertTitle removed in favor of inline markup to simplify usage.

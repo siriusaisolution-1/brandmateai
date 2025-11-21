@@ -3,7 +3,7 @@ import { HttpsError } from 'firebase-functions/v1/https';
 import { adminStatsFlow } from './admin-stats';
 
 // ---------------------------------------------------------------------------
-// Firebase Admin Mock – MUST exist (created by test setup in M11b)
+// Firebase Admin Mock – MUST exist (created by test setup in vitest.setup.ts)
 // ---------------------------------------------------------------------------
 const firebaseAdminMock = globalThis.__vitestFirebaseAdmin;
 

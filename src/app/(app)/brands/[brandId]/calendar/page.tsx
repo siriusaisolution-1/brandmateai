@@ -16,6 +16,7 @@ import { CalendarDays, Loader2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useBrandCalendarEvents } from '@/hooks/brand-content';
 import type { CalendarEvent } from '@/types/firestore';
 
@@ -29,7 +30,17 @@ function formatTimeRange(event: CalendarEvent & { startTime?: Date; endTime?: Da
 export default function BrandCalendarPage() {
   const params = useParams<{ brandId: string }>();
   const brandId = params?.brandId;
+
   const [referenceDate, setReferenceDate] = useState<Date>(() => new Date());
+
+  if (!brandId) {
+    return (
+      <Alert>
+        <div className="font-semibold">Select a brand</div>
+        <AlertDescription>Pick a brand to review the calendar.</AlertDescription>
+      </Alert>
+    );
+  }
 
   const monthStart = startOfMonth(referenceDate);
   const monthEnd = endOfMonth(referenceDate);
@@ -46,7 +57,7 @@ export default function BrandCalendarPage() {
         acc[key] = acc[key] ? [...acc[key], event] : [event];
         return acc;
       },
-      {}
+      {},
     );
   }, [events]);
 
@@ -66,7 +77,7 @@ export default function BrandCalendarPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold">Calendar</h1>
+        <h1 className="text-2xl font-bold text-copy-primary">Calendar</h1>
         <p className="text-muted-foreground text-sm">
           Read-only view of planned content and calendar events for this brand.
         </p>
@@ -92,7 +103,9 @@ export default function BrandCalendarPage() {
         <Card className="bg-surface border-gray-700">
           <CardHeader>
             <CardTitle>No events for this period</CardTitle>
-            <CardDescription>Once you add requests or outputs with dates, they will show up here.</CardDescription>
+            <CardDescription>
+              Once you add requests or outputs with dates, they will show up here.
+            </CardDescription>
           </CardHeader>
         </Card>
       )}
@@ -106,10 +119,12 @@ export default function BrandCalendarPage() {
                   {day}
                 </div>
               ))}
+
               {days.map((day) => {
                 const key = format(day, 'yyyy-MM-dd');
                 const dayEvents = grouped[key] ?? [];
                 const muted = !isSameMonth(day, referenceDate);
+
                 return (
                   <div
                     key={key}
@@ -126,6 +141,7 @@ export default function BrandCalendarPage() {
                         </span>
                       )}
                     </div>
+
                     <div className="mt-2 space-y-1">
                       {dayEvents.map((event) => (
                         <div key={event.id} className="rounded-md bg-gray-900 p-2 text-[11px] leading-tight">
@@ -134,7 +150,10 @@ export default function BrandCalendarPage() {
                           <div className="text-muted-foreground">{formatTimeRange(event)}</div>
                         </div>
                       ))}
-                      {dayEvents.length === 0 && <div className="text-[11px] text-muted-foreground">No items</div>}
+
+                      {dayEvents.length === 0 && (
+                        <div className="text-[11px] text-muted-foreground">No items</div>
+                      )}
                     </div>
                   </div>
                 );

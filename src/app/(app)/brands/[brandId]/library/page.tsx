@@ -7,6 +7,7 @@ import { useParams } from 'next/navigation';
 import { Film, Image as ImageIcon, Layers, Loader2, StickyNote, Video } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
@@ -136,6 +137,16 @@ function MediaCard({ output }: { output: Output & { createdAt?: Date; id: string
 export default function BrandLibraryPage() {
   const params = useParams<{ brandId: string }>();
   const brandId = params?.brandId;
+
+  if (!brandId) {
+    return (
+      <Alert>
+        <div className="font-semibold">Select a brand</div>
+        <AlertDescription>Pick a brand to see its media library.</AlertDescription>
+      </Alert>
+    );
+  }
+
   const [tab, setTab] = useState<TabKey>('all');
 
   const { status, data } = useBrandOutputs(brandId, {

@@ -201,10 +201,20 @@
         "Implement agency extra brand slots and limits.",
         "Add beta diagnostics (health + Sentry stub + build info)."
       ]
+    },
+    {
+      "id": "M10",
+      "name": "Closed Beta UX & Tech Hardening",
+      "status": "done",
+      "goals": [
+        "Add beta banner, marketing badge and feature flag plumbing.",
+        "Implement welcome tour tied to onboarding flags.",
+        "Polish chat, library, requests, calendar and billing UX states for the beta."
+      ]
     }
   ],
   "codex": {
-    "currentMilestoneId": "M10",
+    "currentMilestoneId": "M11",
     "allowedScopes": [
       "frontend",
       "functions",
