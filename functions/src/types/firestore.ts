@@ -9,21 +9,47 @@ export interface BaseDocument {
 }
 
 export interface Brand extends BaseDocument {
-  ownerId?: string;
+  id?: string;
+  ownerId: string;
   name: string;
+  industry?: string;
+  website?: string;
+  socialHandles?: { instagram?: string; tiktok?: string; other?: string };
+  priceRange?: 'low' | 'mid' | 'high';
+  targetAudienceSummary?: string;
+  brandMemoryRef?: string;
+  status: 'active' | 'inactive';
+  createdAt: FirestoreDateLike;
+  updatedAt: FirestoreDateLike;
+
+  // Legacy/compatibility fields retained for now
   logoUrl?: string;
   colors?: string[];
   fonts?: string[];
   brandVoice?: string;
   keyInfo?: string;
-  industry?: string;
   description?: string;
   websiteUrl?: string;
   socialLinks?: string[];
   competitorWebsites?: string[];
   primaryContactId?: string;
-  status?: 'draft' | 'active' | 'archived' | string;
   metadata?: Record<string, unknown>;
+}
+
+export interface BrandMemory extends BaseDocument {
+  id: string;
+  brandId: string;
+  toneOfVoice?: string;
+  mission?: string;
+  values?: string[];
+  personas?: { name: string; description: string }[];
+  primaryColors?: string[];
+  fonts?: string[];
+  preferences?: string[];
+  assetsSummary?: string;
+  incomplete: boolean;
+  createdAt: FirestoreDateLike;
+  updatedAt: FirestoreDateLike;
 }
 
 export interface MediaAsset extends BaseDocument {
@@ -137,6 +163,8 @@ export interface TrendInsight extends BaseDocument {
   metadata?: Record<string, unknown>;
 }
 
+/* ----------------------------- M4 Outputs ----------------------------- */
+
 export type OutputType = 'video' | 'image' | 'copy';
 
 export interface OutputMeta {
@@ -160,21 +188,72 @@ export interface Output extends BaseDocument {
   createdBy: string;
 }
 
-export type ContentRequestStatus = 'queued' | 'processing' | 'done' | 'failed';
+/* ------------------------ Content Requests (M3+) ------------------------ */
+
+export type ContentChannel =
+  | 'instagram_feed'
+  | 'instagram_reels'
+  | 'tiktok'
+  | 'youtube_shorts';
+
+export type ContentOutputType = 'video' | 'image' | 'copy';
 
 export interface ContentRequest extends BaseDocument {
   brandId: string;
   userId: string;
-  platform?: string;
-  requestedImages?: number;
-  requestedVideos?: number;
-  requestedCopies?: number;
-  brief?: string;
-  status: ContentRequestStatus;
+
+  title: string;
+  description?: string;
+
+  goal?: 'increase_sales' | 'brand_awareness' | 'engagement' | 'other';
+  channels: ContentChannel[];
+
+  requestedOutputs: {
+    video?: number;
+    image?: number;
+    copy?: number;
+  };
+
+  status:
+    | 'draft'
+    | 'queued'
+    | 'in_progress'
+    | 'needs_revision'
+    | 'approved'
+    | 'cancelled';
+
+  masterBrief: unknown;
+
+  createdFromChatId?: string;
+  createdAt: FirestoreDateLike;
+  updatedAt: FirestoreDateLike;
 }
+
+/* ----------------------------- Chat (M3) ----------------------------- */
+
+export interface ChatSession extends BaseDocument {
+  brandId: string;
+  userId: string;
+  title: string;
+  createdAt: FirestoreDateLike;
+  updatedAt: FirestoreDateLike;
+  lastContentRequestId?: string;
+}
+
+export interface ChatMessage extends BaseDocument {
+  sessionId: string;
+  brandId: string;
+  userId?: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  createdAt: FirestoreDateLike;
+}
+
+/* ----------------------------- Model Map ----------------------------- */
 
 export type FirestoreModels = {
   brands: Brand;
+  brandMemories: BrandMemory;
   mediaAssets: MediaAsset;
   notifications: Notification;
   users: UserProfile;
@@ -183,7 +262,15 @@ export type FirestoreModels = {
   adCampaigns: AdCampaign;
   scraperCache: ScraperCache;
   trendInsights: TrendInsight;
+
+  // M4
   outputs: Output;
+
+  // M3
+  chatSessions: ChatSession;
+  chatMessages: ChatMessage;
+
+  // M3+
   contentRequests: ContentRequest;
 };
 
