@@ -19,6 +19,7 @@ settings live in the Codex Environment variables panel.
 | `SENTRY_TRACES_SAMPLE_RATE` / `SENTRY_PROFILES_SAMPLE_RATE` | Fine-grained sampling controls. | Optional numeric values between 0 and 1. |
 | `STRIPE_SECRET_KEY` | Authenticates the Stripe SDK for checkout/session APIs. | Required for billing flows. |
 | `STRIPE_WEBHOOK_SECRET` | Verifies webhook payload authenticity. | Required when deploying the Stripe webhook function. |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key used by any client-side checkout helpers. | Optional until checkout UI is exposed. |
 
 Configure these secrets under **Codex → Secrets** for the production and
 staging environments. Redeploy Functions after updating secrets so new values
@@ -38,7 +39,13 @@ are picked up.
 | `NEXT_PUBLIC_SENTRY_TRACES_SAMPLE_RATE` | Optional browser traces sampling rate override. |
 | `NEXT_PUBLIC_SENTRY_REPLAYS_SESSION_SAMPLE_RATE` / `NEXT_PUBLIC_SENTRY_REPLAYS_ERROR_SAMPLE_RATE` | Optional Replay sampling controls. |
 | `NEXT_PUBLIC_FEAT_*` | Feature flags for admin, reports, video studio, newsletter, etc. |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Publishable key for initializing client-side Stripe (upgrade CTA placeholder). |
 | `SENTRY_ORG` / `SENTRY_PROJECT` | Build-time configuration for uploading sourcemaps. |
 
 Set these values under **Codex → Environment** so they are available to both the
 Next.js build and runtime. Keep `.env.local` in sync for local development.
+
+## Usage tracking notes
+
+- Monthly usage counters are stored in `usageSnapshots` documents keyed by `{userId}:{brandId}:{yearMonth}`.
+- The Functions helper `processContentRequest` and the Billing UI both rely on these documents being readable by the authenticated user.

@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HttpsError } from 'firebase-functions/v1/https';
 
+vi.mock('../../genkit/ai', () => ({
+  ai: {
+    defineFlow: (_config: unknown, handler: (input: unknown, context: any) => unknown) =>
+      (input: unknown, extras?: any) => handler(input, extras ?? {}),
+  },
+  ensureGoogleGenAiApiKeyReady: vi.fn(),
+}));
+
 const firebaseAdminMock = globalThis.__vitestFirebaseAdmin;
 
 if (!firebaseAdminMock) {

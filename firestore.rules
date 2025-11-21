@@ -67,5 +67,11 @@ service cloud.firestore {
       allow read, write: if isSelf(resource.data.ownerId);
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
     }
+
+    // Usage snapshots are private to each user.
+    match /usageSnapshots/{usageId} {
+      allow read, update, delete: if isSelf(resource.data.userId);
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
   }
 }
