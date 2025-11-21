@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Megaphone, Calendar, BarChart, PlusCircle, Building } from "lucide-react";
+import { LayoutDashboard, Megaphone, Calendar, BarChart, PlusCircle, Building, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -11,6 +11,7 @@ const navItems = [
     { href: '/brands', label: 'Brand Studio', icon: Building },
     { href: '/calendar', label: 'Calendar', icon: Calendar },
     { href: '/analytics', label: 'Analytics', icon: BarChart },
+    { href: '/app/billing', label: 'Billing', icon: CreditCard },
 ];
 
 const NavLink = ({ href, label, icon: Icon }: { href: string, label: string, icon: React.ElementType }) => {

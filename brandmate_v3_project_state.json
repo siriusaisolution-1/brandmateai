@@ -159,7 +159,7 @@
     {
       "id": "M6",
       "name": "Billing & Limits",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Integrate Stripe for plans and invoicing.",
         "Track AI usage and Novita tasks per brand/user.",
@@ -178,7 +178,7 @@
     }
   ],
   "codex": {
-    "currentMilestoneId": "M6",
+    "currentMilestoneId": "M7",
     "allowedScopes": [
       "frontend",
       "functions",

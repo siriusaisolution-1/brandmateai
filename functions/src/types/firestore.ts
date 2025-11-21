@@ -93,7 +93,7 @@ export interface UserProfile extends BaseDocument {
   displayName?: string | null;
   photoURL?: string | null;
   role?: 'admin' | 'user' | 'viewer' | 'editor' | string;
-  subscriptionPlan?: 'free' | 'solo' | 'pro' | 'agency' | string;
+  subscriptionPlan?: 'starter' | 'free' | 'solo' | 'pro' | 'agency' | string;
   bmkCredits?: number;
   bmkBalance?: number;
   onboardingComplete?: boolean;

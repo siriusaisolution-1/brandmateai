@@ -3,16 +3,6 @@ import { HttpsError } from 'firebase-functions/v1/https';
 import { adminStatsFlow } from './admin-stats';
 
 // ---------------------------------------------------------------------------
-// Mock Genkit AI (deterministic mock – matches M11b stabilization)
-// ---------------------------------------------------------------------------
-vi.mock('../../genkit/ai', () => ({
-  ai: {
-    defineFlow: (_config: unknown, handler: any) =>
-      (input: unknown, options: unknown) => handler(input, options as never),
-  },
-}));
-
-// ---------------------------------------------------------------------------
 // Firebase Admin Mock – MUST exist (created by test setup in M11b)
 // ---------------------------------------------------------------------------
 const firebaseAdminMock = globalThis.__vitestFirebaseAdmin;
@@ -44,7 +34,7 @@ vi.mock('firebase-admin/firestore', () => {
 function createUserDoc(role: string | null) {
   return {
     get: vi.fn().mockImplementation((field: string) =>
-      field === 'role' ? role : undefined
+      field === 'role' ? role : undefined,
     ),
     exists: role !== null,
   };
@@ -63,7 +53,10 @@ describe('adminStatsFlow', () => {
   // -------------------------------------------------------------------------
   it('requires authentication', async () => {
     await expect(
-      adminStatsFlow({}, { context: undefined as unknown as Record<string, unknown> })
+      adminStatsFlow(
+        {},
+        { context: undefined as unknown as Record<string, unknown> },
+      ),
     ).rejects.toThrowError(HttpsError);
   });
 
@@ -102,7 +95,7 @@ describe('adminStatsFlow', () => {
     });
 
     await expect(
-      adminStatsFlow({}, { context: { auth: { uid: 'user-123' } } })
+      adminStatsFlow({}, { context: { auth: { uid: 'user-123' } } }),
     ).rejects.toThrowError(/Admin access is required/);
   });
 
@@ -152,7 +145,7 @@ describe('adminStatsFlow', () => {
 
     const result = await adminStatsFlow(
       {},
-      { context: { auth: { uid: 'admin-1' } } }
+      { context: { auth: { uid: 'admin-1' } } },
     );
 
     expect(result).toEqual({

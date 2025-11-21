@@ -1,3 +1,7 @@
+// functions/src/ai/flows/moderation.ts
+// Lightweight, provider-free moderation.
+// Pure/local rules only, to keep tests deterministic and avoid upstream SDK issues.
+
 import { z } from 'zod';
 
 export const ModerationOutputSchema = z.object({
@@ -20,7 +24,7 @@ export function detectCategories(text: string): string[] {
     .filter(([, patterns]) => patterns.some((regex) => regex.test(normalised)))
     .map(([key]) => key);
 
-  // de-dup just in case
+  // De-dup, just in case multiple patterns map to same category
   return Array.from(new Set(categories));
 }
 
@@ -34,13 +38,15 @@ export function moderateText(
   };
 }
 
+// Keep same exported name used elsewhere, but make it local/pure.
+// Signature stays async for drop-in compatibility with callers.
 export async function moderateTextFlow(
   text: string,
 ): Promise<z.infer<typeof ModerationOutputSchema>> {
-  // Pure/local moderation (no external provider / no Genkit dependency)
   return ModerationOutputSchema.parse(moderateText(text));
 }
 
+// Test hooks
 export const _test = {
   detectCategories,
   moderateText,
