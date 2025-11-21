@@ -4,8 +4,9 @@ import { z } from 'zod';
 
 import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
 import { extractAuthUserId } from '../../utils/flow-context';
-import { upsertNovitaTask } from '../../utils/novita-tasks';
 import { enforceFlowRateLimit } from '../../utils/rate-limit';
+import { getAllowedBrandCountForUser, getPlanConfig } from '../../billing/plans';
+import type { UserProfile } from '../../types/firestore';
 
 const firestore = admin.firestore();
 const { FieldValue } = admin.firestore;
@@ -20,6 +21,8 @@ export const BrandInputSchema = z.object({
   keyInfo: z.string().optional(),
   industry: z.string().optional(),
   competitorWebsites: z.array(z.string()).optional(),
+  markAsExtraBrand: z.boolean().optional(),
+  acquireExtraBrandSlot: z.boolean().optional(),
 });
 
 export const manageBrandFlow = ai.defineFlow(
@@ -39,6 +42,7 @@ export const manageBrandFlow = ai.defineFlow(
     }
 
     const brandsCollection = firestore.collection('brands');
+    const usersCollection = firestore.collection('users');
     const now = FieldValue.serverTimestamp();
 
     const docRef = input.brandId ? brandsCollection.doc(input.brandId) : brandsCollection.doc();
@@ -86,6 +90,66 @@ export const manageBrandFlow = ai.defineFlow(
     }
 
     await enforceFlowRateLimit(uid, input.brandId);
+
+    const userSnap = await usersCollection.doc(uid).get();
+    const userData = (userSnap.data() as UserProfile | undefined) ?? undefined;
+    if (!userData) {
+      throw new HttpsError('failed-precondition', 'User profile is required to manage brands.');
+    }
+
+    const plan = getPlanConfig(userData.subscriptionPlan);
+    const currentBrandCountSnap = await brandsCollection.where('ownerId', '==', uid).count().get();
+    const currentBrandCount = (currentBrandCountSnap.data().count as number | undefined) ?? 0;
+    const baseLimit = userData.subscriptionMeta?.baseBrandLimit ?? plan.baseBrandLimit;
+    let extraBrandCount = userData.subscriptionMeta?.extraBrandCount ?? 0;
+
+    const acquireExtraSlot = Boolean(input.acquireExtraBrandSlot);
+    const desiredExtraCount = extraBrandCount + (acquireExtraSlot ? 1 : 0);
+    const allowedWithoutExtra = getAllowedBrandCountForUser(userData);
+
+    if (!acquireExtraSlot && currentBrandCount >= allowedWithoutExtra) {
+      throw new HttpsError(
+        'failed-precondition',
+        'brand_limit_exceeded',
+        "You've reached your included brand limit. Add extra brands from Billing to continue.",
+      );
+    }
+
+    if (acquireExtraSlot) {
+      if (!plan.extraBrandPriceUsd) {
+        throw new HttpsError(
+          'failed-precondition',
+          'extra_brand_unavailable',
+          'Extra brands are available only on agency plans.',
+        );
+      }
+
+      await usersCollection.doc(uid).set(
+        {
+          subscriptionMeta: {
+            baseBrandLimit: baseLimit,
+            extraBrandCount: desiredExtraCount,
+            extraBrandPriceUsd: plan.extraBrandPriceUsd,
+          },
+        },
+        { merge: true },
+      );
+
+      extraBrandCount = desiredExtraCount;
+    }
+
+    const allowedBrandCount = baseLimit + extraBrandCount;
+    if (currentBrandCount + 1 > allowedBrandCount) {
+      throw new HttpsError(
+        'failed-precondition',
+        'brand_limit_exceeded',
+        "You've reached your included brand limit. Add extra brands from Billing to continue.",
+      );
+    }
+
+    if (input.markAsExtraBrand || acquireExtraSlot) {
+      payload.isExtraBrand = true;
+    }
 
     await docRef.set(payload, { merge: true });
 

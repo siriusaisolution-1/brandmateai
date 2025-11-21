@@ -41,6 +41,8 @@ export interface SaveBrandRequest {
   keyInfo?: string;
   industry?: string;
   competitorWebsites?: string[];
+  markAsExtraBrand?: boolean;
+  acquireExtraBrandSlot?: boolean;
 }
 
 export interface SaveBrandResponse {

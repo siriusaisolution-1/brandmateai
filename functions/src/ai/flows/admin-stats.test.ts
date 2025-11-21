@@ -1,12 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, it, beforeEach, expect, vi } from 'vitest';
 import { HttpsError } from 'firebase-functions/v1/https';
+import { adminStatsFlow } from './admin-stats';
 
-vi.mock('../../genkit/ai', () => ({
-  ai: {
-    defineFlow: (_config: unknown, handler: (...args: unknown[]) => unknown) => handler,
-  },
-}));
-
+// ---------------------------------------------------------------------------
+// Firebase Admin Mock – MUST exist (created by test setup in vitest.setup.ts)
+// ---------------------------------------------------------------------------
 const firebaseAdminMock = globalThis.__vitestFirebaseAdmin;
 
 if (!firebaseAdminMock) {
@@ -15,37 +13,73 @@ if (!firebaseAdminMock) {
 
 const { collection: collectionMock } = firebaseAdminMock.mocks;
 
-import { adminStatsFlow } from './admin-stats';
+// ---------------------------------------------------------------------------
+// Mock Firestore
+// ---------------------------------------------------------------------------
+vi.mock('firebase-admin/firestore', () => {
+  const mock = globalThis.__vitestFirebaseAdmin;
+  if (!mock) {
+    throw new Error('Firebase admin mock was not initialised');
+  }
+  return {
+    getFirestore: () => mock.mocks.firestore(),
+    CollectionReference: class {},
+    Query: class {},
+  };
+});
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 function createUserDoc(role: string | null) {
   return {
-    get: vi.fn().mockImplementation((field: string) => (field === 'role' ? role : undefined)),
+    get: vi.fn().mockImplementation((field: string) =>
+      field === 'role' ? role : undefined,
+    ),
     exists: role !== null,
   };
 }
 
+// ---------------------------------------------------------------------------
+// TEST SUITE
+// ---------------------------------------------------------------------------
 describe('adminStatsFlow', () => {
   beforeEach(() => {
     firebaseAdminMock.reset();
   });
 
+  // -------------------------------------------------------------------------
+  // TEST 1 — no auth
+  // -------------------------------------------------------------------------
   it('requires authentication', async () => {
-    await expect(adminStatsFlow({}, { context: undefined as unknown as Record<string, unknown> }))
-      .rejects.toThrowError(HttpsError);
+    await expect(
+      adminStatsFlow(
+        {},
+        { context: undefined as unknown as Record<string, unknown> },
+      ),
+    ).rejects.toThrowError(HttpsError);
   });
 
+  // -------------------------------------------------------------------------
+  // TEST 2 — user is not admin
+  // -------------------------------------------------------------------------
   it('rejects non-admin users', async () => {
     const userDoc = createUserDoc('user');
+
     collectionMock.mockImplementation((name: string) => {
       if (name === 'users') {
         return {
           doc: vi.fn(() => ({ get: vi.fn().mockResolvedValue(userDoc) })),
-          count: vi.fn(() => ({ get: vi.fn().mockResolvedValue({ data: () => ({ count: 2 }) }) })),
+          count: vi.fn(() => ({
+            get: vi.fn().mockResolvedValue({ data: () => ({ count: 2 }) }),
+          })),
         };
       }
       if (name === 'brands') {
         return {
-          count: vi.fn(() => ({ get: vi.fn().mockResolvedValue({ data: () => ({ count: 1 }) }) })),
+          count: vi.fn(() => ({
+            get: vi.fn().mockResolvedValue({ data: () => ({ count: 1 }) }),
+          })),
         };
       }
       if (name === 'bmkLedger') {
@@ -61,14 +95,24 @@ describe('adminStatsFlow', () => {
     });
 
     await expect(
-      adminStatsFlow({}, { context: { auth: { uid: 'user-123' } } as Record<string, unknown> })
+      adminStatsFlow({}, { context: { auth: { uid: 'user-123' } } }),
     ).rejects.toThrowError(/Admin access is required/);
   });
 
+  // -------------------------------------------------------------------------
+  // TEST 3 — admin metrics
+  // -------------------------------------------------------------------------
   it('returns aggregated metrics for admins', async () => {
     const userDoc = createUserDoc('admin');
-    const userCountGet = vi.fn().mockResolvedValue({ data: () => ({ count: 7 }) });
-    const brandCountGet = vi.fn().mockResolvedValue({ data: () => ({ count: 4 }) });
+
+    const userCountGet = vi.fn().mockResolvedValue({
+      data: () => ({ count: 7 }),
+    });
+
+    const brandCountGet = vi.fn().mockResolvedValue({
+      data: () => ({ count: 4 }),
+    });
+
     const ledgerDocs = [
       { data: () => ({ amount: 12 }) },
       { data: () => ({ amount: 8.5 }) },
@@ -99,13 +143,17 @@ describe('adminStatsFlow', () => {
       throw new Error(`Unexpected collection ${name}`);
     });
 
-    const result = await adminStatsFlow({}, { context: { auth: { uid: 'admin-1' } } as Record<string, unknown> });
+    const result = await adminStatsFlow(
+      {},
+      { context: { auth: { uid: 'admin-1' } } },
+    );
 
     expect(result).toEqual({
       totalUsers: 7,
       totalBrands: 4,
       bmkSpentLast24h: 20.5,
     });
+
     expect(userCountGet).toHaveBeenCalled();
     expect(brandCountGet).toHaveBeenCalled();
   });

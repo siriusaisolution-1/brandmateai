@@ -1,40 +1,67 @@
-import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
-import { z } from 'zod';
+// functions/src/ai/flows/moderation.ts
+// Lightweight, provider-free moderation.
+// Pure/local rules only, to keep tests deterministic and avoid upstream SDK issues.
 
-const CATEGORY_PATTERNS: Record<string, RegExp> = {
-  profanity: /fuck|shit|damn|bitch/i,
-  violence: /violence|violent|kill|murder|attack/i,
-  sexual: /sexual|explicit|nsfw|porn/i,
-  'self-harm': /suicide|self-harm|self harm|kill myself/i,
-  hate: /hate|racist|bigot|supremacist/i,
+import { z } from "zod";
+
+export const ModerationOutputSchema = z.object({
+  isSafe: z.boolean(),
+  categories: z.array(z.string()),
+});
+
+/**
+ * Simple local regex-based category detection.
+ * Keep it conservative and deterministic.
+ */
+const CATEGORY_PATTERNS: Record<string, RegExp[]> = {
+  sexual: [/sexual/i, /porn/i, /explicit/i, /nsfw/i, /\bsex\b/i],
+  "self-harm": [/suicide/i, /self[- ]?harm/i, /kill myself/i],
+  hate: [/hate/i, /racist/i, /bigot/i, /supremacist/i],
+  violence: [
+    /violence/i,
+    /violent/i,
+    /\bkill\b/i,
+    /assault/i,
+    /attack/i,
+    /murder/i,
+  ],
+  profanity: [/\b(fuck|shit|damn|bitch)\b/i],
 };
 
-function detectCategories(text: string): string[] {
+export function detectCategories(text: string): string[] {
   const normalised = text.toLowerCase();
-  return Object.entries(CATEGORY_PATTERNS)
-    .filter(([, pattern]) => pattern.test(normalised))
-    .map(([category]) => category);
+
+  const categories = Object.entries(CATEGORY_PATTERNS)
+    .filter(([, patterns]) => patterns.some((regex) => regex.test(normalised)))
+    .map(([key]) => key);
+
+  // De-dup, just in case multiple patterns map to same category.
+  return Array.from(new Set(categories));
 }
 
-function moderateText(text: string) {
+export function moderateText(
+  text: string,
+): { isSafe: boolean; categories: string[] } {
   const categories = detectCategories(text);
-  return { isSafe: categories.length === 0, categories };
+  return {
+    isSafe: categories.length === 0,
+    categories,
+  };
 }
 
-export const moderateTextFlow = ai.defineFlow(
-  {
-    name: 'moderateTextFlow',
-    inputSchema: z.string(),
-    outputSchema: z.object({ isSafe: z.boolean(), categories: z.array(z.string()) }),
-  },
-  async (input) => {
-    await ensureGoogleGenAiApiKeyReady();
-    return moderateText(input);
-  },
-);
+// Keep same exported name used elsewhere, but make it local/pure.
+// Signature stays async for drop-in compatibility with callers.
+export async function moderateTextFlow(
+  text: string,
+): Promise<z.infer<typeof ModerationOutputSchema>> {
+  return ModerationOutputSchema.parse(moderateText(text));
+}
 
+// Test hooks
 export const _test = {
   detectCategories,
   moderateText,
+  ModerationOutputSchema,
 };
 
+export default moderateTextFlow;

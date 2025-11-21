@@ -1,15 +1,27 @@
 'use client';
 
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { BarChart3, Calendar, CreditCard, Home, Images, ListChecks, Megaphone, MessageSquare, PlusCircle } from "lucide-react";
+import type { ElementType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  BarChart3,
+  Calendar,
+  CreditCard,
+  Home,
+  Images,
+  ListChecks,
+  Megaphone,
+  MessageSquare,
+  PlusCircle,
+} from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type NavItem = {
   key: string;
   label: string;
-  icon: React.ElementType;
+  icon: ElementType;
   getHref: (brandId?: string | null) => string;
   requiresBrand?: boolean;
   badge?: string;
@@ -20,35 +32,38 @@ const navItems: NavItem[] = [
     key: "home",
     label: "Home / Overview",
     icon: Home,
-    getHref: brandId => (brandId ? `/brands/${brandId}/home` : "/dashboard"),
+    getHref: (brandId) => (brandId ? `/brands/${brandId}/home` : "/dashboard"),
   },
   {
     key: "chat",
     label: "Chat",
     icon: MessageSquare,
     requiresBrand: true,
-    getHref: brandId => (brandId ? `/brands/${brandId}/chat` : "/dashboard"),
+    getHref: (brandId) => (brandId ? `/brands/${brandId}/chat` : "/dashboard"),
   },
   {
     key: "library",
     label: "Library",
     icon: Images,
     requiresBrand: true,
-    getHref: brandId => (brandId ? `/brands/${brandId}/library` : "/media-library"),
+    getHref: (brandId) =>
+      brandId ? `/brands/${brandId}/library` : "/media-library",
   },
   {
     key: "requests",
     label: "Requests",
     icon: ListChecks,
     requiresBrand: true,
-    getHref: brandId => (brandId ? `/brands/${brandId}/requests` : "/dashboard"),
+    getHref: (brandId) =>
+      brandId ? `/brands/${brandId}/requests` : "/dashboard",
   },
   {
     key: "calendar",
     label: "Calendar",
     icon: Calendar,
     requiresBrand: true,
-    getHref: brandId => (brandId ? `/brands/${brandId}/calendar` : "/calendar"),
+    getHref: (brandId) =>
+      brandId ? `/brands/${brandId}/calendar` : "/calendar",
   },
   {
     key: "analytics",
@@ -56,7 +71,7 @@ const navItems: NavItem[] = [
     icon: BarChart3,
     requiresBrand: true,
     badge: "beta",
-    getHref: brandId => (brandId ? `/reports/${brandId}` : "/reports"),
+    getHref: (brandId) => (brandId ? `/reports/${brandId}` : "/reports"),
   },
   {
     key: "billing",
@@ -66,11 +81,18 @@ const navItems: NavItem[] = [
   },
 ];
 
-function NavLink({ item, activeBrandId }: { item: NavItem; activeBrandId?: string | null }) {
+function NavLink({
+  item,
+  activeBrandId,
+}: {
+  item: NavItem;
+  activeBrandId?: string | null;
+}) {
   const pathname = usePathname();
   const href = item.getHref(activeBrandId);
   const isDisabled = item.requiresBrand && !activeBrandId;
   const isActive = !isDisabled && pathname.startsWith(href);
+
   const content = (
     <span
       className={cn(
@@ -82,7 +104,11 @@ function NavLink({ item, activeBrandId }: { item: NavItem; activeBrandId?: strin
       <item.icon className="h-4 w-4" />
       <span className="flex items-center gap-1">
         {item.label}
-        {item.badge && <span className="text-[10px] uppercase text-muted-foreground">({item.badge})</span>}
+        {item.badge && (
+          <span className="text-[10px] uppercase text-muted-foreground">
+            ({item.badge})
+          </span>
+        )}
       </span>
     </span>
   );
@@ -104,9 +130,7 @@ function NavLink({ item, activeBrandId }: { item: NavItem; activeBrandId?: strin
 
 function resolveBrandId(pathname: string): string | null {
   const brandMatch = pathname.match(/\/brands\/([^/]+)/);
-  if (brandMatch?.[1]) {
-    return brandMatch[1];
-  }
+  if (brandMatch?.[1]) return brandMatch[1];
 
   const altMatch = pathname.match(/\/(media-library|calendar|reports)\/([^/]+)/);
   return altMatch?.[2] ?? null;
@@ -125,6 +149,7 @@ export function AppSidebar() {
             <span>BrandMate AI</span>
           </Link>
         </div>
+
         <div className="flex-1">
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
             <div className="mb-4">
@@ -133,8 +158,13 @@ export function AppSidebar() {
                 Create New
               </Button>
             </div>
-            {navItems.map(item => (
-              <NavLink key={item.key} item={item} activeBrandId={activeBrandId} />
+
+            {navItems.map((item) => (
+              <NavLink
+                key={item.key}
+                item={item}
+                activeBrandId={activeBrandId}
+              />
             ))}
           </nav>
         </div>
@@ -142,3 +172,5 @@ export function AppSidebar() {
     </div>
   );
 }
+
+export default AppSidebar;

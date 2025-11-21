@@ -163,16 +163,19 @@ Sve unutar `/app` ruta:
     - Tabovi: “Videos”, “Images”, “Copy”.
     - Filteri: kampanja, kanal, datum, status (draft/approved/published).
     - Akcije: pregled, preuzimanje, dupliranje, slanje u plan objave.
+  - Implementacija (M5): `src/app/(app)/brands/[brandId]/library/page.tsx` koristi Firestore kolekciju `outputs` preko Reactfire hookova + React Query provajdera.
 
 - `/app/brands/{brandId}/requests`
   - Lista svih content request-ova (taskova):
     - npr. “10 Reels za Black Friday promo”.
     - status: queued / processing / needs_revision / approved.
     - klik otvara detalje (vidi sve generisane varijante, istoriju revizija).
+  - Implementacija (M5): `src/app/(app)/brands/[brandId]/requests/page.tsx` čita `contentRequests` kolekciju i iz UI nudi “Process now” dugme koje poziva orchestrator funkciju kada je dostupno.
 
 - `/app/brands/{brandId}/calendar` (verzija 1: samo view)
   - Kalendar objava (bez direktnog posta za v3.0).
   - Ručno ili AI predloženo planiranje dana, teme i tipa sadržaja.
+  - Implementacija (M5): `src/app/(app)/brands/[brandId]/calendar/page.tsx` renderuje mesečni grid i čita `calendarEvents` (ili izvedene događaje) za prikaz sadržaja po danima.
 
 - `/app/account`
   - User profil: ime, email, jezik, zona, email notifikacije.

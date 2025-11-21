@@ -40,6 +40,11 @@ export function MarketingFooter() {
               </Link>
             </li>
             <li>
+              <Link href="/faq" prefetch={false}>
+                FAQ
+              </Link>
+            </li>
+            <li>
               <Link href="/blog" prefetch={false}>
                 Blog
               </Link>

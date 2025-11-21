@@ -4,7 +4,7 @@
     "codeName": "brandmate_ai_studio",
     "owner": "Sirius AI Solution",
     "version": "3.0.0",
-    "status": "planning",
+    "status": "active",
     "primaryDoc": "brandmate_v3_Product&ArchitectureBlueprint.md",
     "description": "AI-driven content studio for video, visuals and copy, orchestrated by a master AI agent, focused on solo founders, small agencies and creators."
   },
@@ -13,8 +13,14 @@
       "framework": "Next.js",
       "version": "15.x",
       "language": "TypeScript",
-      "ui": ["React 18", "TailwindCSS", "shadcn/ui"],
-      "state": ["React Query"],
+      "ui": [
+        "React 18",
+        "TailwindCSS",
+        "shadcn/ui"
+      ],
+      "state": [
+        "React Query"
+      ],
       "routing": "App Router (/app/* for application, public routes for marketing site)"
     },
     "backend": {
@@ -99,7 +105,7 @@
     {
       "id": "M1",
       "name": "Foundation & Auth",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Clean up repo, env, and base configs.",
         "Set up Firebase Auth and basic /login, /register, /app shell.",
@@ -109,7 +115,7 @@
     {
       "id": "M2",
       "name": "Brand Onboarding & Brand Memory",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Implement quick brand setup (short form).",
         "Implement extended brand wizard (full brand memory).",
@@ -119,7 +125,7 @@
     {
       "id": "M3",
       "name": "Master AI Chat MVP",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Implement /app/brands/{brandId}/chat page with chat UI.",
         "Implement master AI endpoint (Functions or Next.js API) that creates ContentRequests from chat.",
@@ -129,7 +135,7 @@
     {
       "id": "M4",
       "name": "Agents & Media Generation",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Implement CopyAgent, VisualAgent and VideoAgent as separate flows/endpoints.",
         "Integrate Novita image + video APIs.",
@@ -139,7 +145,7 @@
     {
       "id": "M5",
       "name": "Library, Requests & Calendar",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Implement asset library UI (videos, images, copy).",
         "Implement contentRequests list/detail pages.",
@@ -147,9 +153,19 @@
       ]
     },
     {
+      "id": "M5b",
+      "name": "Test Stabilization",
+      "status": "done",
+      "goals": [
+        "Resolve duplicate export errors in admin-stats and manage-ads flows.",
+        "Stabilize moderation and GenAI-related tests with shims and mocks.",
+        "Harden Firestore rules checks with emulator guards."
+      ]
+    },
+    {
       "id": "M6",
       "name": "Billing & Limits",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Integrate Stripe for plans and invoicing.",
         "Track AI usage and Novita tasks per brand/user.",
@@ -159,11 +175,31 @@
     {
       "id": "M7",
       "name": "Polish & Analytics",
-      "status": "pending",
+      "status": "done",
       "goals": [
         "Add basic analytics dashboard per brand (content volume, reach proxies if available).",
         "Improve UX for errors, empty states and onboarding.",
         "Stabilize tests, docs and observability."
+      ]
+    },
+    {
+      "id": "M8",
+      "name": "Closed Beta Prep",
+      "status": "done",
+      "goals": [
+        "Stabilize marketing routes and billing preview screens.",
+        "Align usage snapshots for beta testers.",
+        "Prepare reporting hooks for billing/usage."
+      ]
+    },
+    {
+      "id": "M9",
+      "name": "Closed Beta Launch & Pricing Alignment",
+      "status": "done",
+      "goals": [
+        "Align plan registry with Starter/Pro/Agency (monthly & yearly).",
+        "Implement agency extra brand slots and limits.",
+        "Add beta diagnostics (health + Sentry stub + build info)."
       ]
     },
     {

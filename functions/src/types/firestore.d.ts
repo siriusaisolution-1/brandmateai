@@ -153,3 +153,44 @@ export interface ScrapedCacheEntry {
   timestamp: number;
   payload: ScrapedCachePayload;
 }
+
+export type OutputType = 'video' | 'image' | 'copy';
+
+export interface OutputMeta {
+  durationSec?: number;
+  width?: number;
+  height?: number;
+  styleId?: string;
+}
+
+export interface Output {
+  id?: string;
+  brandId: string;
+  requestId: string;
+  type: OutputType;
+  platform?: string;
+  variantIndex?: number;
+  status: 'draft' | 'approved' | 'published' | string;
+  meta?: OutputMeta;
+  storagePath?: string;
+  url?: string;
+  text?: string;
+  createdAt?: FirestoreTimestamp;
+  createdBy: string;
+}
+
+export type ContentRequestStatus = 'queued' | 'processing' | 'done' | 'failed';
+
+export interface ContentRequest {
+  id?: string;
+  brandId: string;
+  userId: string;
+  platform?: string;
+  requestedImages?: number;
+  requestedVideos?: number;
+  requestedCopies?: number;
+  brief?: string;
+  status: ContentRequestStatus;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
+}

@@ -22,7 +22,9 @@ export default function BrandCalendarPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-copy-primary">Calendar</h1>
-        <p className="text-muted-foreground">Scheduled posts and campaigns for this brand.</p>
+        <p className="text-muted-foreground">
+          Scheduled posts and campaigns for this brand.
+        </p>
       </div>
       <BrandCalendar brandId={brandId} />
     </div>

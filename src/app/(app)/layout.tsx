@@ -9,8 +9,12 @@ import { CommandPalette } from "@/components/command-palette";
 import { MasterAiChat } from "@/components/master-ai-chat";
 import QueryProvider from "@/components/query-provider";
 import { Toaster } from "@/components/ui/toaster";
-import { FirebaseAuthError, requireServerAuthSession } from "@/lib/auth/verify-id-token";
+import {
+  FirebaseAuthError,
+  requireServerAuthSession,
+} from "@/lib/auth/verify-id-token";
 import { isBetaMode } from "@/lib/featureFlags";
+import { getBuildInfo } from "@/lib/runtime/build-info";
 
 export default async function AppLayout({
   children,
@@ -19,9 +23,13 @@ export default async function AppLayout({
 }) {
   const betaMode = isBetaMode();
   let userId: string;
+
   try {
     const session = await requireServerAuthSession();
-    const uid = session.claims.uid ?? (typeof session.claims.sub === "string" ? session.claims.sub : null);
+    const uid =
+      session.claims.uid ??
+      (typeof session.claims.sub === "string" ? session.claims.sub : null);
+
     if (!uid) {
       redirect("/login");
     }
@@ -33,6 +41,8 @@ export default async function AppLayout({
     throw error;
   }
 
+  const buildInfo = getBuildInfo();
+
   return (
     <QueryProvider>
       <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -43,6 +53,9 @@ export default async function AppLayout({
           <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
             {children}
           </main>
+          <footer className="border-t bg-muted/40 px-4 py-3 text-sm text-muted-foreground lg:px-6">
+            BrandMate v3 – build {buildInfo.label}
+          </footer>
         </div>
       </div>
 

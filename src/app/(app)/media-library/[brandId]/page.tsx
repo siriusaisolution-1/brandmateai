@@ -13,7 +13,9 @@ export default function MediaLibraryPage() {
     return (
       <Alert>
         <div className="font-semibold">Select a brand</div>
-        <AlertDescription>Pick a brand from the selector to open its media library.</AlertDescription>
+        <AlertDescription>
+          Pick a brand from the selector to open its media library.
+        </AlertDescription>
       </Alert>
     );
   }
