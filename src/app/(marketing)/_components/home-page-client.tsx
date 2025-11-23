@@ -21,6 +21,7 @@ const fadeUp = {
 
 export function HomePageClient() {
   const betaMode = isBetaMode();
+
   const pricingPlans: PricingPlan[] = [
     {
       name: "Starter",
@@ -39,9 +40,14 @@ export function HomePageClient() {
       name: "Enterprise",
       price: "Custom",
       descriptor: "annual agreements",
-      features: ["Unlimited brands", "Dedicated success partner", "SOC 2 Type II compliance"],
+      features: [
+        "Unlimited brands",
+        "Dedicated success partner",
+        "SOC 2 Type II compliance",
+      ],
     },
   ];
+
   return (
     <div className="bg-[#0d0d12] text-zinc-100">
       <main className="relative mx-auto max-w-7xl px-6 pb-24 sm:px-8 lg:px-12">
@@ -132,7 +138,10 @@ export function HomePageClient() {
               <div className="flex flex-col items-center gap-2">
                 {betaMode && (
                   <span className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-200">
-                    <span className="h-2 w-2 rounded-full bg-amber-300" aria-hidden />
+                    <span
+                      className="h-2 w-2 rounded-full bg-amber-300"
+                      aria-hidden
+                    />
                     Closed Beta
                   </span>
                 )}
@@ -641,7 +650,9 @@ export function HomePageClient() {
                     >
                       <Link
                         href={
-                          plan.name === "Enterprise" ? "/contact" : "/register"
+                          plan.name === "Enterprise"
+                            ? "/contact"
+                            : "/register"
                         }
                       >
                         {plan.name === "Enterprise"
@@ -657,11 +668,7 @@ export function HomePageClient() {
         </section>
 
         {/* FAQ */}
-        <section
-          id="faq"
-          className="relative z-10 py-24"
-          aria-labelledby="faq-heading"
-        >
+        <section id="faq" className="relative z-10 py-24" aria-labelledby="faq-heading">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -674,10 +681,7 @@ export function HomePageClient() {
                 <p className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-400/80">
                   FAQ
                 </p>
-                <h2
-                  id="faq-heading"
-                  className="text-3xl font-semibold text-white sm:text-4xl"
-                >
+                <h2 id="faq-heading" className="text-3xl font-semibold text-white sm:text-4xl">
                   Answers before you dive in
                 </h2>
                 <p className="text-zinc-300">
@@ -726,10 +730,7 @@ export function HomePageClient() {
         </section>
 
         {/* FINAL CTA */}
-        <section
-          id="final-cta"
-          className="relative z-10 py-24 text-center"
-        >
+        <section id="final-cta" className="relative z-10 py-24 text-center">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -801,18 +802,12 @@ export function HomePageClient() {
                     </h3>
                     <ul className="space-y-2 text-zinc-300">
                       <li>
-                        <a
-                          className="transition hover:text-white"
-                          href="#why"
-                        >
+                        <a className="transition hover:text-white" href="#why">
                           Overview
                         </a>
                       </li>
                       <li>
-                        <a
-                          className="transition hover:text-white"
-                          href="#studio"
-                        >
+                        <a className="transition hover:text-white" href="#studio">
                           Content Studio
                         </a>
                       </li>
@@ -840,34 +835,22 @@ export function HomePageClient() {
                     </h3>
                     <ul className="space-y-2 text-zinc-300">
                       <li>
-                        <Link
-                          className="transition hover:text-white"
-                          href="/pricing"
-                        >
+                        <Link className="transition hover:text-white" href="/pricing">
                           Pricing
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          className="transition hover:text-white"
-                          href="/blog"
-                        >
+                        <Link className="transition hover:text-white" href="/blog">
                           Blog
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          className="transition hover:text-white"
-                          href="/webinars"
-                        >
+                        <Link className="transition hover:text-white" href="/webinars">
                           Webinars
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          className="transition hover:text-white"
-                          href="/support"
-                        >
+                        <Link className="transition hover:text-white" href="/support">
                           Support
                         </Link>
                       </li>
@@ -879,26 +862,17 @@ export function HomePageClient() {
                     </h3>
                     <ul className="space-y-2 text-zinc-300">
                       <li>
-                        <Link
-                          className="transition hover:text-white"
-                          href="/about"
-                        >
+                        <Link className="transition hover:text-white" href="/about">
                           About
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          className="transition hover:text-white"
-                          href="/careers"
-                        >
+                        <Link className="transition hover:text-white" href="/careers">
                           Careers
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          className="transition hover:text-white"
-                          href="/contact"
-                        >
+                        <Link className="transition hover:text-white" href="/contact">
                           Contact
                         </Link>
                       </li>
@@ -910,26 +884,17 @@ export function HomePageClient() {
                     </h3>
                     <ul className="space-y-2 text-zinc-300">
                       <li>
-                        <Link
-                          className="transition hover:text-white"
-                          href="/legal/privacy"
-                        >
+                        <Link className="transition hover:text-white" href="/legal/privacy">
                           Privacy
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          className="transition hover:text-white"
-                          href="/legal/terms"
-                        >
+                        <Link className="transition hover:text-white" href="/legal/terms">
                           Terms
                         </Link>
                       </li>
                       <li>
-                        <Link
-                          className="transition hover:text-white"
-                          href="/legal/security"
-                        >
+                        <Link className="transition hover:text-white" href="/legal/security">
                           Security
                         </Link>
                       </li>
@@ -938,27 +903,15 @@ export function HomePageClient() {
                 </div>
               </div>
               <div className="flex flex-col gap-4 border-t border-white/10 pt-6 text-sm text-zinc-400 sm:flex-row sm:items-center sm:justify-between">
-                <p>
-                  © {new Date().getFullYear()} BrandMate AI. All rights
-                  reserved.
-                </p>
+                <p>© {new Date().getFullYear()} BrandMate AI. All rights reserved.</p>
                 <div className="flex items-center gap-4">
-                  <Link
-                    className="transition hover:text-white"
-                    href="/status"
-                  >
+                  <Link className="transition hover:text-white" href="/status">
                     Status
                   </Link>
-                  <Link
-                    className="transition hover:text-white"
-                    href="/partners"
-                  >
+                  <Link className="transition hover:text-white" href="/partners">
                     Partners
                   </Link>
-                  <Link
-                    className="transition hover:text-white"
-                    href="/newsletter"
-                  >
+                  <Link className="transition hover:text-white" href="/newsletter">
                     Join newsletter
                   </Link>
                 </div>
@@ -970,3 +923,5 @@ export function HomePageClient() {
     </div>
   );
 }
+
+export default HomePageClient;

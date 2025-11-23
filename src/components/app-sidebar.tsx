@@ -13,10 +13,13 @@ import {
   Megaphone,
   MessageSquare,
   PlusCircle,
+  Shield,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { isOwnerUser } from "@/lib/auth/owner";
+import { useUser } from "reactfire";
 
 type NavItem = {
   key: string;
@@ -140,6 +143,16 @@ export function AppSidebar() {
   const pathname = usePathname();
   const activeBrandId = resolveBrandId(pathname);
 
+  const { data: user } = useUser();
+  const showAdminLink = isOwnerUser(user ?? undefined);
+
+  const adminItem: NavItem = {
+    key: "beta-admin",
+    label: "Beta Admin",
+    icon: Shield,
+    getHref: () => "/admin/beta",
+  };
+
   return (
     <div className="hidden border-r bg-muted/40 md:block">
       <div className="flex h-full max-h-screen flex-col gap-2">
@@ -166,6 +179,10 @@ export function AppSidebar() {
                 activeBrandId={activeBrandId}
               />
             ))}
+
+            {showAdminLink && (
+              <NavLink item={adminItem} activeBrandId={activeBrandId} />
+            )}
           </nav>
         </div>
       </div>

@@ -211,6 +211,16 @@
         "Implement welcome tour tied to onboarding flags.",
         "Polish chat, library, requests, calendar and billing UX states for the beta."
       ]
+    },
+    {
+      "id": "M11",
+      "name": "Deployment & Beta Ops",
+      "status": "done",
+      "goals": [
+        "Document Vercel + Firebase deployment and env requirements.",
+        "Deliver the closed-beta owner dashboard and feedback ingestion.",
+        "Verify Sentry + health monitoring without breaking the UI."
+      ]
     }
   ],
   "codex": {

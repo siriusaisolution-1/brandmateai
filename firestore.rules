@@ -11,6 +11,10 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
     function brandOwner(brandId) {
       return get(/databases/$(database)/documents/brands/$(brandId)).data.ownerId;
     }
@@ -31,7 +35,7 @@ service cloud.firestore {
 
     // Users can only read/create their own document and cannot change their own role/plan.
     match /users/{userId} {
-      allow read, create: if isSelf(userId);
+      allow read, create: if isSelf(userId) || isAdmin();
       allow update: if isSelf(userId)
                     && request.resource.data.role == resource.data.role
                     && request.resource.data.subscriptionPlan == resource.data.subscriptionPlan;
@@ -41,7 +45,7 @@ service cloud.firestore {
     // Brand count enforcement is handled in the manageBrandFlow backend guard (subscriptionMeta.extraBrandCount).
     // Only the owner of a brand can read, update, or delete it.
     match /brands/{brandId} {
-      allow read, update, delete: if isBrandOwner(brandId);
+      allow read, update, delete: if isBrandOwner(brandId) || isAdmin();
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
     }
 
@@ -71,20 +75,28 @@ service cloud.firestore {
 
     // Notifications are private to the owner.
     match /notifications/{notificationId} {
-      allow read, update: if isSelf(resource.data.ownerId);
+      allow read, update: if isSelf(resource.data.ownerId) || isAdmin();
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
     }
 
     // Calendar events are private to the owner.
     match /calendarEvents/{eventId} {
-      allow read, write: if isSelf(resource.data.ownerId);
+      allow read, write: if isSelf(resource.data.ownerId) || isAdmin();
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
     }
 
     // Ad campaigns are private to the owner.
     match /adCampaigns/{campaignId} {
-      allow read, write: if isSelf(resource.data.ownerId);
+      allow read, write: if isSelf(resource.data.ownerId) || isAdmin();
       allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+    }
+
+    // M11: Closed beta feedback (users can submit, only admins can read/manage)
+    match /betaFeedback/{feedbackId} {
+      allow create: if isAuthenticated()
+                    && request.resource.data.userId == request.auth.uid;
+      allow read, update: if isAdmin();
+      allow delete: if false;
     }
 
     // M6: Usage snapshots are private to each user.

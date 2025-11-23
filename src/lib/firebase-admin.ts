@@ -1,6 +1,7 @@
 import { getApps, initializeApp, cert, getApp } from 'firebase-admin/app';
 import { getAuth as _getAuth } from 'firebase-admin/auth';
 import { getStorage as _getStorage } from 'firebase-admin/storage';
+import { getFirestore as _getFirestore } from 'firebase-admin/firestore';
 
 /**
  * Pokuša da pročita service account iz:
@@ -87,4 +88,9 @@ export function getAuth() {
 export function getStorage() {
   initApp();
   return _getStorage();
+}
+
+export function getFirestore() {
+  initApp();
+  return _getFirestore();
 }

@@ -3,12 +3,14 @@ import { redirect } from 'next/navigation';
 
 import QueryProvider from '@/components/query-provider';
 import { Toaster } from '@/components/ui/toaster';
+import { isOwnerUser } from '@/lib/auth/owner';
 import { FirebaseAuthError, requireServerAuthSession } from '@/lib/auth/verify-id-token';
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   try {
     const session = await requireServerAuthSession();
-    if (session.claims.admin !== true) {
+    const isAdmin = session.claims.admin === true;
+    if (!isAdmin && !isOwnerUser(session.claims)) {
       redirect('/dashboard');
     }
   } catch (error) {

@@ -4,6 +4,13 @@
 
 import { z } from "zod";
 
+export type ModerationCategory =
+  | "sexual"
+  | "self-harm"
+  | "violence"
+  | "hate"
+  | "profanity";
+
 export const ModerationOutputSchema = z.object({
   isSafe: z.boolean(),
   categories: z.array(z.string()),
@@ -13,10 +20,10 @@ export const ModerationOutputSchema = z.object({
  * Simple local regex-based category detection.
  * Keep it conservative and deterministic.
  */
-const CATEGORY_PATTERNS: Record<string, RegExp[]> = {
+const CATEGORY_PATTERNS: Record<ModerationCategory, RegExp[]> = {
   sexual: [/sexual/i, /porn/i, /explicit/i, /nsfw/i, /\bsex\b/i],
-  "self-harm": [/suicide/i, /self[- ]?harm/i, /kill myself/i],
-  hate: [/hate/i, /racist/i, /bigot/i, /supremacist/i],
+  "self-harm": [/suicide/i, /self[-\s]?harm/i, /kill myself/i],
+  hate: [/hate/i, /hate crime/i, /racist/i, /bigot/i, /supremacist/i],
   violence: [
     /violence/i,
     /violent/i,
@@ -28,20 +35,28 @@ const CATEGORY_PATTERNS: Record<string, RegExp[]> = {
   profanity: [/\b(fuck|shit|damn|bitch)\b/i],
 };
 
-export function detectCategories(text: string): string[] {
-  const normalised = text.toLowerCase();
+export function normaliseText(input: string): string {
+  return input.normalize("NFKC").trim();
+}
 
-  const categories = Object.entries(CATEGORY_PATTERNS)
-    .filter(([, patterns]) => patterns.some((regex) => regex.test(normalised)))
-    .map(([key]) => key);
+export function detectCategories(text: string): ModerationCategory[] {
+  const normalised = normaliseText(text).toLowerCase();
+  const matches = new Set<ModerationCategory>();
 
-  // De-dup, just in case multiple patterns map to same category.
-  return Array.from(new Set(categories));
+  for (const [category, patterns] of Object.entries(
+    CATEGORY_PATTERNS,
+  ) as Array<[ModerationCategory, RegExp[]]>) {
+    if (patterns.some((regex) => regex.test(normalised))) {
+      matches.add(category);
+    }
+  }
+
+  return [...matches];
 }
 
 export function moderateText(
   text: string,
-): { isSafe: boolean; categories: string[] } {
+): { isSafe: boolean; categories: ModerationCategory[] } {
   const categories = detectCategories(text);
   return {
     isSafe: categories.length === 0,
@@ -59,6 +74,7 @@ export async function moderateTextFlow(
 
 // Test hooks
 export const _test = {
+  normaliseText,
   detectCategories,
   moderateText,
   ModerationOutputSchema,

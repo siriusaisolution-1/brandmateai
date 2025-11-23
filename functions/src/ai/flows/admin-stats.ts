@@ -1,4 +1,7 @@
 // functions/src/ai/flows/admin-stats.ts
+// Admin-only stats flow. Pure Firestore access.
+// Test-friendly: supports Vitest injected firebase-admin mocks.
+
 import {
   CollectionReference,
   Query,
@@ -13,7 +16,8 @@ type FirestoreLike = ReturnType<typeof getFirestore>;
 
 /**
  * Test-friendly DB accessor.
- * In Vitest, __vitestFirebaseAdmin.mocks.collection is injected so we avoid loading real Admin SDK.
+ * In Vitest, __vitestFirebaseAdmin.mocks.collection can be injected
+ * so we avoid loading real Admin SDK / emulator edge-cases.
  */
 function getDb(): FirestoreLike {
   const mockCollection = (
@@ -31,13 +35,13 @@ function getDb(): FirestoreLike {
   return getFirestore();
 }
 
+export const AdminStatsInputSchema = z.object({});
+
 export const AdminStatsOutputSchema = z.object({
   totalUsers: z.number(),
   totalBrands: z.number(),
   bmkSpentLast24h: z.number(),
 });
-
-export const AdminStatsInputSchema = z.object({});
 
 async function getCollectionCount(
   collection: CollectionReference,
@@ -139,11 +143,13 @@ export async function adminStatsFlow(
   return resolveAdminStats(uid);
 }
 
+// Test hooks
 export const _test = {
   getCollectionCount,
   calculateBmkSpentSince,
   resolveAdminStats,
   AdminStatsOutputSchema,
+  AdminStatsInputSchema,
 };
 
 export default adminStatsFlow;
