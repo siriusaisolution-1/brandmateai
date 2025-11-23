@@ -20,7 +20,12 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useBrandCalendarEvents } from '@/hooks/brand-content';
 import type { CalendarEvent } from '@/types/firestore';
 
-function formatTimeRange(event: CalendarEvent & { startTime?: Date; endTime?: Date }) {
+type CalendarEventWithDates = Omit<CalendarEvent, 'startTime' | 'endTime'> & {
+  startTime?: Date;
+  endTime?: Date;
+};
+
+function formatTimeRange(event: CalendarEventWithDates) {
   if (!event.startTime) return 'No time set';
   const start = format(event.startTime, 'MMM d, p');
   if (!event.endTime) return start;
@@ -48,10 +53,10 @@ export default function BrandCalendarPage() {
   const gridEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
 
   const { status, data } = useBrandCalendarEvents(brandId, { start: gridStart, end: gridEnd });
-  const events = data ?? [];
+  const events: CalendarEventWithDates[] = data ?? [];
 
   const grouped = useMemo(() => {
-    return events.reduce<Record<string, Array<CalendarEvent & { startTime?: Date; endTime?: Date }>>>(
+    return events.reduce<Record<string, CalendarEventWithDates[]>>(
       (acc, event) => {
         const key = event.startTime ? format(event.startTime, 'yyyy-MM-dd') : 'unknown';
         acc[key] = acc[key] ? [...acc[key], event] : [event];
