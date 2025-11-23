@@ -133,7 +133,7 @@ export default function PricingPage({ variant = "marketing" }: PricingPageProps)
             <Switch
               aria-label="Toggle billing cycle"
               checked={billingCycle === "yearly"}
-              onCheckedChange={(checked) => setBillingCycle(checked ? "yearly" : "monthly")}
+              onCheckedChange={(checked: boolean) => setBillingCycle(checked ? "yearly" : "monthly")}
             />
             <span className={`text-sm ${billingCycle === "yearly" ? "font-semibold" : "text-muted-foreground"}`}>
               Yearly (2 months free)

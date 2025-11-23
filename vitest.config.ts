@@ -8,8 +8,8 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     include: [
       'functions/src/**/*.test.ts',
-      'src/**/*.test.ts',
-      'tests/**/*.test.ts',
+      'src/**/*.{test,ui.test}.{ts,tsx}',
+      'tests/**/*.test.ts?(x)',
       'middleware.test.ts',
     ],
     exclude: [

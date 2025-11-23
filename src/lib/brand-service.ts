@@ -86,10 +86,11 @@ export async function createBrandWithMemory(
   await updateDoc(brandDoc, { brandMemoryRef: brandMemoryDoc.path });
 
   const [brandSnap, memorySnap] = await Promise.all([getDoc(brandDoc), getDoc(brandMemoryDoc)]);
+  const { id: _memoryId, ...memoryData } = memorySnap.data() as BrandMemory;
 
   return {
     brand: { id: brandSnap.id, ...(brandSnap.data() as Brand) },
-    memory: { id: memorySnap.id, ...(memorySnap.data() as BrandMemory) },
+    memory: { id: memorySnap.id, ...memoryData },
   };
 }
 
@@ -127,8 +128,10 @@ export async function getBrandWithMemory(brandId: string): Promise<{ brand: Bran
     return undefined;
   }
 
+  const { id: _memoryId, ...memoryData } = memorySnap.data() as BrandMemory;
+
   return {
     brand: { id: brandSnap.id, ...(brandSnap.data() as Brand) },
-    memory: { id: memorySnap.id, ...(memorySnap.data() as BrandMemory) },
+    memory: { id: memorySnap.id, ...memoryData },
   };
 }

@@ -105,6 +105,10 @@ export function buildChatMessage(
   content: string,
   userId?: string,
 ): ChatMessage {
+  if (!session.id) {
+    throw new Error('Session id is required to build a chat message');
+  }
+
   const now = Timestamp.now();
   return {
     id: '',
