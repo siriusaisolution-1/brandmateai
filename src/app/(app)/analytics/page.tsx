@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { fetchGlobalAnalytics, createDefaultAnalyticsPeriod } from '@/lib/analytics-data';
 import { EmptyAnalyticsState, GlobalOverview, PerBrandGrid } from '@/components/analytics/analytics-cards';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AnalyticsPage() {
   const { data: user, status: authStatus } = useUser();
