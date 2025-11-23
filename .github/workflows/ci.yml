@@ -10,6 +10,40 @@ env:
   NODE_VERSION: '20.x'
 
 jobs:
+  pre-merge-sanity:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'pull_request' || github.ref == 'refs/heads/main' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.2.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Ensure clean pnpm store
+        run: pnpm store path --silent | xargs rm -rf
+
+      - name: Install dependencies (workspace)
+        run: pnpm -r install --frozen-lockfile
+
+      - name: Lint (workspace)
+        run: pnpm lint --max-warnings=0
+
+      - name: Typecheck (workspace)
+        run: pnpm typecheck
+
+      - name: Build (Next.js)
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+        run: pnpm build
+
   lint:
     runs-on: ubuntu-latest
     steps:

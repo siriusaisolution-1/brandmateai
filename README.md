@@ -54,6 +54,14 @@ The full CI-aligned setup remains available if you need the extra tooling.
    pnpm dev
    ```
 
+## Before opening a PR
+
+Run the fast pre-flight checks locally to mirror the CI gate:
+
+```bash
+pnpm run check:fast
+```
+
 ## Common Scripts
 
 | Command | Purpose |
