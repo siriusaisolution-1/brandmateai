@@ -43,9 +43,12 @@ export default function NewBrandPage() {
 
   const firestore = useFirestore();
   const { data: authUser } = useUser();
-  const userRef = useMemo(() => (authUser ? doc(firestore, 'users', authUser.uid) : null), [authUser, firestore]);
-  const { data: userDoc } = useFirestoreDocData(userRef ?? undefined, { idField: 'id' });
-  const appUser = (userDoc as AppUser | undefined) ?? undefined;
+  const userRef = useMemo(
+    () => doc(firestore, 'users', authUser?.uid ?? '__no-user__'),
+    [authUser, firestore],
+  );
+  const { data: userDoc } = useFirestoreDocData(userRef, { idField: 'id' });
+  const appUser = authUser ? ((userDoc as AppUser | undefined) ?? undefined) : undefined;
 
   const plan = getPlanConfig(appUser?.subscriptionPlan);
   const allowedBrandCount =
