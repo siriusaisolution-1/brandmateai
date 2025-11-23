@@ -207,6 +207,10 @@ export const PLAN_DEFINITIONS: Record<SubscriptionPlanId, PlanDefinition> = {
   },
 };
 
+export function listPlans() {
+  return PLAN_DEFINITIONS;
+}
+
 export function coercePlanId(plan?: string | null): SubscriptionPlanId {
   if (plan === 'pro' || plan === 'agency' || plan === 'starter') {
     return plan;
