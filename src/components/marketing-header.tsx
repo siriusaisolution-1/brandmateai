@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Megaphone } from "lucide-react";
 import Link from "next/link";
 
-type MarketingHeaderCurrent = "features" | "pricing";
+type MarketingHeaderCurrent = "features" | "pricing" | "about" | "faq" | "legal";
 
 interface MarketingHeaderProps {
   current?: MarketingHeaderCurrent;
@@ -40,7 +40,27 @@ export function MarketingHeader({ current }: MarketingHeaderProps = {}) {
             >
               Pricing
             </Link>
-            {/* Add Blog link later */}
+            <Link
+              href="/about"
+              className={linkBaseClasses}
+              aria-current={current === "about" ? "page" : undefined}
+            >
+              About
+            </Link>
+            <Link
+              href="/faq"
+              className={linkBaseClasses}
+              aria-current={current === "faq" ? "page" : undefined}
+            >
+              FAQ
+            </Link>
+            <Link
+              href="/legal"
+              className={linkBaseClasses}
+              aria-current={current === "legal" ? "page" : undefined}
+            >
+              Legal
+            </Link>
           </nav>
         </div>
         <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">

@@ -1,70 +1,125 @@
-import * as admin from 'firebase-admin';
-import type { CollectionReference, Query } from 'firebase-admin/firestore';
-import { HttpsError } from 'firebase-functions/v1/https';
-import { z } from 'zod';
+// functions/src/ai/flows/admin-stats.ts
+// Admin-only stats flow. Pure Firestore access.
+// Test-friendly: supports Vitest injected firebase-admin mocks.
 
-import { ai, ensureGoogleGenAiApiKeyReady } from '../../genkit/ai';
-import { extractAuthUserId } from '../../utils/flow-context';
+import {
+  CollectionReference,
+  Query,
+  getFirestore,
+} from "firebase-admin/firestore";
+import { HttpsError } from "firebase-functions/v1/https";
+import { z } from "zod";
 
-const firestore = admin.firestore();
+import { extractAuthUserId } from "../../utils/flow-context";
 
-const AdminStatsOutputSchema = z.object({
+type FirestoreLike = ReturnType<typeof getFirestore>;
+
+/**
+ * Test-friendly DB accessor.
+ * In Vitest, __vitestFirebaseAdmin.mocks.collection can be injected
+ * so we avoid loading real Admin SDK / emulator edge-cases.
+ */
+function getDb(): FirestoreLike {
+  const mockCollection = (
+    globalThis as {
+      __vitestFirebaseAdmin?: {
+        mocks?: { collection?: FirestoreLike["collection"] };
+      };
+    }
+  ).__vitestFirebaseAdmin?.mocks?.collection;
+
+  if (typeof mockCollection === "function") {
+    return { collection: mockCollection } as FirestoreLike;
+  }
+
+  return getFirestore();
+}
+
+export const AdminStatsInputSchema = z.object({});
+
+export const AdminStatsOutputSchema = z.object({
   totalUsers: z.number(),
   totalBrands: z.number(),
   bmkSpentLast24h: z.number(),
 });
 
-async function getCollectionCount(collection: CollectionReference): Promise<number> {
-  if (typeof collection.count === 'function') {
-    const snapshot = await collection.count().get();
+async function getCollectionCount(
+  collection: CollectionReference,
+): Promise<number> {
+  // New Firestore aggregation count() API (if available)
+  if (typeof (collection as any).count === "function") {
+    const snapshot = await (collection as any).count().get();
     const count = snapshot.data()?.count;
-    return typeof count === 'number' && Number.isFinite(count) ? count : 0;
+    return typeof count === "number" && Number.isFinite(count) ? count : 0;
   }
 
+  // Fallback for emulator/tests/older SDKs
   const snapshot = await collection.get();
-  return typeof snapshot.size === 'number' ? snapshot.size : 0;
+  return typeof snapshot.size === "number" ? snapshot.size : 0;
 }
 
 async function calculateBmkSpentSince(threshold: Date): Promise<number> {
-  const ledger = firestore.collection('bmkLedger');
-  let query: Query = ledger;
+  const db = getDb();
+  const ledger = db.collection("bmkLedger");
+  let query: Query = ledger as unknown as Query;
 
-  if (typeof ledger.where === 'function') {
-    const filteredByDirection = ledger.where('direction', '==', 'debit');
-    if (filteredByDirection && typeof (filteredByDirection as Query).where === 'function') {
-      query = (filteredByDirection as Query).where('createdAt', '>=', threshold);
+  if (typeof (ledger as any).where === "function") {
+    const filteredByDirection = (ledger as any).where(
+      "direction",
+      "==",
+      "debit",
+    );
+
+    if (
+      filteredByDirection &&
+      typeof (filteredByDirection as any).where === "function"
+    ) {
+      query = (filteredByDirection as any).where(
+        "createdAt",
+        ">=",
+        threshold,
+      );
     }
   }
 
   const snapshot = await query.get();
-  const docs = snapshot && typeof snapshot === 'object' && 'docs' in snapshot && Array.isArray((snapshot as { docs: unknown }).docs)
-    ? (snapshot as { docs: Array<{ data: () => unknown }> }).docs
-    : [];
+
+  const docs =
+    snapshot &&
+    typeof snapshot === "object" &&
+    "docs" in snapshot &&
+    Array.isArray((snapshot as { docs: unknown }).docs)
+      ? (snapshot as { docs: Array<{ data: () => unknown }> }).docs
+      : [];
 
   return docs.reduce((total, doc) => {
-    const data = typeof doc.data === 'function' ? doc.data() : undefined;
-    const amount = data?.amount;
-    return typeof amount === 'number' && Number.isFinite(amount)
+    const data = typeof doc.data === "function" ? doc.data() : undefined;
+    const amount = (data as { amount?: unknown })?.amount;
+    return typeof amount === "number" && Number.isFinite(amount)
       ? total + amount
       : total;
   }, 0);
 }
 
-async function resolveAdminStats(uid: string): Promise<z.infer<typeof AdminStatsOutputSchema>> {
-  const usersCollection = firestore.collection('users');
+async function resolveAdminStats(
+  uid: string,
+): Promise<z.infer<typeof AdminStatsOutputSchema>> {
+  const db = getDb();
+
+  const usersCollection = db.collection("users");
   const userDoc = await usersCollection.doc(uid).get();
 
-  const role = userDoc.get('role');
-  if (role !== 'admin') {
-    throw new HttpsError('permission-denied', 'Admin access is required.');
+  const role = userDoc.get("role");
+  if (role !== "admin") {
+    throw new HttpsError("permission-denied", "Admin access is required.");
   }
 
-  const brandsCollection = firestore.collection('brands');
+  const brandsCollection = db.collection("brands");
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
   const [totalUsers, totalBrands, bmkSpentLast24h] = await Promise.all([
-    getCollectionCount(usersCollection),
-    getCollectionCount(brandsCollection),
+    getCollectionCount(usersCollection as unknown as CollectionReference),
+    getCollectionCount(brandsCollection as unknown as CollectionReference),
     calculateBmkSpentSince(dayAgo),
   ]);
 
@@ -75,28 +130,26 @@ async function resolveAdminStats(uid: string): Promise<z.infer<typeof AdminStats
   });
 }
 
-export const adminStatsFlow = ai.defineFlow(
-  {
-    name: 'adminStatsFlow',
-    inputSchema: z.object({}),
-    outputSchema: AdminStatsOutputSchema,
-  },
-  async (_input, { context }) => {
-    await ensureGoogleGenAiApiKeyReady();
+export async function adminStatsFlow(
+  _input: z.infer<typeof AdminStatsInputSchema>,
+  { context }: { context?: Record<string, unknown> } = {},
+): Promise<z.infer<typeof AdminStatsOutputSchema>> {
+  const uid = extractAuthUserId(context);
 
-    const uid = extractAuthUserId(context);
+  if (!uid) {
+    throw new HttpsError("unauthenticated", "Authentication is required.");
+  }
 
-    if (!uid) {
-      throw new HttpsError('unauthenticated', 'Authentication is required.');
-    }
+  return resolveAdminStats(uid);
+}
 
-    return resolveAdminStats(uid);
-  },
-);
-
+// Test hooks
 export const _test = {
   getCollectionCount,
   calculateBmkSpentSince,
   resolveAdminStats,
   AdminStatsOutputSchema,
+  AdminStatsInputSchema,
 };
+
+export default adminStatsFlow;

@@ -1,9 +1,11 @@
+import "@testing-library/jest-dom/vitest";
 import { beforeEach, vi } from "vitest";
 
 const defaultServiceAccount = {
   project_id: "test-project",
   client_email: "test@example.com",
-  private_key: "-----BEGIN PRIVATE KEY-----\nTEST_PRIVATE_KEY\n-----END PRIVATE KEY-----\n",
+  private_key:
+    "-----BEGIN PRIVATE KEY-----\nTEST_PRIVATE_KEY\n-----END PRIVATE KEY-----\n",
 };
 
 const baseEnv: Record<string, string> = {
@@ -40,7 +42,9 @@ declare global {
   // eslint-disable-next-line no-var
   var __vitestFirebaseAdmin: FirebaseAdminMock | undefined;
   // eslint-disable-next-line no-var
-  var __vitestGetAssetUrlMock: ReturnType<typeof vi.fn> | undefined;
+  var __vitestGetAssetUrlMock:
+    | ReturnType<typeof vi.fn>
+    | undefined;
 }
 
 function createFirebaseAdminMock() {
@@ -53,8 +57,12 @@ function createFirebaseAdminMock() {
   const addMock = vi.fn();
   const whereMock = vi.fn();
   const countMock = vi.fn();
+  const countGetMock = vi.fn();
   const collectionGetMock = vi.fn();
   const firestoreFn = vi.fn();
+  const batchMock = vi.fn();
+  const batchSetMock = vi.fn();
+  const batchCommitMock = vi.fn();
   const bucketMock = vi.fn();
   const fileMock = vi.fn();
   const getSignedUrlMock = vi.fn();
@@ -65,6 +73,7 @@ function createFirebaseAdminMock() {
 
   const firestoreInstance = {
     collection: (...args: unknown[]) => collectionMock(...args),
+    batch: batchMock,
   };
 
   const storageInstance = {
@@ -76,7 +85,12 @@ function createFirebaseAdminMock() {
     storage: vi.fn(() => storageInstance),
   };
 
-  docMock.mockImplementation(() => ({ get: getMock, set: setMock }));
+  docMock.mockImplementation(() => ({
+    get: getMock,
+    set: setMock,
+    id: "mock-id",
+  }));
+
   collectionMock.mockImplementation(() => ({
     doc: docMock,
     add: addMock,
@@ -84,6 +98,24 @@ function createFirebaseAdminMock() {
     count: countMock,
     get: collectionGetMock,
   }));
+
+  // where/count aggregation chain (codex)
+  whereMock.mockImplementation(() => ({
+    count: countMock,
+    get: collectionGetMock,
+    where: whereMock,
+  }));
+  countMock.mockImplementation(() => ({ get: countGetMock }));
+  countGetMock.mockImplementation(() => ({
+    data: () => ({ count: 0 }),
+  }));
+
+  // batch mock (main)
+  batchMock.mockImplementation(() => ({
+    set: batchSetMock,
+    commit: batchCommitMock,
+  }));
+
   bucketMock.mockImplementation(() => ({ file: fileMock }));
   fileMock.mockImplementation(() => ({ getSignedUrl: getSignedUrlMock }));
 
@@ -116,8 +148,14 @@ function createFirebaseAdminMock() {
   function reset() {
     getMock.mockReset();
     setMock.mockReset();
+
     docMock.mockReset();
-    docMock.mockImplementation(() => ({ get: getMock, set: setMock }));
+    docMock.mockImplementation(() => ({
+      get: getMock,
+      set: setMock,
+      id: "mock-id",
+    }));
+
     collectionMock.mockReset();
     collectionMock.mockImplementation(() => ({
       doc: docMock,
@@ -126,31 +164,65 @@ function createFirebaseAdminMock() {
       count: countMock,
       get: collectionGetMock,
     }));
-    addMock.mockReset();
+
     whereMock.mockReset();
+    whereMock.mockImplementation(() => ({
+      count: countMock,
+      get: collectionGetMock,
+      where: whereMock,
+    }));
+
+    countGetMock.mockReset();
+    countGetMock.mockImplementation(() => ({
+      data: () => ({ count: 0 }),
+    }));
+
     countMock.mockReset();
+    countMock.mockImplementation(() => ({ get: countGetMock }));
+
+    addMock.mockReset();
     collectionGetMock.mockReset();
+
+    batchMock.mockReset();
+    batchSetMock.mockReset();
+    batchCommitMock.mockReset();
+    batchMock.mockImplementation(() => ({
+      set: batchSetMock,
+      commit: batchCommitMock,
+    }));
+
     bucketMock.mockReset();
     bucketMock.mockImplementation(() => ({ file: fileMock }));
+
     fileMock.mockReset();
     fileMock.mockImplementation(() => ({ getSignedUrl: getSignedUrlMock }));
+
     getSignedUrlMock.mockReset();
+
     firestoreFn.mockReset();
     firestoreFn.mockImplementation(() => firestoreInstance);
+
     storageFn.mockReset();
     storageFn.mockImplementation(() => storageInstance);
+
     app.firestore.mockReset();
     app.firestore.mockImplementation(() => firestoreInstance);
+
     app.storage.mockReset();
     app.storage.mockImplementation(() => storageInstance);
+
     initializeApp.mockReset();
     initializeApp.mockImplementation(() => app);
+
     FieldValue.increment.mockReset();
     FieldValue.increment.mockImplementation((value: number) => value);
+
     FieldValue.serverTimestamp.mockReset();
     FieldValue.serverTimestamp.mockImplementation(() => "timestamp");
+
     certMock.mockReset();
     certMock.mockImplementation(() => ({}));
+
     apps.length = 0;
   }
 
@@ -167,6 +239,10 @@ function createFirebaseAdminMock() {
       add: addMock,
       where: whereMock,
       count: countMock,
+      countGet: countGetMock,
+      batch: batchMock,
+      batchSet: batchSetMock,
+      batchCommit: batchCommitMock,
       firestore: firestoreFn,
       FieldValue,
       bucket: bucketMock,
@@ -182,22 +258,39 @@ function createFirebaseAdminMock() {
 }
 
 const firebaseAdminMock = createFirebaseAdminMock();
-
 globalThis.__vitestFirebaseAdmin = firebaseAdminMock;
 
 vi.mock("firebase-admin", () => firebaseAdminMock.module);
 
-const getAssetUrlMock = vi.fn(async (assetId: string) => `https://example.com/assets/${assetId}`);
-
+const getAssetUrlMock = vi.fn(
+  async (assetId: string) => `https://example.com/assets/${assetId}`,
+);
 globalThis.__vitestGetAssetUrlMock = getAssetUrlMock;
 
-vi.mock(new URL("./functions/src/utils/firebase.ts", import.meta.url).pathname, async importOriginal => {
-  const actual = await importOriginal<typeof import("./functions/src/utils/firebase")>();
-  return {
-    ...actual,
-    getAssetUrl: getAssetUrlMock,
-  };
-});
+vi.mock(
+  new URL("./functions/src/utils/firebase.ts", import.meta.url).pathname,
+  async (importOriginal) => {
+    const actual =
+      await importOriginal<typeof import("./functions/src/utils/firebase")>();
+    return {
+      ...actual,
+      getAssetUrl: getAssetUrlMock,
+    };
+  },
+);
+
+vi.mock(
+  new URL("./functions/src/genkit/ai.ts", import.meta.url).pathname,
+  () => {
+    return {
+      ai: {
+        defineFlow: (_config: unknown, handler: unknown) => handler,
+        currentContext: () => undefined,
+      },
+      ensureGoogleGenAiApiKeyReady: vi.fn(),
+    };
+  },
+);
 
 vi.mock(new URL("./functions/src/genkit/ai.ts", import.meta.url).pathname, () => {
   const defineFlow = <Input, Output>(

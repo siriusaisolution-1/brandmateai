@@ -1,25 +1,32 @@
-'use client'
+'use client';
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { useParams } from 'next/navigation';
+
+import { BrandCalendar } from '@/components/brand-calendar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function BrandCalendarPage() {
-  return (
-    <div className="container mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold text-copy-primary">Calendar</h1>
+  const params = useParams<{ brandId: string }>();
+  const brandId = params?.brandId;
 
-      <Card className="bg-surface border-gray-700">
-        <CardHeader>
-          <CardTitle>Temporarily Disabled</CardTitle>
-          <CardDescription>
-            Calendar actions that trigger ad-campaign flows are disabled while we remove Reactfire and wire Firebase v11.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            We&rsquo;ll bring this back once Genkit flows are replaced with our Firebase v11 + React Query integration.
-          </p>
-        </CardContent>
-      </Card>
+  if (!brandId) {
+    return (
+      <Alert>
+        <div className="font-semibold">Select a brand</div>
+        <AlertDescription>Pick a brand to review the calendar.</AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-copy-primary">Calendar</h1>
+        <p className="text-muted-foreground">
+          Scheduled posts and campaigns for this brand.
+        </p>
+      </div>
+      <BrandCalendar brandId={brandId} />
     </div>
-  )
+  );
 }

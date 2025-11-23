@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/nextjs';
+import { captureException } from '@/lib/monitoring/sentry';
 
 type ExtraContext = Record<string, unknown> | undefined;
 
@@ -28,9 +28,9 @@ export function reportClientError(error: unknown, context?: ExtraContext): void 
   }
 
   if (context) {
-    Sentry.captureException(normalizedError, { extra: context });
+    captureException(normalizedError, context);
     return;
   }
 
-  Sentry.captureException(normalizedError);
+  captureException(normalizedError);
 }
